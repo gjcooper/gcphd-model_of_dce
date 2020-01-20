@@ -1,0 +1,9 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+packrat/lib*/
+packrat/src/
+*.xpd
+# grabbed from expyriment github
+read_expyriment.R

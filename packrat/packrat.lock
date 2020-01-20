@@ -1,0 +1,67 @@
+PackratFormat: 1.4
+PackratVersion: 0.5.0
+RVersion: 3.6.2
+Repos: CRAN=https://cran.csiro.au
+
+Package: MCMCpack
+Source: CRAN
+Version: 1.4-5
+Hash: 3d343d54add61b0b668ee09ac72104a5
+Requires: coda, mcmc, quantreg
+
+Package: MatrixModels
+Source: CRAN
+Version: 0.4-1
+Hash: 60a5c75e57aae4a0ce76cb7422939aaf
+
+Package: SparseM
+Source: CRAN
+Version: 1.78
+Hash: deb628f138abd8575037bcf662a99259
+
+Package: coda
+Source: CRAN
+Version: 0.19-3
+Hash: a6bd401a844d5fc9e5d9589dc0197acb
+
+Package: condMVNorm
+Source: CRAN
+Version: 2015.2-1
+Hash: b60ee14de6073ccedc897371dc07884d
+Requires: mvtnorm
+
+Package: mcmc
+Source: CRAN
+Version: 0.9-6
+Hash: 8533c26f181bdfe38ac8446c24e13a4e
+
+Package: mvtnorm
+Source: CRAN
+Version: 1.0-12
+Hash: 7e8727c109e7f541fa685e3745d6b30a
+
+Package: packrat
+Source: CRAN
+Version: 0.5.0
+Hash: 498643e765d1442ba7b1160a1df3abf9
+
+Package: psamplers
+Source: github
+Version: 0.0.0.9016
+Hash: 83b603fcdaad3e8297c28403496d1b55
+Requires: MCMCpack, condMVNorm, mvtnorm
+GithubRepo: samplers
+GithubUsername: gjcooper
+GithubRef: master
+GithubSha1: c2ecfc7fb6753fd95704dea68896c59dbb29c633
+RemoteHost: api.github.com
+RemoteRepo: samplers
+RemoteUsername: gjcooper
+RemoteRef: master
+RemoteSha: c2ecfc7fb6753fd95704dea68896c59dbb29c633
+
+Package: quantreg
+Source: CRAN
+Version: 5.54
+Hash: b1662addfb95ee8dc4f72408e65b97b1
+Requires: MatrixModels, SparseM
