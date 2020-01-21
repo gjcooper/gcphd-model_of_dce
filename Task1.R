@@ -21,6 +21,8 @@ mod_data <- data.frame(
     labels = stim_levels
   )
 )
+mod_data$beta <- paste0("beta_", mod_data$cell)
+mod_data$delta <- paste0("delta_", mod_data$cell)
 
 # Sum and difference of evidence rates for positive and negative accumulators
 sum_diff <- c("beta", "delta")
@@ -64,19 +66,67 @@ omega <- function(pars, osign) {
 yes <- function(data) data[data$response == 1, ]$rt
 no <- function(data) data[data$response == 2, ]$rt
 
-drift <- function(x, data) {
+drift <- function(pars, data, osign) {
+  # drift is derived from β (sum) and δ (difference) of evidence rates for pos
+  # and neg accumulators
+  # β is sum(v+, v-) and δ is diff(v+, v-)
+  # So v+ is (β + δ)/2 and v- is (β - δ)/2
+  if (osign == "+") {
+    return((pars[data$beta] + pars[data$delta]) / 2)
+  }
+  (pars[data$beta] - pars[data$delta]) / 2
+}
 
 
+# individual race pdf and cdfs ------------------------------------------------
+pos_f <- function(x, data, scale=1) {
+  dlba_norm(
+    yes(data),
+    A = scale * alpha(x),
+    b = scale * omega(x, "+"),
+    t0 = x["R"],
+    mean_v = scale * drift(x, data, "+"),
+    sd_v = sqrt(scale)
+    )
+}
 
+neg_f <- function(x, data, scale=1) {
+  dlba_norm(
+    no(data),
+    A = scale * alpha(x),
+    b = scale * omega(x, "-"),
+    t0 = x["R"],
+    mean_v = scale * drift(x, data, "-"),
+    sd_v = sqrt(scale)
+    )
+}
+
+pos_F <- function(x, data, scale=1) {
+  plba_norm(
+    yes(data),
+    A = scale * alpha(x),
+    b = scale * omega(x, "+"),
+    t0 = x["R"],
+    mean_v = scale * drift(x, data, "+"),
+    sd_v = sqrt(scale)
+    )
+}
+
+neg_F <- function(x, data, scale=1) {
+  plba_norm(
+    no(data),
+    A = scale * alpha(x),
+    b = scale * omega(x, "-"),
+    t0 = x["R"],
+    mean_v = scale * drift(x, data, "-"),
+    sd_v = sqrt(scale)
+    )
+}
 
 # Specify likelihoods of parameters fro individual models ---------------------
 
 # Independant parallel self terminating
 ll_IST <- function(x, data) {
-  pos_f <- dlba_norm(yes(data), A = alpha(x), b = omega(x, "+"), t0 = x["R"],
-                mean_v = drift(x, data), sd_v = 1)
-  
-                
 }
 
 # Specify the log likelihood function -----------------------------------------
