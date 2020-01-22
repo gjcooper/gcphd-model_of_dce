@@ -79,7 +79,7 @@ drift <- function(pars, data, osign) {
 
 
 # individual race pdf and cdfs ------------------------------------------------
-pos_f <- function(x, data, scale=1) {
+pos_f <- function(x, data, scale = 1) {
   dlba_norm(
     yes(data),
     A = scale * alpha(x),
@@ -87,10 +87,10 @@ pos_f <- function(x, data, scale=1) {
     t0 = x["R"],
     mean_v = scale * drift(x, data, "+"),
     sd_v = sqrt(scale)
-    )
+  )
 }
 
-neg_f <- function(x, data, scale=1) {
+neg_f <- function(x, data, scale = 1) {
   dlba_norm(
     no(data),
     A = scale * alpha(x),
@@ -98,10 +98,10 @@ neg_f <- function(x, data, scale=1) {
     t0 = x["R"],
     mean_v = scale * drift(x, data, "-"),
     sd_v = sqrt(scale)
-    )
+  )
 }
 
-pos_F <- function(x, data, scale=1) {
+pos_F <- function(x, data, scale = 1) {
   plba_norm(
     yes(data),
     A = scale * alpha(x),
@@ -109,10 +109,10 @@ pos_F <- function(x, data, scale=1) {
     t0 = x["R"],
     mean_v = scale * drift(x, data, "+"),
     sd_v = sqrt(scale)
-    )
+  )
 }
 
-neg_F <- function(x, data, scale=1) {
+neg_F <- function(x, data, scale = 1) {
   plba_norm(
     no(data),
     A = scale * alpha(x),
@@ -120,7 +120,7 @@ neg_F <- function(x, data, scale=1) {
     t0 = x["R"],
     mean_v = scale * drift(x, data, "-"),
     sd_v = sqrt(scale)
-    )
+  )
 }
 
 # Specify likelihoods of parameters fro individual models ---------------------
