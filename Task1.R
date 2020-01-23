@@ -12,6 +12,7 @@ levels(task1_data$PriceSalience) <- c("H", "L", "D")
 levels(task1_data$RatingSalience) <- c("H", "L", "D")
 mod_data <- data.frame(
   rt = task1_data$RT / 1000,
+  subject = task1_data$subject_id,
   response = as.numeric(task1_data$Correct),
   cell = factor(
     paste0(
@@ -63,8 +64,8 @@ omega <- function(pars, osign) {
   pars["nu"] * pars["omega"] + (1 - pars["nu"]) * pars["w"] * pars["omega"]
 }
 
-yes <- function(data) data[data$response == 1, ]$rt
-no <- function(data) data[data$response == 2, ]$rt
+yes <- function(data) data[data$response == 2, ]
+no <- function(data) data[data$response == 1, ]
 
 drift <- function(pars, data, osign) {
   # drift is derived from β (sum) and δ (difference) of evidence rates for pos
@@ -79,46 +80,46 @@ drift <- function(pars, data, osign) {
 
 
 # individual race pdf and cdfs ------------------------------------------------
-pos_f <- function(x, data, scale = 1) {
+pos_f <- function(x, data, drifts, scale = 1) {
   dlba_norm(
-    yes(data),
+    data,
     A = scale * alpha(x),
     b = scale * omega(x, "+"),
     t0 = x["R"],
-    mean_v = scale * drift(x, data, "+"),
+    mean_v = scale * drifts,
     sd_v = sqrt(scale)
   )
 }
 
-neg_f <- function(x, data, scale = 1) {
+neg_f <- function(x, data, drifts, scale = 1) {
   dlba_norm(
-    no(data),
+    data,
     A = scale * alpha(x),
     b = scale * omega(x, "-"),
     t0 = x["R"],
-    mean_v = scale * drift(x, data, "-"),
+    mean_v = scale * drifts,
     sd_v = sqrt(scale)
   )
 }
 
-pos_F <- function(x, data, scale = 1) {
+pos_F <- function(x, data, drifts, scale = 1) {
   plba_norm(
-    yes(data),
+    data,
     A = scale * alpha(x),
     b = scale * omega(x, "+"),
     t0 = x["R"],
-    mean_v = scale * drift(x, data, "+"),
+    mean_v = scale * drifts,
     sd_v = sqrt(scale)
   )
 }
 
-neg_F <- function(x, data, scale = 1) {
+neg_F <- function(x, data, drifts, scale = 1) {
   plba_norm(
-    no(data),
+    data,
     A = scale * alpha(x),
     b = scale * omega(x, "-"),
     t0 = x["R"],
-    mean_v = scale * drift(x, data, "-"),
+    mean_v = scale * drifts,
     sd_v = sqrt(scale)
   )
 }
@@ -127,6 +128,7 @@ neg_F <- function(x, data, scale = 1) {
 
 # Independant parallel self terminating
 ll_IST <- function(x, data) {
+  
 }
 
 # Specify the log likelihood function -----------------------------------------
