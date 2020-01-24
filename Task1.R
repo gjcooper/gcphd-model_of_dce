@@ -50,6 +50,9 @@ parameters <- c(parameters, apply(
   collapse = "_"
 ))
 
+pars <- rnorm(length(parameters))
+names(pars) <- parameters
+
 # Helper methods --------------------------------------------------------------
 alpha <- function(pars) pars["nu"] * pars["omega"]
 
@@ -124,11 +127,66 @@ neg_F <- function(x, data, drifts, scale = 1) {
   )
 }
 
-# Specify likelihoods of parameters fro individual models ---------------------
+# A table of calls to individual (d/p)lba_norms -------------------------------
+
+#    func ║ Correct │ Incorrect
+#   ══════╬═════════╪═══════════
+#    f+   ║ 4       │
+#    f-   ║         │ 4
+#    F+   ║ 4       │ 4
+#    F-   ║ 4       │ 4
+#    f+²  ║ 3       │
+#    f-²  ║         │ 3
+#    F+²  ║         │ 3
+#    F-²  ║ 3       │
+#
+#
+# Enough repeats here to be worthwhile calling each once and passing resulting
+# arrays around to individual model likelihood functions.
+
+# Specify likelihoods of parameters for individual models ---------------------
 
 # Independant parallel self terminating
-ll_IST <- function(x, data) {
-  
+ll_IST <- function(dfunc) {  # nolint
+  yes <- 2 * dfunc[["f+"]] * (1 - dfunc[["F+"]]) * (1 - dfunc[["F-"]]**2)
+  no <- 2 * dfunc[["f-"]] * dfunc[["F-"]] * (1 - dfunc[["F+"]])**2
+  c(yes, no)
+}
+
+ll_IEX <- function(dfunc) {  # nolint
+  yes <- 2 * dfunc[["f+"]] * dfunc[["F+"]] * (1 - dfunc[["F-"]])**2
+  no <- 2 * dfunc[["f-"]] * (1 - dfunc[["F-"]]) * (1 - dfunc[["F+"]]**2)
+  c(yes, no)
+}
+
+ll_CYST <- function(dfunc) {  # nolint
+  yes <- dunc[["f+2"]] * (1 - dfunc[["F-"]]**2)
+  no <- 2 * dfunc[["f-"]] * dfunc[["F-"]] *  (1 - dfunc[["F+2"]])
+  c(yes, no)
+}
+
+ll_CYEX <- function(dfunc) {  # nolint
+  yes <- dfunc[["f+2"]] * (1 - dfunc[["F-"]])**2
+  no <- 2 * dfunc[["f-"]] * (1 - dfunc[["F-"]]) *  (1 - dfunc[["F+2"]])
+  c(yes, no)
+}
+
+ll_CNST <- function(dfunc) {  # nolint
+  yes <- 2 * dfunc[["f+"]] * (1 - dfunc[["F+"]]) *  (1 - dfunc[["F-2"]])
+  no <- dfunc[["f-2"]] * (1 - dfunc[["F+2"]])**2
+  c(yes, no)
+}
+
+ll_CNEX <- function(dfunc) {  # nolint
+  yes <- 2 * dfunc[["f+"]] * dfunc[["F+"]] * (1 - dfunc[["F-2"]])
+  no <- dfunc[["f-2"]] * (1 - dfunc[["F+"]]**2)
+  c(yes, no)
+}
+
+ll_CB <- function(dfunc) {  # nolint
+  yes <- dfunc[["f+2"]] * (1 - dfunc[["F-2"]])
+  no <- dfunc[["f-2"]] * (1 - dfunc[["F+2"]])
+  c(yes, no)
 }
 
 # Specify the log likelihood function -----------------------------------------
@@ -144,19 +202,8 @@ cox_ll <- function(x, data) {
     return(-1e10)
   }
 
-  # This is faster than "paste".
-  bs <- x["A"] + x[c("b1", "b2", "b3")][data$condition]
-  out <- rtdists::dLBA(
-    rt = data$rt, # nolint
-    response = data$correct,
-    A = x["A"],
-    b = bs,
-    t0 = x["t0"],
-    mean_v = x[c("v1", "v2")],
-    sd_v = c(1, 1),
-    distribution = "norm",
-    silent = TRUE
-  )
+  # MEAT OF THE mixture LL here
+
   bad <- (out < 1e-10) | (!is.finite(out))
   out[bad] <- 1e-10
   out <- sum(log(out))
