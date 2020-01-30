@@ -30,10 +30,10 @@ sum_diff <- c("beta", "delta")
 
 parameters <- c(
   # Parallel mixture probabilities
-  "lambda_IST", "lambda_IEX",
+  "theta_IST", #"theta_IEX",
   # Coactive mixture probabilities
-  "lambda_CYST", "lambda_CYEX", "lambda_CNST", "lambda_CNEX",
-  # "lambda_CB", -> set to 1 - sum(other lambdas)
+  #"theta_CYST", "theta_CYEX", "theta_CNST", "theta_CNEX",
+  # "theta_CB", -> set to 1 - sum(other thetas)
   # ω - Sum of response thresholds
   "omega",
   # ν - how much threshold is subject to start point variability
@@ -49,9 +49,6 @@ parameters <- c(parameters, apply(
   expand.grid(sum_diff, stim_levels), 1, paste,
   collapse = "_"
 ))
-
-pars <- rnorm(length(parameters))
-names(pars) <- parameters
 
 # Helper methods --------------------------------------------------------------
 alpha <- function(pars) pars["nu"] * pars["omega"]
@@ -83,44 +80,22 @@ drift <- function(pars, data, osign) {
 
 
 # individual race pdf and cdfs ------------------------------------------------
-pos_f <- function(x, data, drifts, scale = 1) {
+lba_pdf <- function(x, data, drifts, evidence = "+", scale = 1) {
   dlba_norm(
     data,
     A = scale * alpha(x),
-    b = scale * omega(x, "+"),
+    b = scale * omega(x, evidence),
     t0 = x["R"],
     mean_v = scale * drifts,
     sd_v = sqrt(scale)
   )
 }
 
-neg_f <- function(x, data, drifts, scale = 1) {
-  dlba_norm(
-    data,
-    A = scale * alpha(x),
-    b = scale * omega(x, "-"),
-    t0 = x["R"],
-    mean_v = scale * drifts,
-    sd_v = sqrt(scale)
-  )
-}
-
-pos_F <- function(x, data, drifts, scale = 1) {
+lba_cdf <- function(x, data, drifts, evidence = "+", scale = 1) {
   plba_norm(
     data,
     A = scale * alpha(x),
-    b = scale * omega(x, "+"),
-    t0 = x["R"],
-    mean_v = scale * drifts,
-    sd_v = sqrt(scale)
-  )
-}
-
-neg_F <- function(x, data, drifts, scale = 1) {
-  plba_norm(
-    data,
-    A = scale * alpha(x),
-    b = scale * omega(x, "-"),
+    b = scale * omega(x, evidence),
     t0 = x["R"],
     mean_v = scale * drifts,
     sd_v = sqrt(scale)
@@ -144,48 +119,77 @@ neg_F <- function(x, data, drifts, scale = 1) {
 # Enough repeats here to be worthwhile calling each once and passing resulting
 # arrays around to individual model likelihood functions.
 
+ll_subcomponents <- function(x, data) {
+  ydat <- yes(data)
+  ndat <- no(data)
+  pdf_pos_ind_corr <- lba_pdf(x, ydat, drift(x, ydat, "+"))
+  pdf_neg_ind_inco <- lba_pdf(x, ndat, drift(x, ndat, "-"), evidence = "-")
+  cdf_pos_ind_corr <- lba_cdf(x, ydat, drift(x, ydat, "+"))
+  cdf_pos_ind_inco <- lba_cdf(x, ndat, drift(x, ndat, "+"))
+  cdf_neg_ind_corr <- lba_cdf(x, ydat, drift(x, ydat, "-"), evidence = "-")
+  cdf_neg_ind_inco <- lba_cdf(x, ndat, drift(x, ndat, "-"), evidence = "-")
+  pdf_pos_coa_corr <- lba_pdf(x, ydat, drift(x, ydat, "+"), scale = 2)
+  pdf_neg_coa_inco <- lba_pdf(x, ndat, drift(x, ndat, "-"), evidence = "-", scale = 2) #nolint
+  cdf_pos_coa_inco <- lba_cdf(x, ndat, drift(x, ndat, "+"), scale = 2)
+  cdf_neg_coa_corr <- lba_cdf(x, ydat, drift(x, ydat, "-"), evidence = "-", scale = 2) #nolint
+
+  list(
+    "f+c"  = pdf_pos_ind_corr,
+    "f-i"  = pdf_neg_ind_inco,
+    "F+c"  = cdf_pos_ind_corr,
+    "F+i"  = cdf_pos_ind_inco,
+    "F-c"  = cdf_neg_ind_corr,
+    "F-i"  = cdf_neg_ind_inco,
+    "f+2c" = pdf_pos_coa_corr,
+    "f-2i" = pdf_neg_coa_inco,
+    "F+2i" = cdf_pos_coa_inco,
+    "F-2c" = cdf_neg_coa_corr
+  )
+}
+
+
 # Specify likelihoods of parameters for individual models ---------------------
 
 # Independant parallel self terminating
 ll_IST <- function(dfunc) {  # nolint
-  yes <- 2 * dfunc[["f+"]] * (1 - dfunc[["F+"]]) * (1 - dfunc[["F-"]]**2)
-  no <- 2 * dfunc[["f-"]] * dfunc[["F-"]] * (1 - dfunc[["F+"]])**2
+  yes <- 2 * dfunc[["f+c"]] * (1 - dfunc[["F+c"]]) * (1 - dfunc[["F-c"]]**2)
+  no <- 2 * dfunc[["f-i"]] * dfunc[["F-i"]] * (1 - dfunc[["F+i"]])**2
   c(yes, no)
 }
 
 ll_IEX <- function(dfunc) {  # nolint
-  yes <- 2 * dfunc[["f+"]] * dfunc[["F+"]] * (1 - dfunc[["F-"]])**2
-  no <- 2 * dfunc[["f-"]] * (1 - dfunc[["F-"]]) * (1 - dfunc[["F+"]]**2)
+  yes <- 2 * dfunc[["f+c"]] * dfunc[["F+c"]] * (1 - dfunc[["F-c"]])**2
+  no <- 2 * dfunc[["f-i"]] * (1 - dfunc[["F-i"]]) * (1 - dfunc[["F+i"]]**2)
   c(yes, no)
 }
 
 ll_CYST <- function(dfunc) {  # nolint
-  yes <- dunc[["f+2"]] * (1 - dfunc[["F-"]]**2)
-  no <- 2 * dfunc[["f-"]] * dfunc[["F-"]] *  (1 - dfunc[["F+2"]])
+  yes <- dunc[["f+2c"]] * (1 - dfunc[["F-c"]]**2)
+  no <- 2 * dfunc[["f-i"]] * dfunc[["F-i"]] *  (1 - dfunc[["F+2i"]])
   c(yes, no)
 }
 
 ll_CYEX <- function(dfunc) {  # nolint
-  yes <- dfunc[["f+2"]] * (1 - dfunc[["F-"]])**2
-  no <- 2 * dfunc[["f-"]] * (1 - dfunc[["F-"]]) *  (1 - dfunc[["F+2"]])
+  yes <- dfunc[["f+2c"]] * (1 - dfunc[["F-c"]])**2
+  no <- 2 * dfunc[["f-i"]] * (1 - dfunc[["F-i"]]) *  (1 - dfunc[["F+2i"]])
   c(yes, no)
 }
 
 ll_CNST <- function(dfunc) {  # nolint
-  yes <- 2 * dfunc[["f+"]] * (1 - dfunc[["F+"]]) *  (1 - dfunc[["F-2"]])
-  no <- dfunc[["f-2"]] * (1 - dfunc[["F+2"]])**2
+  yes <- 2 * dfunc[["f+c"]] * (1 - dfunc[["F+c"]]) *  (1 - dfunc[["F-2c"]])
+  no <- dfunc[["f-2i"]] * (1 - dfunc[["F+2i"]])**2
   c(yes, no)
 }
 
 ll_CNEX <- function(dfunc) {  # nolint
-  yes <- 2 * dfunc[["f+"]] * dfunc[["F+"]] * (1 - dfunc[["F-2"]])
-  no <- dfunc[["f-2"]] * (1 - dfunc[["F+"]]**2)
+  yes <- 2 * dfunc[["f+c"]] * dfunc[["F+c"]] * (1 - dfunc[["F-2c"]])
+  no <- dfunc[["f-2i"]] * (1 - dfunc[["F+i"]]**2)
   c(yes, no)
 }
 
 ll_CB <- function(dfunc) {  # nolint
-  yes <- dfunc[["f+2"]] * (1 - dfunc[["F-2"]])
-  no <- dfunc[["f-2"]] * (1 - dfunc[["F+2"]])
+  yes <- dfunc[["f+2c"]] * (1 - dfunc[["F-2c"]])
+  no <- dfunc[["f-2i"]] * (1 - dfunc[["F+2i"]])
   c(yes, no)
 }
 
@@ -198,14 +202,52 @@ ll_CB <- function(dfunc) {  # nolint
 # For rtdists, we have A == α, b == ω, t0 == R, mean_v == v, sd_v == s
 cox_ll <- function(x, data) {
   x <- exp(x)
-  if (any(data$RT < x["R"])) {
+  if (any(data$rt < x["R"])) {
     return(-1e10)
   }
 
+  # Simple two rule mixture
+  x["theta_IST"] * exp(sum(log(pmax(ll_IST, 1e-10)))) +
+    (1 - x["theta_IST"]) * exp(sum(log(pmax(ll_IEX, 1e-10))))
+
+
   # MEAT OF THE mixture LL here
 
-  bad <- (out < 1e-10) | (!is.finite(out))
-  out[bad] <- 1e-10
-  out <- sum(log(out))
-  out
+  #bad <- (out < 1e-10) | (!is.finite(out))
+  #out[bad] <- 1e-10
+  #out <- sum(log(out))
+  #out
 }
+
+#parameters <- c("theta_IST", "omega",  "nu",  "w",  "R")
+# parameters + beta/sigma for each cell of double =factorial design
+priors <- list(
+  theta_mu = rep(0, length(parameters)),
+  theta_sig = diag(rep(1, length(parameters)))
+)
+
+# Create the Particle Metropolis within Gibbs sampler object ------------------
+
+sampler <- pmwgs(
+  data = mod_data,
+  pars = parameters,
+  ll_func = cox_ll,
+  prior = priors
+)
+
+start_mu <- stats::rnorm(sampler$n_pars, sd = 2)
+start_sig <- MCMCpack::riwish(50, diag(sampler$n_pars))
+#start_points <- list(
+#  mu = c(.2, .2, .2, .4, .3, 1.3, -2),
+#  sig2 = diag(rep(.01, length(pars)))
+#)
+
+sampler <- init(sampler, theta_mu = start_mu, theta_sig = start_sig)
+
+burned <- run_stage(sampler, stage = "burn", iter=200, particles=200)
+
+adapted <- run_stage(burned, stage = "adapt", iter=200, particles=200)
+
+sampled <- run_stage(adapted, stage = "sample", iter=100, particles=100)
+
+save.image("data/output/PMwG.RData")
