@@ -23,26 +23,25 @@ mod_data <- data.frame(
     labels = stim_levels
   )
 )
-mod_data$beta <- paste0("beta_", mod_data$cell)
-mod_data$delta <- paste0("delta_", mod_data$cell)
+mod_data$v_pos <- paste0("v_pos_", mod_data$cell)
+mod_data$v_neg <- paste0("v_neg_", mod_data$cell)
 
 # Sum and difference of evidence rates for positive and negative accumulators
-sum_diff <- c("beta", "delta")
+sum_diff <- c("v_pos", "v_neg")
 
 parameters <- c(
-  # Parallel mixture probabilities
-  "theta_IST", #"theta_IEX",
+  # Parallel mixture counts
+  "alpha_IST", "alpha_IEX",
   # Coactive mixture probabilities
-  #"theta_CYST", "theta_CYEX", "theta_CNST", "theta_CNEX",
-  # "theta_CB", -> set to 1 - sum(other thetas)
-  # ω - Sum of response thresholds
-  "omega",
-  # ν - how much threshold is subject to start point variability
-  "nu",
-  # w - proportion of total threshold given to negative accunmulator
-  "w",
-  # R - residual time, bounded above by min response time for participant k
-  "R"
+  #"alpha_CYST", "alpha_CYEX", "alpha_CNST", "alpha_CNEX", "alpha_CB",
+  # A - start point variability (sampled from U(0, A) where U is uniform dist)
+  "A",
+  # b_pos - threshold for positive evidence accumulation
+  "b_pos",
+  # b_neg - threshold for negative evidence accumulation
+  "b_neg",
+  # t0 - residual time, bounded above by min response time for participant k
+  "t0"
 )
 # beta and delta - 9 versions each for each of beta and delta,
 # corresponding to the 9 cells of the experimental design
@@ -52,19 +51,6 @@ parameters <- c(parameters, apply(
 ))
 
 # Helper methods --------------------------------------------------------------
-alpha <- function(pars) pars["nu"] * pars["omega"]
-
-omega <- function(pars, osign) {
-  if (osign == "+") {
-    return(
-      pars["nu"] * pars["omega"] +
-        (1 - pars["nu"]) * (1 - pars["w"]) * pars["omega"]
-    )
-  }
-  # otherwise
-  pars["nu"] * pars["omega"] + (1 - pars["nu"]) * pars["w"] * pars["omega"]
-}
-
 yes <- function(data) data[data$response == 2, ]
 no <- function(data) data[data$response == 1, ]
 
@@ -84,7 +70,7 @@ drift <- function(pars, data, osign) {
 lba_pdf <- function(x, data, drifts, evidence = "+", scale = 1) {
   dlba_norm(
     data,
-    A = scale * alpha(x),
+    A = scale * x["A"],
     b = scale * omega(x, evidence),
     t0 = x["R"],
     mean_v = scale * drifts,
