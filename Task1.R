@@ -3,6 +3,18 @@ require(rtdists)
 library(MCMCpack)
 source("read_expyriment.R")
 
+#Get output filename
+args = commandArgs(trailingOnly=TRUE)
+if (length(args) == 0) {
+  jobid = Sys.getenv()["PBS_JOBID"]
+  if (is.na(jobid)) {
+    args[1] <- tempfile(pattern="cce_burn_", tmpdir=".", fileext=".RData")
+  } else {
+    args[1] <- c("cce_burn_", jobid, ".RData")
+  }
+}
+outfile <- args[1]
+
 task1_data <- read.expyriment.data("data/input/Task1/", "S*")
 # Two char labels for each cell of design,
 # first char is price, second is quality, H=High, L=Low, D=Distractor
@@ -176,9 +188,9 @@ dirichlet_mix_ll <- function(x, data) {
   if (any(data$rt < x["t0"])) {
     return(-1e10)
   }
-  if ((x["b_pos"] < x["A"]) || (x["b_neg"] < x["A"])) {
-    return(-1e10)
-  }
+  # Enforces b cannot be less than A, b parameter is thus threshold - A
+  x["b_pos"] <- x["b_pos"] + x["A"]
+  x["b_neg"] <- x["b_neg"] + x["A"]
 
   # Simple two rule mixture
   rdev <- rdirichlet(1, x[mix_counts])
@@ -205,12 +217,8 @@ sampler <- pmwgs(
   prior = priors
 )
 
-start_mu <- stats::rnorm(sampler$n_pars, sd = 2)
-start_sig <- MCMCpack::riwish(50, diag(sampler$n_pars))
-# start_points <- list(
-#  mu = c(.2, .2, .2, .4, .3, 1.3, -2),
-#  sig2 = diag(rep(.01, length(pars)))
-# )
+start_mu <- c(0, 0, .4, .2, .2, -2, rep(c(1.3, .3), 9))
+start_sig <- MCMCpack::riwish(sampler$n_pars * 2, diag(sampler$n_pars))
 
 sampler <- init(sampler, theta_mu = start_mu, theta_sig = start_sig)
 
@@ -220,4 +228,4 @@ adapted <- run_stage(burned, stage = "adapt", iter = 200, particles = 200)
 
 sampled <- run_stage(adapted, stage = "sample", iter = 100, particles = 100)
 
-save.image("data/output/PMwG.RData")
+save.image(outfile)
