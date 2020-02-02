@@ -10,10 +10,10 @@ if (length(args) == 0) {
   if (is.na(jobid)) {
     args[1] <- tempfile(pattern="cce_burn_", tmpdir=".", fileext=".RData")
   } else {
-    args[1] <- c("cce_burn_", jobid, ".RData")
+    args[1] <- paste0("cce_burn_", jobid, ".RData")
   }
 }
-outfile <- args[1]
+outfile <- paste0("data/output/", args[1])
 
 task1_data <- read.expyriment.data("data/input/Task1/", "S*")
 # Two char labels for each cell of design,
