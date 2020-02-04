@@ -225,7 +225,7 @@ sampler <- pmwgs(
   prior = priors
 )
 
-start_mu <- c(0, 0, .4, .2, .2, -2, rep(c(1.3, .3), 9))
+start_mu <- c(0, 0, 0, 0, 0, 0, 0, .4, .2, .2, -2, rep(c(1.3, .3), 9))
 start_sig <- MCMCpack::riwish(sampler$n_pars * 2, diag(sampler$n_pars))
 
 sampler <- init(sampler, theta_mu = start_mu, theta_sig = start_sig)
