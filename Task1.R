@@ -21,6 +21,7 @@ task1_data <- read.expyriment.data("data/input/Task1/", "S*")
 stim_levels <- c("HH", "HL", "HD", "LH", "LL", "LD", "DH", "DL", "DD")
 # Clean no responses
 task1_data <- task1_data[complete.cases(task1_data), ]
+task1_data <- task1_data[task1_data$RT > 300,]
 task1_data <- task1_data[task1_data$`b'AcceptRejectFocus' ` == "b'Accept'", ]
 levels(task1_data$PriceSalience) <- c("H", "L", "D")
 levels(task1_data$RatingSalience) <- c("H", "L", "D")
@@ -39,6 +40,11 @@ mod_data <- data.frame(
 mod_data$v_pos <- paste0("v_pos_", mod_data$cell)
 mod_data$v_neg <- paste0("v_neg_", mod_data$cell)
 
+#< 0.3 participants were penalised, max trial length was 4.5 seconds
+min_RT <- .3
+max_RT <- 4.5
+p_contam <- 0.02
+
 # Sum and difference of evidence rates for positive and negative accumulators
 sum_diff <- c("v_pos", "v_neg")
 
@@ -46,7 +52,7 @@ parameters <- c(
   # Parallel mixture counts
   "alpha_IST", "alpha_IEX",
   # Coactive mixture probabilities
-  # "alpha_CYST", "alpha_CYEX", "alpha_CNST", "alpha_CNEX", "alpha_CB",
+  "alpha_CYST", "alpha_CYEX", "alpha_CNST", "alpha_CNEX", "alpha_CB",
   # A - start point variability (sampled from U(0, A) where U is uniform dist)
   "A",
   # b_pos - threshold for positive evidence accumulation
@@ -192,12 +198,14 @@ dirichlet_mix_ll <- function(x, data) {
   x["b_pos"] <- x["b_pos"] + x["A"]
   x["b_neg"] <- x["b_neg"] + x["A"]
 
-  # Simple two rule mixture
+  # all decision rules
   rdev <- rdirichlet(1, x[mix_counts])
   func_idx <- sample(mix_counts, 1, prob = rdev)
   ll_func <- ll_funcs[[func_idx]]
   trial_ll <- ll_func(x, data)
-  sum(log(pmax(trial_ll, 1e-10)))
+  new_like <- (1 - p_contam) * trial_ll +
+    p_contam * (dunif(data$rt, min_RT, max_RT) / 2)
+  sum(log(pmax(new_like, 1e-10)))
 }
 
 priors <- list(
