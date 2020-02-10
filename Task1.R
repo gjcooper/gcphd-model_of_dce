@@ -21,7 +21,6 @@ task1_data <- read.expyriment.data("data/input/Task1/", "S*")
 stim_levels <- c("HH", "HL", "HD", "LH", "LL", "LD", "DH", "DL", "DD")
 # Clean no responses
 task1_data <- task1_data[complete.cases(task1_data), ]
-task1_data <- task1_data[task1_data$RT > 300, ]
 task1_data <- task1_data[task1_data$`b'AcceptRejectFocus' ` == "b'Accept'", ]
 levels(task1_data$PriceSalience) <- c("H", "L", "D")
 levels(task1_data$RatingSalience) <- c("H", "L", "D")
