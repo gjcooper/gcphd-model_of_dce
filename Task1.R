@@ -4,11 +4,11 @@ library(MCMCpack)
 source("read_expyriment.R")
 
 #Get output filename
-args = commandArgs(trailingOnly=TRUE)
+args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
-  jobid = Sys.getenv()["PBS_JOBID"]
+  jobid <- Sys.getenv()["PBS_JOBID"]
   if (is.na(jobid)) {
-    args[1] <- tempfile(pattern="cce_burn_", tmpdir=".", fileext=".RData")
+    args[1] <- tempfile(pattern = "cce_burn_", tmpdir = ".", fileext = ".RData")
   } else {
     args[1] <- paste0("cce_burn_", jobid, ".RData")
   }
@@ -21,7 +21,7 @@ task1_data <- read.expyriment.data("data/input/Task1/", "S*")
 stim_levels <- c("HH", "HL", "HD", "LH", "LL", "LD", "DH", "DL", "DD")
 # Clean no responses
 task1_data <- task1_data[complete.cases(task1_data), ]
-task1_data <- task1_data[task1_data$RT > 300,]
+task1_data <- task1_data[task1_data$RT > 300, ]
 task1_data <- task1_data[task1_data$`b'AcceptRejectFocus' ` == "b'Accept'", ]
 levels(task1_data$PriceSalience) <- c("H", "L", "D")
 levels(task1_data$RatingSalience) <- c("H", "L", "D")
@@ -41,8 +41,8 @@ mod_data$v_pos <- paste0("v_pos_", mod_data$cell)
 mod_data$v_neg <- paste0("v_neg_", mod_data$cell)
 
 #< 0.3 participants were penalised, max trial length was 4.5 seconds
-min_RT <- .3
-max_RT <- 4.5
+min_rt <- 0
+max_rt <- 4.5
 p_contam <- 0.02
 
 # Sum and difference of evidence rates for positive and negative accumulators
@@ -191,9 +191,12 @@ ll_funcs <- c(ll_IST, ll_IEX, ll_CYST, ll_CYEX, ll_CNST, ll_CNEX, ll_CB)
 # For rtdists, we have A == α, b == ω, t0 == R, mean_v == v, sd_v == s
 dirichlet_mix_ll <- function(x, data) {
   x <- exp(x)
-  if (any(data$rt < x["t0"])) {
+
+  #Enforce alphas to be greater than 0.01 and less than 100
+  if (any(x[mix_counts] < 0.01) || any(x[mix_counts] > 100)) {
     return(-1e10)
   }
+
   # Enforces b cannot be less than A, b parameter is thus threshold - A
   x["b_pos"] <- x["b_pos"] + x["A"]
   x["b_neg"] <- x["b_neg"] + x["A"]
@@ -204,7 +207,7 @@ dirichlet_mix_ll <- function(x, data) {
   ll_func <- ll_funcs[[func_idx]]
   trial_ll <- ll_func(x, data)
   new_like <- (1 - p_contam) * trial_ll +
-    p_contam * (dunif(data$rt, min_RT, max_RT) / 2)
+    p_contam * (dunif(data$rt, min_rt, max_rt) / 2)
   sum(log(pmax(new_like, 1e-10)))
 }
 
@@ -213,8 +216,8 @@ priors <- list(
   theta_sig = diag(rep(1, length(parameters)))
 )
 # Set alpha values to be mu 1, sigma 2
-priors$theta_mu[1:2] <- 1
-diag(priors$theta_sig)[1:2] <- 2
+priors$theta_mu[mix_counts] <- 1
+diag(priors$theta_sig)[mix_counts] <- 2
 
 # Create the Particle Metropolis within Gibbs sampler object ------------------
 
