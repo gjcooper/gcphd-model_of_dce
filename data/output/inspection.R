@@ -63,6 +63,7 @@ hd <- heidel.diag(sobj)
 plot(sobj)
 summary(sobj)$statistics
 
+plot(sobj[,c('alpha_IST', 'alpha_IEX', 'A', 'b_pos', 'b_neg')])
 
 
 means$run <- 1:nrow(means)
