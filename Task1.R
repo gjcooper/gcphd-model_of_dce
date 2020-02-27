@@ -14,6 +14,7 @@ if (length(args) == 0) {
   }
 }
 outfile <- paste0("data/output/", args[1])
+decision_rules <- c("IST", "IEX", "CYST", "CYEX", "CNST", "CNEX", "CB")
 
 task1_data <- read.expyriment.data("data/input/Task1/", "S*")
 # Two char labels for each cell of design,
@@ -44,7 +45,6 @@ min_rt <- 0
 max_rt <- 4.5
 p_contam <- 0.02
 
-decision_rules <- c("IST", "IEX", "CYST", "CYEX", "CNST", "CNEX", "CB")
 
 parameters <- c(
   # Mixture counts for each decision rule
@@ -211,6 +211,7 @@ dirichlet_mix_ll <- function(x, data) {
 selection_ll <- function(decision_rule) {
   ll_func <- ll_funcs[[match(decision_rule, decision_rules)]]
   wrapped_ll <- function(x, data) {
+    x <- exp(x)
     x["b_pos"] <- x["b_pos"] + x["A"]
     x["b_neg"] <- x["b_neg"] + x["A"]
 
@@ -220,6 +221,7 @@ selection_ll <- function(decision_rule) {
       p_contam * (dunif(data$rt, min_rt, max_rt) / 2)
     sum(log(pmax(new_like, 1e-10)))
   }
+  wrapped_ll
 }
 
 priors <- list(
