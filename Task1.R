@@ -203,6 +203,25 @@ dirichlet_mix_ll <- function(x, data) {
   sum(log(pmax(new_like, 1e-10)))
 }
 
+
+# Specify the model and surround it with log like wrapper ---------------------
+# Based on a given string (the model ID) then select a specific model to run
+# for all rows of data, for all subjects, for all iterations. (No model
+# selection within the process)
+selection_ll <- function(decision_rule) {
+  ll_func <- ll_funcs[[match(decision_rule, decision_rules)]]
+  wrapped_ll <- function(x, data) {
+    x["b_pos"] <- x["b_pos"] + x["A"]
+    x["b_neg"] <- x["b_neg"] + x["A"]
+
+    # all decision rules
+    trial_ll <- ll_func(x, data)
+    new_like <- (1 - p_contam) * trial_ll +
+      p_contam * (dunif(data$rt, min_rt, max_rt) / 2)
+    sum(log(pmax(new_like, 1e-10)))
+  }
+}
+
 priors <- list(
   theta_mu = rep(0, length(parameters)),
   theta_sig = diag(rep(1, length(parameters)))
