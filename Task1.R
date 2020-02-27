@@ -44,14 +44,11 @@ min_rt <- 0
 max_rt <- 4.5
 p_contam <- 0.02
 
-# Sum and difference of evidence rates for positive and negative accumulators
-sum_diff <- c("v_pos", "v_neg")
+decision_rules <- c("IST", "IEX", "CYST", "CYEX", "CNST", "CNEX", "CB")
 
 parameters <- c(
-  # Parallel mixture counts
-  "alpha_IST", "alpha_IEX",
-  # Coactive mixture probabilities
-  "alpha_CYST", "alpha_CYEX", "alpha_CNST", "alpha_CNEX", "alpha_CB",
+  # Mixture counts for each decision rule
+  apply(expand.grid("alpha", decision_rules), 1, paste, collapse="_"),
   # A - start point variability (sampled from U(0, A) where U is uniform dist)
   "A",
   # b_pos - threshold for positive evidence accumulation
@@ -59,14 +56,10 @@ parameters <- c(
   # b_neg - threshold for negative evidence accumulation
   "b_neg",
   # t0 - residual time, bounded above by min response time for participant k
-  "t0"
+  "t0",
+  # Positive (accept) and negative (reject) drift rate by cell of design
+  apply(expand.grid(c("v_pos", "v_neg"), stim_levels), 1, paste, collapse = "_")
 )
-# beta and delta - 9 versions each for each of beta and delta,
-# corresponding to the 9 cells of the experimental design
-parameters <- c(parameters, apply(
-  expand.grid(sum_diff, stim_levels), 1, paste,
-  collapse = "_"
-))
 #Mixture counts should always come first
 mix_counts <- 1:sum(startsWith(parameters, "alpha"))
 
