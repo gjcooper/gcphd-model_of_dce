@@ -6,15 +6,15 @@ source("read_expyriment.R")
 #Get output filename
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
-  jobid <- Sys.getenv()["PBS_JOBID"]
-  if (is.na(jobid)) {
-    args[1] <- tempfile(pattern = "cce_burn_", tmpdir = ".", fileext = ".RData")
-  } else {
-    args[1] <- paste0("cce_burn_", jobid, ".RData")
-  }
+  stop("Must provide architecture to test")
 }
-outfile <- paste0("data/output/", args[1])
 decision_rules <- c("IST", "IEX", "CYST", "CYEX", "CNST", "CNEX", "CB")
+arch <- args[1]
+if (is.na(match(arch, decision_rules)))
+  stop("Cmd line arg must match one of [",
+       paste(decision_rules, collapse = " "),
+       "]")
+outfile <- tempfile(pattern = arch, tmpdir = "data/output/", fileext = ".RData")
 
 task1_data <- read.expyriment.data("data/input/Task1/", "S*")
 # Two char labels for each cell of design,
@@ -47,8 +47,6 @@ p_contam <- 0.02
 
 
 parameters <- c(
-  # Mixture counts for each decision rule
-  apply(expand.grid("alpha", decision_rules), 1, paste, collapse="_"),
   # A - start point variability (sampled from U(0, A) where U is uniform dist)
   "A",
   # b_pos - threshold for positive evidence accumulation
@@ -60,8 +58,6 @@ parameters <- c(
   # Positive (accept) and negative (reject) drift rate by cell of design
   apply(expand.grid(c("v_pos", "v_neg"), stim_levels), 1, paste, collapse = "_")
 )
-#Mixture counts should always come first
-mix_counts <- 1:sum(startsWith(parameters, "alpha"))
 
 # Specify likelihoods of parameters for individual models ---------------------
 
@@ -174,36 +170,6 @@ ll_CB <- function(x, data) { # nolint
 
 ll_funcs <- c(ll_IST, ll_IEX, ll_CYST, ll_CYEX, ll_CNST, ll_CNEX, ll_CB)
 
-# Specify the log likelihood function -----------------------------------------
-# For one accumulator, following terminology in Cox and Criss (2019)
-# Start point variability is uniform 0 -> α
-# Drift sampled from normal distribution with mean v and std dev s
-# Threshold is ω
-# Residual time is R (time to detect and start processing, and respond)
-# For rtdists, we have A == α, b == ω, t0 == R, mean_v == v, sd_v == s
-dirichlet_mix_ll <- function(x, data) {
-  x <- exp(x)
-
-  #Enforce alphas to be greater than 0.01 and less than 100
-  if (any(x[mix_counts] < 0.01) || any(x[mix_counts] > 100)) {
-    return(-1e10)
-  }
-
-  # Enforces b cannot be less than A, b parameter is thus threshold - A
-  x["b_pos"] <- x["b_pos"] + x["A"]
-  x["b_neg"] <- x["b_neg"] + x["A"]
-
-  # all decision rules
-  rdev <- rdirichlet(1, x[mix_counts])
-  func_idx <- sample(mix_counts, 1, prob = rdev)
-  ll_func <- ll_funcs[[func_idx]]
-  trial_ll <- ll_func(x, data)
-  new_like <- (1 - p_contam) * trial_ll +
-    p_contam * (dunif(data$rt, min_rt, max_rt) / 2)
-  sum(log(pmax(new_like, 1e-10)))
-}
-
-
 # Specify the model and surround it with log like wrapper ---------------------
 # Based on a given string (the model ID) then select a specific model to run
 # for all rows of data, for all subjects, for all iterations. (No model
@@ -228,28 +194,25 @@ priors <- list(
   theta_mu = rep(0, length(parameters)),
   theta_sig = diag(rep(1, length(parameters)))
 )
-# Set alpha values to be mu 1, sigma 2
-priors$theta_mu[mix_counts] <- 1
-diag(priors$theta_sig)[mix_counts] <- 2
 
 # Create the Particle Metropolis within Gibbs sampler object ------------------
 
 sampler <- pmwgs(
   data = mod_data,
   pars = parameters,
-  ll_func = dirichlet_mix_ll,
+  ll_func = selection_ll(arch),
   prior = priors
 )
 
-start_mu <- c(0, 0, 0, 0, 0, 0, 0, .4, .2, .2, -2, rep(c(1.3, .3), 9))
+start_mu <- c(.4, .2, .2, -2, rep(c(1.3, .3), 9))
 start_sig <- MCMCpack::riwish(sampler$n_pars * 2, diag(sampler$n_pars))
 
 sampler <- init(sampler, theta_mu = start_mu, theta_sig = start_sig)
 
-burned <- run_stage(sampler, stage = "burn", iter = 200, particles = 200)
+burned <- run_stage(sampler, stage = "burn", iter = 3000, particles = 1000, n_cores = 16)
 
-adapted <- run_stage(burned, stage = "adapt", iter = 200, particles = 200)
+#adapted <- run_stage(burned, stage = "adapt", iter = 100, particles = 200)
 
-sampled <- run_stage(adapted, stage = "sample", iter = 100, particles = 100)
+#sampled <- run_stage(adapted, stage = "sample", iter = 100, particles = 100)
 
 save.image(outfile)
