@@ -17,6 +17,29 @@ if (is.na(match(arch, decision_rules)))
 outfile <- tempfile(pattern = arch, tmpdir = "data/output/", fileext = ".RData")
 
 task1_data <- read.expyriment.data("data/input/Task1/", "S*")
+task1_data$Correct <- as.logical(task1_data$Correct)
+#Clean inaccurate subjects (< 80% accuracy on Double Target, Double Distractor
+# or both single target types)
+accurate_responders <- c()
+for (subject in unique(task1_data$subject_id)) {
+  subj_data <- task1_data[task1_data$subject_id == subject, ]
+  price_match <- subj_data$PriceSalience %in% c("High", "Low")
+  rating_match <- subj_data$RatingSalience %in% c("High", "Low")
+  filters <- list(both = price_match & rating_match,
+                  psing = price_match & !rating_match,
+                  rsing = rating_match & !price_match,
+                  neither = !(price_match | rating_match)
+                 )
+  pc_correct <- NULL
+  for (filter in filters) {
+    pc_correct <- c(pc_correct, mean(subj_data$Correct[filter]))
+  }
+
+  if (min(pc_correct) >= 0.8) {
+    accurate_responders <- c(accurate_responders, subject)
+  }
+}
+task1_data <- task1_data[task1_data$subject_id %in% accurate_responders, ]
 # Two char labels for each cell of design,
 # first char is price, second is quality, H=High, L=Low, D=Distractor
 stim_levels <- c("HH", "HL", "HD", "LH", "LL", "LD", "DH", "DL", "DD")
