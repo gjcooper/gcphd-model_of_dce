@@ -18,6 +18,8 @@ outfile <- tempfile(pattern = arch, tmpdir = "data/output/", fileext = ".RData")
 
 task1_data <- read.expyriment.data("data/input/Task1/", "S*")
 task1_data$Correct <- as.logical(task1_data$Correct)
+task1_data <- task1_data[task1_data$Button != "NORESPONSE", ]
+task1_data <- task1_data[task1_data$RT >= 300, ]
 #Clean inaccurate subjects (< 80% accuracy on Double Target, Double Distractor
 # or both single target types)
 accurate_responders <- c()
