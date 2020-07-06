@@ -1,18 +1,23 @@
 PackratFormat: 1.4
 PackratVersion: 0.5.0
-RVersion: 3.6.2
+RVersion: 3.6.3
 Repos: CRAN=https://cran.csiro.au
 
 Package: MCMCpack
 Source: CRAN
-Version: 1.4-5
-Hash: 3d343d54add61b0b668ee09ac72104a5
+Version: 1.4-8
+Hash: 2f8c9c45434a207051e7322f94431a12
 Requires: coda, mcmc, quantreg
 
 Package: MatrixModels
 Source: CRAN
 Version: 0.4-1
 Hash: 60a5c75e57aae4a0ce76cb7422939aaf
+
+Package: Rcpp
+Source: CRAN
+Version: 1.0.4.6
+Hash: 8b95553bc32a59321b8981aa02bfbf72
 
 Package: SparseM
 Source: CRAN
@@ -26,42 +31,69 @@ Hash: a6bd401a844d5fc9e5d9589dc0197acb
 
 Package: condMVNorm
 Source: CRAN
-Version: 2015.2-1
-Hash: b60ee14de6073ccedc897371dc07884d
+Version: 2020.1
+Hash: e7fdbe8b2d6a606d26cd2619cbf8dc48
 Requires: mvtnorm
+
+Package: evd
+Source: CRAN
+Version: 2.3-3
+Hash: 57b34316da97f524124bf12a7a515e00
+
+Package: expm
+Source: CRAN
+Version: 0.999-4
+Hash: 527f642fe0322a9fbf81ca640a142669
+
+Package: gsl
+Source: CRAN
+Version: 2.1-6
+Hash: ea1268d0032b4afb4cd582d755f750d3
 
 Package: mcmc
 Source: CRAN
-Version: 0.9-6
-Hash: 8533c26f181bdfe38ac8446c24e13a4e
+Version: 0.9-7
+Hash: f72a336e564e6c04999c5880161a1aa8
+
+Package: msm
+Source: CRAN
+Version: 1.6.8
+Hash: 2747ecc13713085d015595347efe4c35
+Requires: expm, mvtnorm
 
 Package: mvtnorm
 Source: CRAN
-Version: 1.0-12
-Hash: 7e8727c109e7f541fa685e3745d6b30a
+Version: 1.1-1
+Hash: 6e13acde49757399332c2950318c78dc
 
 Package: packrat
 Source: CRAN
 Version: 0.5.0
 Hash: 498643e765d1442ba7b1160a1df3abf9
 
-Package: psamplers
+Package: pmwg
 Source: github
-Version: 0.0.0.9016
-Hash: 83b603fcdaad3e8297c28403496d1b55
-Requires: MCMCpack, condMVNorm, mvtnorm
-GithubRepo: samplers
-GithubUsername: gjcooper
-GithubRef: master
-GithubSha1: c2ecfc7fb6753fd95704dea68896c59dbb29c633
+Version: 0.1.4
+Hash: c28df0eff58be59e95feb8ddbdbaa39d
+Requires: MCMCpack, coda, condMVNorm, mvtnorm
+GithubRepo: pmwg
+GithubUsername: newcastlecl
+GithubRef: release
+GithubSha1: 9412a17a0f085f9b16e7348e19e3db565e59b3eb
 RemoteHost: api.github.com
-RemoteRepo: samplers
-RemoteUsername: gjcooper
-RemoteRef: master
-RemoteSha: c2ecfc7fb6753fd95704dea68896c59dbb29c633
+RemoteRepo: pmwg
+RemoteUsername: newcastlecl
+RemoteRef: release
+RemoteSha: 9412a17a0f085f9b16e7348e19e3db565e59b3eb
 
 Package: quantreg
 Source: CRAN
-Version: 5.54
-Hash: b1662addfb95ee8dc4f72408e65b97b1
+Version: 5.55
+Hash: 8518ba15058ddb0932d7b0d815a607f4
 Requires: MatrixModels, SparseM
+
+Package: rtdists
+Source: CRAN
+Version: 0.11-2
+Hash: 4a061c3120b4f9db52ca1aab2a899763
+Requires: Rcpp, evd, gsl, msm

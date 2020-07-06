@@ -1,4 +1,4 @@
-require(psamplers)
+require(pmwg)
 require(rtdists)
 library(MCMCpack)
 source("read_expyriment.R")
