@@ -50,7 +50,7 @@ levels(task1_data$RatingSalience) <- c("H", "L", "D")
 mod_data <- data.frame(
   rt = task1_data$RT / 1000,
   subject = task1_data$subject_id,
-  response = as.numeric(task1_data$Correct),
+  response = as.numeric(task1_data$Correct) + 1,
   cell = factor(
     paste0(
       as.character(task1_data$PriceSalience),
