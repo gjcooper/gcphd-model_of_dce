@@ -21,3 +21,16 @@ ll() {
   }
 
   # Can we store the model that wins?
+  
+
+# New plan
+
+Parameter recovery
+
+For each subject get median of posterior distribution, simulate data that matches size of real dataset.
+
+hOW DO WE SIMULATE ALPHAS
+
+Median of subj level pars, then simulate a different models shared across participants. How well do alphas 
+
+Start with output we have, apply fn over samples, get median for each par for each subject. Sotre that array to call repeatedly. Generate 7 datasets. All same median subject level pars. Simulate data for each subject from IST model, and so forth for each of the 7 models.

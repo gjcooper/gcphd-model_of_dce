@@ -2,26 +2,32 @@ require(pmwg)
 require(rtdists)
 library(MCMCpack)
 source("read_expyriment.R")
+source("loglike.R")
 
+#Get display to analyse
+displaytype <- Sys.getenv("VDCE_DISPLAY")
 #Get output filename
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
   jobid <- Sys.getenv()["PBS_JOBID"]
   if (is.na(jobid)) {
-    args[1] <- tempfile(pattern = "cce_burn_", tmpdir = ".", fileext = ".RData")
+    args[1] <- tempfile(pattern = paste0("Task2_", displaytype, "_"), tmpdir = ".", fileext = ".RData")
   } else {
-    args[1] <- paste0("cce_burn_", jobid, ".RData")
+    args[1] <- paste0("Task2_", displaytype, "_", jobid, ".RData")
   }
 }
 outfile <- paste0("data/output/", args[1])
 
-task1_data <- read.expyriment.data("data/input/Task1/", "S*")
-task1_data$Correct <- as.logical(task1_data$Correct)
+print(paste("Output will be saved to", outfile))
+
+task2_data <- read.expyriment.data("data/input/Task2/", "S*")
+task2_data$Correct <- as.logical(task2_data$Correct)
+task2_data <- task2_data[task2_data$Display == displaytype, ]
 #Clean inaccurate subjects (< 80% accuracy on Double Target, Double Distractor
 # or both single target types)
 accurate_responders <- c()
-for (subject in unique(task1_data$subject_id)) {
-  subj_data <- task1_data[task1_data$subject_id == subject, ]
+for (subject in unique(task2_data$subject_id)) {
+  subj_data <- task2_data[task2_data$subject_id == subject, ]
   price_match <- subj_data$PriceSalience %in% c("High", "Low")
   rating_match <- subj_data$RatingSalience %in% c("High", "Low")
   filters <- list(both = price_match & rating_match,
@@ -38,23 +44,23 @@ for (subject in unique(task1_data$subject_id)) {
     accurate_responders <- c(accurate_responders, subject)
   }
 }
-task1_data <- task1_data[task1_data$subject_id %in% accurate_responders, ]
+task2_data <- task2_data[task2_data$subject_id %in% accurate_responders, ]
 # Two char labels for each cell of design,
 # first char is price, second is quality, H=High, L=Low, D=Distractor
 stim_levels <- c("HH", "HL", "HD", "LH", "LL", "LD", "DH", "DL", "DD")
 # Clean no responses
-task1_data <- task1_data[complete.cases(task1_data), ]
-task1_data <- task1_data[task1_data$`b'AcceptRejectFocus' ` == "b'Accept'", ]
-levels(task1_data$PriceSalience) <- c("H", "L", "D")
-levels(task1_data$RatingSalience) <- c("H", "L", "D")
+task2_data <- task2_data[complete.cases(task2_data), ]
+task2_data <- task2_data[task2_data$`b'AcceptRejectFocus' ` == "b'Accept'", ]
+levels(task2_data$PriceSalience) <- c("H", "L", "D")
+levels(task2_data$RatingSalience) <- c("H", "L", "D")
 mod_data <- data.frame(
-  rt = task1_data$RT / 1000,
-  subject = task1_data$subject_id,
-  response = as.numeric(task1_data$Correct) + 1,
+  rt = task2_data$RT / 1000,
+  subject = task2_data$subject_id,
+  response = as.numeric(task2_data$Correct) + 1,
   cell = factor(
     paste0(
-      as.character(task1_data$PriceSalience),
-      as.character(task1_data$RatingSalience)
+      as.character(task2_data$PriceSalience),
+      as.character(task2_data$RatingSalience)
     ),
     labels = stim_levels
   )
@@ -234,12 +240,12 @@ dirichlet_mix_ll <- function(x, data) {
 }
 
 priors <- list(
-  theta_mu = rep(0, length(parameters)),
-  theta_sig = diag(rep(1, length(parameters)))
+  theta_mu_mean = rep(0, length(parameters)),
+  theta_mu_var = diag(rep(1, length(parameters)))
 )
 # Set alpha values to be mu 1, sigma 2
-priors$theta_mu[mix_counts] <- 1
-diag(priors$theta_sig)[mix_counts] <- 2
+priors$theta_mu_mean[mix_counts] <- 1
+diag(priors$theta_mu_var)[mix_counts] <- 2
 
 # Create the Particle Metropolis within Gibbs sampler object ------------------
 
@@ -253,12 +259,16 @@ sampler <- pmwgs(
 start_mu <- c(0, 0, 0, 0, 0, 0, 0, .4, .2, .2, -2, rep(c(1.3, .3), 9))
 start_sig <- MCMCpack::riwish(sampler$n_pars * 2, diag(sampler$n_pars))
 
-sampler <- init(sampler, theta_mu = start_mu, theta_sig = start_sig)
+sampler <- init(sampler, start_mu = start_mu, start_sig = start_sig)
 
-burned <- run_stage(sampler, stage = "burn", iter = 200, particles = 200)
+burned <- run_stage(sampler, stage = "burn", iter = 2000, particles = 500, n_cores = 34)
 
-adapted <- run_stage(burned, stage = "adapt", iter = 200, particles = 200)
+save.image(outfile)
 
-sampled <- run_stage(adapted, stage = "sample", iter = 100, particles = 100)
+adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 500, n_cores = 34)
+
+save.image(outfile)
+
+sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = 34)
 
 save.image(outfile)
