@@ -3,34 +3,34 @@ require(tidyverse)
 require(tcltk)
 require(pmwg)
 
-datafile <- as.character(tkgetOpenFile())
-load(datafile)
+#Load in the data into the global environment
+f <- tkgetOpenFile(
+        title = "RData file",
+        initialdir = here::here("data/output")) %>%
+  as.character()
 
-alphas <- parameters[grepl("^a.*", parameters)]
-base <- c("A", "b_pos", "b_neg", "t0")
-alldrift <- parameters[grepl("^v.*", parameters)]
-posdrift <- parameters[grepl("^v_pos.*", parameters)]
-negdrift <- parameters[grepl("^v_neg.*", parameters)]
-fourcell <- c("v_pos_HH", "v_neg_HH", "v_pos_HL", "v_neg_HL", "v_pos_LH", "v_neg_LH", "v_pos_LL", "v_neg_LL")
-# plot(burned2, pars=base)
-# dev.new()
-# plot(burned3, pars=base)
-# plot(burned2, pars=base)
-# dev.new()
-#base plot(burned3, pars=base)
+load(f)
 
-#Look at phases etc
-#knitr::kable(table(adaptmk1$samples$stage))
-plot_obj <- sampled
-knitr::kable(table(plot_obj$samples$stage))
+# *Assumes* final object is named sampled
+knitr::kable(table(sampled$samples$stage))
 
-
+#' Plot the model parameter estimates from the sample stage.
+#'
+#' @param plot_obj The pmwgs object containing the estimates
+#'
+#' @return Nothing, side effect is it creates a plot
 plot_theta_mu <- function(plot_obj) {
   samples <- as_mcmc(plot_obj, filter="sample")
   dimnames(samples) <- list(NULL,parameters)
   plot(samples, smooth=TRUE)
 }
 
+#' Plot the evidence for each model by subject
+#'
+#' @param plot_obj - the pmwg sampler object containing estimates
+#' @param relative - Whether to plot the evidence as relative or absolute
+#'
+#' @return None - side effect is the creation of the plot
 look_at_alphas <- function(plot_obj, relative=TRUE) {
   tmus <- as_mcmc(plot_obj, filter="sample")
   dimnames(tmus) <- list(NULL, parameters)
@@ -73,6 +73,7 @@ look_at_alphas <- function(plot_obj, relative=TRUE) {
   }
 }
 
-look_at_alphas(plot_obj)
-look_at_alphas(plot_obj, relative=FALSE)
-plot_theta_mu(plot_obj)
+#Look at the estimates in absolute and relative terms, then use coda mcmc plot for theta_mu
+look_at_alphas(sampled)
+look_at_alphas(sampled, relative=FALSE)
+plot_theta_mu(sampled)
