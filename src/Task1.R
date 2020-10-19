@@ -1,6 +1,7 @@
 require(pmwg)
 require(rtdists)
 library(MCMCpack)
+require(tidyverse)
 source("read_expyriment.R")
 source("loglike.R")
 
@@ -14,40 +15,46 @@ if (length(args) == 0) {
     args[1] <- paste0("Task1_", jobid, ".RData")
   }
 }
-outfile <- paste0("data/output/", args[1])
+outfile <- here::here("data/output", args[1])
 
-task1_data <- read.expyriment.data("data/input/Task1/", "S*")
-task1_data$Correct <- as.logical(task1_data$Correct)
-#Clean inaccurate subjects (< 80% accuracy on Double Target, Double Distractor
-# or both single target types)
-accurate_responders <- c()
-for (subject in unique(task1_data$subject_id)) {
-  subj_data <- task1_data[task1_data$subject_id == subject, ]
-  price_match <- subj_data$PriceSalience %in% c("High", "Low")
-  rating_match <- subj_data$RatingSalience %in% c("High", "Low")
-  filters <- list(both = price_match & rating_match,
-                  psing = price_match & !rating_match,
-                  rsing = rating_match & !price_match,
-                  neither = !(price_match | rating_match)
-                 )
-  pc_correct <- NULL
-  for (filter in filters) {
-    pc_correct <- c(pc_correct, mean(subj_data$Correct[filter]))
-  }
-
-  if (min(pc_correct) >= 0.8) {
-    accurate_responders <- c(accurate_responders, subject)
-  }
+cfix <- function(x) {
+  substr(x, 3, nchar(x) - 1)
 }
-task1_data <- task1_data[task1_data$subject_id %in% accurate_responders, ]
+
+short_codes <- c(H = "High", L = "Low", D = "OutOfBounds")
+
+# Read in data, turn Correct column into logical
+# Get double target, single target and double distractor trials
+# Clean based on minimum % correct in all of four trial categories,
+# Clean the column names and drop rows with no response (NA values)
+# Clean values in the renamed columns too
+task1_data <- read.expyriment.data(here::here("data/input/Task1"), "S*") %>%
+  mutate(Correct = as.logical(Correct)) %>%
+  mutate(price_match = PriceSalience %in% c("High", "Low"),
+         rating_match = RatingSalience %in% c("High", "Low")) %>%
+  mutate(trial_cat = case_when(price_match & rating_match ~ "both",
+                               price_match & !rating_match ~ "psing",
+                               rating_match & !price_match ~ "rsing",
+                               !(price_match | rating_match) ~ "neither")) %>%
+  group_by(subject_id, trial_cat) %>%
+  mutate(pc_correct = mean(Correct)) %>%
+  group_by(subject_id) %>%
+  filter(min(pc_correct) >= 0.8) %>%
+  rename(PriceRatingOrder = `b'PriceRatingOrder' `,
+         ResponseCounterbalancing = `b'ResponseCounterbalancing' `,
+         AcceptRejectFocus = `b'AcceptRejectFocus' `) %>%
+  mutate(PriceRatingOrder = fct_relabel(PriceRatingOrder, cfix),
+         ResponseCounterbalancing = fct_relabel(ResponseCounterbalancing, cfix),
+         AcceptRejectFocus = fct_relabel(AcceptRejectFocus, cfix)) %>%
+  mutate(PriceSalience = fct_recode(PriceSalience, !!!short_codes),
+         RatingSalience = fct_recode(RatingSalience, !!!short_codes)) %>%
+  drop_na()
+
 # Two char labels for each cell of design,
 # first char is price, second is quality, H=High, L=Low, D=Distractor
 stim_levels <- c("HH", "HL", "HD", "LH", "LL", "LD", "DH", "DL", "DD")
 # Clean no responses
-task1_data <- task1_data[complete.cases(task1_data), ]
-task1_data <- task1_data[task1_data$`b'AcceptRejectFocus' ` == "b'Accept'", ]
-levels(task1_data$PriceSalience) <- c("H", "L", "D")
-levels(task1_data$RatingSalience) <- c("H", "L", "D")
+accept_trials <- task1_data %>% filter(AcceptRejectFocus == "Accept")
 mod_data <- data.frame(
   rt = task1_data$RT / 1000,
   subject = task1_data$subject_id,
