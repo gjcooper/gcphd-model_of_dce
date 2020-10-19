@@ -30,7 +30,6 @@ sample_ll_IST <- function(x, data) {
   data$response <- ifelse(yesrt < nort, 1, 2)
 }
 
-
 ll_IEX <- function(x, data) { # nolint
   ydat <- data[data$response == 2, ]
   ndat <- data[data$response == 1, ]
@@ -145,42 +144,6 @@ dirichlet_mix_ll <- function(x, data) {
   sum(log(pmax(new_like, 1e-10)))
 }
 
-sample_dirichlet_mix_ll <- function(x, data) {
-  x <- exp(x)
-  data$rt <- rep(NA, nrow(data))
-  data$resp <- rep(NA, nrow(data))
-  for (i in 1:nrow(data)) {
-    A <- x["A"]
-    b <- x[paste0("b.", data$condition[i])] + A
-    vc <- x["vc"]
-    ve <- x["ve"]
-    t0 <- x["t0"]
-    s <- c(1, 1)
-    if (data$stim[i] == 1) {
-      vs <- c(vc, ve)
-    } else {
-      vs <- c(ve, vc)
-    }
-
-    tmp <-
-      rLBA(
-        n = 1,
-        A = A,
-        b = b,
-        mean_v = vs,
-        sd_v = s,
-        t0 = t0,
-        dist = "norm",
-        silent = TRUE
-      )
-    data$rt[i] <- tmp$rt
-    data$resp[i] <- tmp$resp
-  }
-
-  return(data)
-}
-
-
 test.likelihood <- function(x, num.values = 9, fake.data, dimensions, ll_func, server = FALSE, ...) {
   pars <- names(x)
   x.tmp <- x
@@ -207,54 +170,6 @@ test.likelihood <- function(x, num.values = 9, fake.data, dimensions, ll_func, s
   })
   par(op)
   return(par_likelihoods)
-}
-
-SDT_ll_fast <- function(x, data) {
-  data$resp <- NA
-  for (i in 1:nrow(data)) {
-    if (data$cond[i] == "w") {
-      if (data$stim[i] == "hf") {
-        data$resp[i] <- ifelse(test = (rnorm(1, mean = x["HF.d"], sd = 1)) > x["C.w"], "word", "non-word")
-      } else if (data$stim[i] == "lf") {
-        data$resp[i] <- ifelse(test = (rnorm(1,
-          mean = x["LF.d"],
-          sd = 1
-        )) > x["C.w"], "word", "non-word")
-      } else if (data$stim[i] == "vlf") {
-        data$resp[i] <- ifelse(test = (rnorm(1,
-          mean = x["VLF.d"],
-          sd = 1
-        )) > x["C.w"], "word", "non-word")
-      } else {
-        data$resp[i] <- ifelse(test = (rnorm(1,
-          mean = 0,
-          sd = 1
-        )) > x["C.w"], "word", "non-word")
-      }
-    } else {
-      if (data$stim[i] == "hf") {
-        data$resp[i] <- ifelse(test = (rnorm(1,
-          mean = x["HF.d"],
-          sd = 1
-        )) > x["C.nw"], "word", "non-word")
-      } else if (data$stim[i] == "lf") {
-        data$resp[i] <- ifelse(test = (rnorm(1,
-          mean = x["LF.d"],
-          sd = 1
-        )) > x["C.nw"], "word", "non-word")
-      } else if (data$stim[i] == "vlf") {
-        data$resp[i] <- ifelse(test = (rnorm(1,
-          mean = x["VLF.d"],
-          sd = 1
-        )) > x["C.nw"], "word", "non-word")
-      } else {
-        data$resp[i] <- ifelse(test = (rnorm(1,
-          mean = 0,
-          sd = 1
-        )) > x["C.nw"], "word", "non-word")
-      }
-    }
-  }
 }
 
 # n.posterior <- 20 # Number of samples from posterior distribution for each parameter.
