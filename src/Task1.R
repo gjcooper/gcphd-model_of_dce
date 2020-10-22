@@ -63,7 +63,6 @@ task1_data <- read.expyriment.data(here::here("data/input/Task1"), "S*") %>%
 # Two char labels for each cell of design,
 # first char is price, second is quality, H=High, L=Low, D=Distractor
 stim_levels <- c("HH", "HL", "HD", "LH", "LL", "LD", "DH", "DL", "DD")
-# Clean no responses
 accept_trials <- task1_data %>% filter(AcceptRejectFocus == "Accept")
 mod_data <- data.frame(
   rt = task1_data$RT / 1000,
@@ -113,7 +112,6 @@ mix_counts <- 1:sum(startsWith(parameters, "alpha"))
 
 # Likelihood functions from separate file
 
-
 priors <- list(
   theta_mu_mean = rep(0, length(parameters)),
   theta_mu_var = diag(rep(1, length(parameters)))
@@ -140,10 +138,10 @@ burned <- run_stage(sampler, stage = "burn", iter = 2000, particles = 500, n_cor
 
 save.image(outfile)
 
-adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 500)
+adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 500, n_cores = 36)
 
 save.image(outfile)
 
-sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100)
+sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = 36)
 
 save.image(outfile)
