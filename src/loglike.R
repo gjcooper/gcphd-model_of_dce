@@ -23,11 +23,27 @@ ll_IST <- function(x, data) { # nolint
 sample_ll_IST <- function(x, data) {
   data$response <- NA
   data$rt <- NA
+  x <- exp(x)
 
-  yesrt <- rlba_norm(nrow(data), x["A"], x["b_pos"], x["t0"], x[data$v_pos], 1)
-  nort <- rlba_norm(nrow(data), x["A"], x["b_neg"], x["t0"], x[data$v_neg], 1)
-  data$rt <- pmin(yesrt, nort)
-  data$response <- ifelse(yesrt < nort, 1, 2)
+  # pos_src_a <- simulate_lba()
+  # neg_src_a <- simulate_lba()
+  # pos_src_b <- simulate_lba()
+  # pos_src_b <- simulate_lba()
+
+  for (row in 1:nrow(data)) {
+    pos <- rlba_norm(2, x[["A"]], x[["b_pos"]], x[["t0"]], x[[data$v_pos[row]]], 1)
+    neg <- rlba_norm(2, x[["A"]], x[["b_neg"]], x[["t0"]], x[[data$v_neg[row]]], 1)
+    minpos <- min(pos[, "rt"])
+    maxneg <- max(neg[, "rt"])
+    if (minpos < maxneg) {
+      data$rt[row] <- minpos
+      data$response[row] <- 1
+    } else {
+      data$rt[row] <- maxneg
+      data$response[row] <- 2
+    }
+  }
+  data
 }
 
 ll_IEX <- function(x, data) { # nolint
