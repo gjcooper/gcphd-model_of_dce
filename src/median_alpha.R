@@ -4,13 +4,14 @@ library(dplyr)
 library(tibble)
 library(ggplot2)
 
-load(here::here("data", "output", "reboot_full.RData"))
-
-median_theta_mu <- sampled %>%
-  as_mcmc(filter = "sample") %>%
-  as_tibble() %>%
-  setNames(sampled$par_names) %>%
-  summarise_all(median)
+tmu <- function(sampled) {
+  median_theta_mu <- sampled %>%
+    as_mcmc(filter = "sample") %>%
+    as_tibble() %>%
+    setNames(sampled$par_names) %>%
+    summarise_all(median)
+  median_theta_mu
+}
 
 convert <- function(mcmc_list, par_names) {
   converted_list <- list()
@@ -24,21 +25,38 @@ convert <- function(mcmc_list, par_names) {
   converted_list
 }
 
-median_alpha <- sampled %>%
-  as_mcmc(selection = "alpha", filter = "sample") %>%
-  convert(sampled$par_names) %>%
-  bind_rows()
-median_alpha
+alph <- function(sampled) {
+  median_alpha <- sampled %>%
+    as_mcmc(selection = "alpha", filter = "sample") %>%
+    convert(sampled$par_names) %>%
+    bind_rows()
+  median_alpha
+}
 
-median_alpha %>%
-  rownames_to_column("SubjectID") %>%
-  pivot_longer(!SubjectID) %>%
-  ggplot(mapping=aes(x=name, y=value, color=SubjectID)) +
+plot_medians <- function(median_alpha, median_theta_mu) {
+  median_alpha %>%
+    rownames_to_column("SubjectID") %>%
+    pivot_longer(!SubjectID) %>%
+    ggplot(mapping = aes(x = name, y = value, color = SubjectID)) +
     geom_point() +
-    geom_point(data = pivot_longer(median_theta_mu, everything()),
-               mapping = aes(x=name, y=value),
-               size = 3,
-               colour = "black") +
-    theme(axis.text.x=element_text(angle = -90, hjust = 0))
+    geom_point(
+      data = pivot_longer(median_theta_mu, everything()),
+      mapping = aes(x = name, y = value),
+      size = 3,
+      colour = "black"
+    ) +
+    theme(axis.text.x = element_text(angle = -90, hjust = 0))
+}
 
-saveRDS(median_alpha, file = here::here("data", "output", "median_alpha.RDS"))
+run_all <- function(filename, output) {
+  load(here::here("data", "output", filename))
+  theta_median <- tmu(sampled)
+  alpha_median <- alph(sampled)
+  print(plot_medians(alpha_median, theta_median))
+  saveRDS(alpha_median, file = here::here("data", "output", output))
+}
+  
+
+run_all("reboot_full.RData", "median_alpha_exp1.RDS")
+run_all("Task2_Absent_Try1.852259.rcgbcm.RData", "median_alpha_exp2_Absent.RDS")
+run_all("Task2_Greyed_Try1.RData", "median_alpha_exp2_Greyed.RDS")
