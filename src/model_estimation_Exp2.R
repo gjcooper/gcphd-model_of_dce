@@ -5,17 +5,23 @@ require(tidyverse)
 source(here::here("src", "read_expyriment.R"))
 source(here::here("src", "loglike.R"))
 
-# Get output filename
+#Get display to analyse
+displaytype <- Sys.getenv("VDCE_DISPLAY")
+# If VDCE_DISPLAY not defined should error out
+if (! (displaytype %in% c("Absent", "Greyed"))) {
+  stop("System Environment variable VDCE_DISPLAY should be defined")
+}
+#Get output filename
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
   jobid <- Sys.getenv()["PBS_JOBID"]
   if (is.na(jobid)) {
-    args[1] <- tempfile(pattern = "Task1_", tmpdir = ".", fileext = ".RData")
+    args[1] <- tempfile(pattern = paste0("Task2_", displaytype, "_"), tmpdir = ".", fileext = ".RData")
   } else {
-    args[1] <- paste0("Task1_", jobid, ".RData")
+    args[1] <- paste0("Task2_", displaytype, "_", jobid, ".RData")
   }
 }
-outfile <- here::here("data/output", args[1])
+outfile <- here::here("data", "output", args[1])
 
 cfix <- function(x) {
   substr(x, 3, nchar(x) - 1)
@@ -28,8 +34,9 @@ short_codes <- c(H = "High", L = "Low", D = "OutOfBounds")
 # Clean based on minimum % correct in all of four trial categories,
 # Clean the column names and drop rows with no response (NA values)
 # Clean values in the renamed columns too
-task1_data <- read.expyriment.data(here::here("data/input/Task1"), "S*") %>%
+task2_data <- read.expyriment.data(here::here("data", "input", "Task2"), "S*") %>%
   mutate(Correct = as.logical(Correct)) %>%
+  filter(Display == displaytype) %>%
   mutate(
     price_match = PriceSalience %in% c("High", "Low"),
     rating_match = RatingSalience %in% c("High", "Low")
@@ -46,12 +53,12 @@ task1_data <- read.expyriment.data(here::here("data/input/Task1"), "S*") %>%
   filter(min(pc_correct) >= 0.8) %>%
   rename(
     PriceRatingOrder = `b'PriceRatingOrder' `,
-    ResponseCounterbalancing = `b'ResponseCounterbalancing' `,
+    GreyedItemDisplay = `b'GreyedItemDisplay' `,
     AcceptRejectFocus = `b'AcceptRejectFocus' `
   ) %>%
   mutate(
     PriceRatingOrder = fct_relabel(PriceRatingOrder, cfix),
-    ResponseCounterbalancing = fct_relabel(ResponseCounterbalancing, cfix),
+    GreyedItemDisplay = fct_relabel(GreyedItemDisplay, cfix),
     AcceptRejectFocus = fct_relabel(AcceptRejectFocus, cfix)
   ) %>%
   mutate(
@@ -63,15 +70,15 @@ task1_data <- read.expyriment.data(here::here("data/input/Task1"), "S*") %>%
 # Two char labels for each cell of design,
 # first char is price, second is quality, H=High, L=Low, D=Distractor
 stim_levels <- c("HH", "HL", "HD", "LH", "LL", "LD", "DH", "DL", "DD")
-accept_trials <- task1_data %>% filter(AcceptRejectFocus == "Accept")
+accept_trials <- task2_data %>% filter(AcceptRejectFocus == "Accept")
 mod_data <- data.frame(
-  rt = task1_data$RT / 1000,
-  subject = task1_data$subject_id,
-  response = as.numeric(task1_data$Correct) + 1,
+  rt = task2_data$RT / 1000,
+  subject = task2_data$subject_id,
+  response = as.numeric(task2_data$Correct) + 1,
   cell = factor(
     paste0(
-      as.character(task1_data$PriceSalience),
-      as.character(task1_data$RatingSalience)
+      as.character(task2_data$PriceSalience),
+      as.character(task2_data$RatingSalience)
     ),
     labels = stim_levels
   )
@@ -79,7 +86,7 @@ mod_data <- data.frame(
 mod_data$v_pos <- paste0("v_pos_", mod_data$cell)
 mod_data$v_neg <- paste0("v_neg_", mod_data$cell)
 
-# < 0.3 participants were penalised, max trial length was 4.5 seconds
+#< 0.3 participants were penalised, max trial length was 4.5 seconds
 min_rt <- 0
 max_rt <- 4.5
 p_contam <- 0.02
@@ -134,14 +141,14 @@ start_sig <- MCMCpack::riwish(sampler$n_pars * 2, diag(sampler$n_pars))
 
 sampler <- init(sampler, start_mu = start_mu, start_sig = start_sig)
 
-burned <- run_stage(sampler, stage = "burn", iter = 2000, particles = 500, n_cores = 36)
+burned <- run_stage(sampler, stage = "burn", iter = 2000, particles = 500, n_cores = 34)
 
 save.image(outfile)
 
-adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 500, n_cores = 36)
+adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 500, n_cores = 34)
 
 save.image(outfile)
 
-sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = 36)
+sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = 34)
 
 save.image(outfile)

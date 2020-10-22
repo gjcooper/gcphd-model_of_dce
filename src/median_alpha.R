@@ -3,7 +3,8 @@ library(tidyr)
 library(dplyr)
 library(tibble)
 library(ggplot2)
-load('data/output/reboot_full.RData')
+
+load(here::here("data", "output", "reboot_full.RData"))
 
 median_theta_mu <- sampled %>%
   as_mcmc(filter = "sample") %>%
@@ -40,4 +41,4 @@ median_alpha %>%
                colour = "black") +
     theme(axis.text.x=element_text(angle = -90, hjust = 0))
 
-saveRDS(median_alpha, file = "median_alpha.RDS")
+saveRDS(median_alpha, file = here::here("data", "output", "median_alpha.RDS"))
