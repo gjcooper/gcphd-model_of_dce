@@ -20,27 +20,24 @@ ll_IST <- function(x, data) { # nolint
   c(yes, no)
 }
 
-sample_ll_IST <- function(x, data) {
+rll_IST <- function(x, data) {
   data$response <- NA
   data$rt <- NA
   x <- exp(x)
+  x["b_pos"] <- x["b_pos"] + x["A"]
+  x["b_neg"] <- x["b_neg"] + x["A"]
 
-  # pos_src_a <- simulate_lba()
-  # neg_src_a <- simulate_lba()
-  # pos_src_b <- simulate_lba()
-  # pos_src_b <- simulate_lba()
-
-  for (row in 1:nrow(data)) {
+  for (row in seq_len(nrow(data))) {
     pos <- rlba_norm(2, x[["A"]], x[["b_pos"]], x[["t0"]], x[[data$v_pos[row]]], 1)
     neg <- rlba_norm(2, x[["A"]], x[["b_neg"]], x[["t0"]], x[[data$v_neg[row]]], 1)
     minpos <- min(pos[, "rt"])
     maxneg <- max(neg[, "rt"])
     if (minpos < maxneg) {
       data$rt[row] <- minpos
-      data$response[row] <- 1
+      data$response[row] <- 2
     } else {
       data$rt[row] <- maxneg
-      data$response[row] <- 2
+      data$response[row] <- 1
     }
   }
   data
@@ -62,6 +59,10 @@ ll_IEX <- function(x, data) { # nolint
   c(yes, no)
 }
 
+rll_IEX <- function(x, data) {
+  stop("Not implemented yet")
+}
+
 ll_CYST <- function(x, data) { # nolint
   ydat <- data[data$response == 2, ]
   ndat <- data[data$response == 1, ]
@@ -75,6 +76,10 @@ ll_CYST <- function(x, data) { # nolint
     plba_norm(ndat$rt, A, x["b_neg"], t0, x[ndat$v_neg], 1) *
     (1 - plba_norm(ndat$rt, 2 * A, 2 * x["b_pos"], t0, 2 * x[ndat$v_pos], sqrt(2))) # nolint
   c(yes, no)
+}
+
+rll_CYST <- function(x, data) {
+  stop("Not implemented yet")
 }
 
 ll_CYEX <- function(x, data) { # nolint
@@ -92,6 +97,10 @@ ll_CYEX <- function(x, data) { # nolint
   c(yes, no)
 }
 
+rll_CYEX <- function(x, data) {
+  stop("Not implemented yet")
+}
+
 ll_CNST <- function(x, data) { # nolint
   ydat <- data[data$response == 2, ]
   ndat <- data[data$response == 1, ]
@@ -105,6 +114,10 @@ ll_CNST <- function(x, data) { # nolint
   no <- dlba_norm(ndat$rt, 2 * A, 2 * x["b_neg"], t0, 2 * x[ndat$v_neg], sqrt(2)) * # nolint
     (1 - plba_norm(ndat$rt, A, x["b_pos"], t0, x[ndat$v_pos], 1))**2
   c(yes, no)
+}
+
+rll_CNST <- function(x, data) {
+  stop("Not implemented yet")
 }
 
 ll_CNEX <- function(x, data) { # nolint
@@ -122,6 +135,10 @@ ll_CNEX <- function(x, data) { # nolint
   c(yes, no)
 }
 
+rll_CNEX <- function(x, data) {
+  stop("Not implemented yet")
+}
+
 ll_CB <- function(x, data) { # nolint
   ydat <- data[data$response == 2, ]
   ndat <- data[data$response == 1, ]
@@ -135,7 +152,13 @@ ll_CB <- function(x, data) { # nolint
   c(yes, no)
 }
 
+rll_CB <- function(x, data) {
+  stop("Not implemented yet")
+}
+
 ll_funcs <- c(ll_IST, ll_IEX, ll_CYST, ll_CYEX, ll_CNST, ll_CNEX, ll_CB)
+rll_funcs <- c(rll_IST, rll_IEX, rll_CYST, rll_CYEX, rll_CNST, rll_CNEX, rll_CB)
+ll_names <- c("IST", "IEX", "CYST", "CYEX", "CNST", "CNEX", "CB")
 
 # Specify the log likelihood function -----------------------------------------
 dirichlet_mix_ll <- function(x, data) {
