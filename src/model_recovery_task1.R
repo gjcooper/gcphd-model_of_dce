@@ -32,6 +32,7 @@ datafile <- file.path(outdir, paste0("Exp1_Recovery_", test_model, "_data.RDS"))
 
 subjects <- unique(model_data$subject)
 
+print("Creating test dataset")
 test_data <- lapply(subjects, FUN = function(subjectid) {
   s_idx <- match(subjectid, subjects)
   subject_data <- model_data %>% filter(subject == subjectid)
@@ -48,6 +49,7 @@ saveRDS(test_data, file = datafile)
 # Model specification - should be identical to model estimation file
 # Sum and difference of evidence rates for positive and negative accumulators
 sum_diff <- c("v_pos", "v_neg")
+stim_levels <- c("HH", "HL", "HD", "LH", "LL", "LD", "DH", "DL", "DD")
 
 parameters <- c(
   # Parallel mixture counts
@@ -83,7 +85,7 @@ diag(priors$theta_mu_var)[mix_counts] <- 2
 # Create the Particle Metropolis within Gibbs sampler object ------------------
 
 sampler <- pmwgs(
-  data = mod_data,
+  data = test_data,
   pars = parameters,
   ll_func = dirichlet_mix_ll,
   prior = priors
@@ -91,6 +93,10 @@ sampler <- pmwgs(
 
 start_mu <- c(0, 0, 0, 0, 0, 0, 0, .4, .2, .2, -2, rep(c(1.3, .3), 9))
 start_sig <- MCMCpack::riwish(sampler$n_pars * 2, diag(sampler$n_pars))
+
+min_rt <- 0
+max_rt <- 4.5
+p_contam <- 0.02
 
 sampler <- init(sampler, start_mu = start_mu, start_sig = start_sig)
 
