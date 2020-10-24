@@ -22,13 +22,13 @@ file_prefix <- paste0("Exp1_Recovery_", test_model, "_")
 if (length(args) == 0) {
   jobid <- Sys.getenv()["PBS_JOBID"]
   if (is.na(jobid)) {
-    args[1] <- tempfile(pattern = file_prefix, tmpdir = ".", fileext = ".RData")
+    args[1] <- tempfile(pattern = file_prefix, tmpdir = ".")
   } else {
-    args[1] <- paste0(file_prefix, jobid, ".RData")
+    args[1] <- paste0(file_prefix, jobid)
   }
 }
-outfile <- file.path(outdir, args[1])
-datafile <- file.path(outdir, paste0("Exp1_Recovery_", test_model, "_data.RDS"))
+outfile <- file.path(outdir, paste0(args[1], ".RData"))
+datafile <- file.path(outdir, paste0(args[1], "_data.RDS"))
 
 subjects <- unique(model_data$subject)
 
