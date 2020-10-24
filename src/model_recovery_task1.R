@@ -100,14 +100,14 @@ p_contam <- 0.02
 
 sampler <- init(sampler, start_mu = start_mu, start_sig = start_sig)
 
-burned <- run_stage(sampler, stage = "burn", iter = 2000, particles = 500, n_cores = 36)
+burned <- run_stage(sampler, stage = "burn", iter = 2000, particles = 500, n_cores = 26)
 
 save.image(outfile)
 
-adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 500, n_cores = 36)
+adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 500, n_cores = 26)
 
 save.image(outfile)
 
-sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = 36)
+sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = 26)
 
 save.image(outfile)
