@@ -13,6 +13,6 @@ module load R/3.6.3
 cd $PBS_O_WORKDIR
 tag="IST_Try1"
 
-Rscript --no-save --no-restore src/model_recovery_task1.R > data/output/recovery_Exp1_$tag.$PDB_JOBID.out 2> data/output/recovery_Exp1_$tag.$PBS_JOBID.err
+Rscript --no-save --no-restore src/model_recovery_task1.R > data/output/recovery_Exp1_$tag.$PBS_JOBID.out 2> data/output/recovery_Exp1_$tag.$PBS_JOBID.err
 
 exit 0
