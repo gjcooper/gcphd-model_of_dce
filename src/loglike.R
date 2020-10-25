@@ -1,23 +1,23 @@
 library(MCMCpack)
 
+# Simulation for sampling
+
 # Specify likelihoods of parameters for individual models ---------------------
 
 # Independant parallel self terminating
-ll_IST <- function(x, data) { # nolint
-  ydat <- data[data$response == 2, ]
-  ndat <- data[data$response == 1, ]
-  A <- x["A"] # nolint
-  t0 <- x["t0"]
-
-  yes <- 2 *
-    dlba_norm(ydat$rt, A, x["b_pos"], t0, x[ydat$v_pos], 1) *
-    (1 - plba_norm(ydat$rt, A, x["b_pos"], t0, x[ydat$v_pos], 1)) *
-    (1 - plba_norm(ydat$rt, A, x["b_neg"], t0, x[ydat$v_neg], 1)**2)
-  no <- 2 *
-    dlba_norm(ndat$rt, A, x["b_neg"], t0, x[ndat$v_neg], 1) *
-    plba_norm(ndat$rt, A, x["b_neg"], t0, x[ndat$v_neg], 1) *
-    (1 - plba_norm(ndat$rt, A, x["b_pos"], t0, x[ndat$v_pos], 1))**2
-  c(yes, no)
+ll_IST <- function(rt, A, b_pos, b_neg, t0, v_pos, v_neg, positive) { # nolint
+  if (positive) {
+    ll <- 2 *
+      dlba_norm(rt, A, b_pos, t0, v_pos, 1) *
+      (1 - plba_norm(rt, A, b_pos, t0, v_pos, 1)) *
+      (1 - plba_norm(rt, A, b_neg, t0, v_neg, 1)**2)
+  } else {
+    ll <- 2 *
+      dlba_norm(rt, A, b_neg, t0, v_neg, 1) *
+      plba_norm(rt, A, b_neg, t0, v_neg, 1) *
+      (1 - plba_norm(rt, A, b_pos, t0, v_pos, 1))**2
+  }
+  ll
 }
 
 rll_IST <- function(x, data) {
@@ -43,113 +43,102 @@ rll_IST <- function(x, data) {
   data
 }
 
-ll_IEX <- function(x, data) { # nolint
-  ydat <- data[data$response == 2, ]
-  ndat <- data[data$response == 1, ]
-  A <- x["A"] # nolint
-  t0 <- x["t0"]
-  yes <- 2 *
-    dlba_norm(ydat$rt, A, x["b_pos"], t0, x[ydat$v_pos], 1) *
-    plba_norm(ydat$rt, A, x["b_pos"], t0, x[ydat$v_pos], 1) *
-    (1 - plba_norm(ydat$rt, A, x["b_neg"], t0, x[ydat$v_neg], 1))**2
-  no <- 2 *
-    dlba_norm(ndat$rt, A, x["b_neg"], t0, x[ndat$v_neg], 1) *
-    (1 - plba_norm(ndat$rt, A, x["b_neg"], t0, x[ndat$v_neg], 1)) *
-    (1 - plba_norm(ndat$rt, A, x["b_pos"], t0, x[ndat$v_pos], 1)**2)
-  c(yes, no)
+ll_IEX <- function(rt, A, b_pos, b_neg, t0, v_pos, v_neg, positive) { # nolint
+  if (positive) {
+    ll <- 2 *
+      dlba_norm(rt, A, b_pos, t0, v_pos, 1) *
+      plba_norm(rt, A, b_pos, t0, v_pos, 1) *
+      (1 - plba_norm(rt, A, b_neg, t0, v_neg, 1))**2
+  } else {
+    ll <- 2 *
+      dlba_norm(rt, A, b_neg, t0, v_neg, 1) *
+      (1 - plba_norm(rt, A, b_neg, t0, v_neg, 1)) *
+      (1 - plba_norm(rt, A, b_pos, t0, v_pos, 1)**2)
+  }
+  ll
 }
 
 rll_IEX <- function(x, data) {
   stop("Not implemented yet")
 }
 
-ll_CYST <- function(x, data) { # nolint
-  ydat <- data[data$response == 2, ]
-  ndat <- data[data$response == 1, ]
-  A <- x["A"] # nolint
-  t0 <- x["t0"]
-
-  yes <- dlba_norm(ydat$rt, 2 * A, 2 * x["b_pos"], t0, 2 * x[ydat$v_pos], sqrt(2)) * # nolint
-    (1 - plba_norm(ydat$rt, A, x["b_neg"], t0, x[ydat$v_neg], 1)**2)
-  no <- 2 *
-    dlba_norm(ndat$rt, A, x["b_neg"], t0, x[ndat$v_neg], 1) *
-    plba_norm(ndat$rt, A, x["b_neg"], t0, x[ndat$v_neg], 1) *
-    (1 - plba_norm(ndat$rt, 2 * A, 2 * x["b_pos"], t0, 2 * x[ndat$v_pos], sqrt(2))) # nolint
-  c(yes, no)
+ll_CYST <- function(rt, A, b_pos, b_neg, t0, v_pos, v_neg, positive) { # nolint
+  if (positive) {
+    ll <- dlba_norm(rt, 2 * A, 2 * b_pos, t0, 2 * v_pos, sqrt(2)) * # nolint
+      (1 - plba_norm(rt, A, b_neg, t0, v_neg, 1)**2)
+  } else {
+    ll <- 2 *
+      dlba_norm(rt, A, b_neg, t0, v_neg, 1) *
+      plba_norm(rt, A, b_neg, t0, v_neg, 1) *
+      (1 - plba_norm(rt, 2 * A, 2 * b_pos, t0, 2 * v_pos, sqrt(2))) # nolint
+  }
+  ll
 }
 
 rll_CYST <- function(x, data) {
   stop("Not implemented yet")
 }
 
-ll_CYEX <- function(x, data) { # nolint
-  ydat <- data[data$response == 2, ]
-  ndat <- data[data$response == 1, ]
-  A <- x["A"] # nolint
-  t0 <- x["t0"]
-
-  yes <- dlba_norm(ydat$rt, 2 * A, 2 * x["b_pos"], t0, 2 * x[ydat$v_pos], sqrt(2)) * # nolint
-    (1 - plba_norm(ydat$rt, A, x["b_neg"], t0, x[ydat$v_neg], 1))**2
-  no <- 2 *
-    dlba_norm(ndat$rt, A, x["b_neg"], t0, x[ndat$v_neg], 1) *
-    (1 - plba_norm(ndat$rt, A, x["b_neg"], t0, x[ndat$v_neg], 1)) *
-    (1 - plba_norm(ndat$rt, 2 * A, 2 * x["b_pos"], t0, 2 * x[ndat$v_pos], sqrt(2))) # nolint
-  c(yes, no)
+ll_CYEX <- function(rt, A, b_pos, b_neg, t0, v_pos, v_neg, positive) { # nolint
+  if (positive) {
+    ll <- dlba_norm(rt, 2 * A, 2 * b_pos, t0, 2 * v_pos, sqrt(2)) * # nolint
+      (1 - plba_norm(rt, A, b_neg, t0, v_neg, 1))**2
+  } else {
+    ll <- 2 *
+      dlba_norm(rt, A, b_neg, t0, v_neg, 1) *
+      (1 - plba_norm(rt, A, b_neg, t0, v_neg, 1)) *
+      (1 - plba_norm(rt, 2 * A, 2 * b_pos, t0, 2 * v_pos, sqrt(2))) # nolint
+  }
+  ll
 }
 
 rll_CYEX <- function(x, data) {
   stop("Not implemented yet")
 }
 
-ll_CNST <- function(x, data) { # nolint
-  ydat <- data[data$response == 2, ]
-  ndat <- data[data$response == 1, ]
-  A <- x["A"] # nolint
-  t0 <- x["t0"]
-
-  yes <- 2 *
-    dlba_norm(ydat$rt, A, x["b_pos"], t0, x[ydat$v_pos], 1) *
-    (1 - plba_norm(ydat$rt, A, x["b_pos"], t0, x[ydat$v_pos], 1)) *
-    (1 - plba_norm(ydat$rt, 2 * A, 2 * x["b_neg"], t0, 2 * x[ydat$v_neg], sqrt(2))) # nolint
-  no <- dlba_norm(ndat$rt, 2 * A, 2 * x["b_neg"], t0, 2 * x[ndat$v_neg], sqrt(2)) * # nolint
-    (1 - plba_norm(ndat$rt, A, x["b_pos"], t0, x[ndat$v_pos], 1))**2
-  c(yes, no)
+ll_CNST <- function(rt, A, b_pos, b_neg, t0, v_pos, v_neg, positive) { # nolint
+  if (positive) {
+    ll <- 2 *
+      dlba_norm(rt, A, b_pos, t0, v_pos, 1) *
+      (1 - plba_norm(rt, A, b_pos, t0, v_pos, 1)) *
+      (1 - plba_norm(rt, 2 * A, 2 * b_neg, t0, 2 * v_neg, sqrt(2))) # nolint
+  } else {
+    ll <- dlba_norm(rt, 2 * A, 2 * b_neg, t0, 2 * v_neg, sqrt(2)) * # nolint
+      (1 - plba_norm(rt, A, b_pos, t0, v_pos, 1))**2
+  }
+  ll
 }
 
 rll_CNST <- function(x, data) {
   stop("Not implemented yet")
 }
 
-ll_CNEX <- function(x, data) { # nolint
-  ydat <- data[data$response == 2, ]
-  ndat <- data[data$response == 1, ]
-  A <- x["A"] # nolint
-  t0 <- x["t0"]
-
-  yes <- 2 *
-    dlba_norm(ydat$rt, A, x["b_pos"], t0, x[ydat$v_pos], 1) *
-    plba_norm(ydat$rt, A, x["b_pos"], t0, x[ydat$v_pos], 1) *
-    (1 - plba_norm(ydat$rt, 2 * A, 2 * x["b_neg"], t0, 2 * x[ydat$v_neg], sqrt(2))) # nolint
-  no <- dlba_norm(ndat$rt, 2 * A, 2 * x["b_neg"], t0, 2 * x[ndat$v_neg], sqrt(2)) * # nolint
-    (1 - plba_norm(ndat$rt, A, x["b_pos"], t0, x[ndat$v_pos], 1)**2)
-  c(yes, no)
+ll_CNEX <- function(rt, A, b_pos, b_neg, t0, v_pos, v_neg, positive) { # nolint
+  if (positive) {
+    ll <- 2 *
+      dlba_norm(rt, A, b_pos, t0, v_pos, 1) *
+      plba_norm(rt, A, b_pos, t0, v_pos, 1) *
+      (1 - plba_norm(rt, 2 * A, 2 * b_neg, t0, 2 * v_neg, sqrt(2))) # nolint
+  } else {
+    ll <- dlba_norm(rt, 2 * A, 2 * b_neg, t0, 2 * v_neg, sqrt(2)) * # nolint
+      (1 - plba_norm(rt, A, b_pos, t0, v_pos, 1)**2)
+  }
+  ll
 }
 
 rll_CNEX <- function(x, data) {
   stop("Not implemented yet")
 }
 
-ll_CB <- function(x, data) { # nolint
-  ydat <- data[data$response == 2, ]
-  ndat <- data[data$response == 1, ]
-  A <- x["A"] # nolint
-  t0 <- x["t0"]
-
-  yes <- dlba_norm(ydat$rt, 2 * A, 2 * x["b_pos"], t0, 2 * x[ydat$v_pos], sqrt(2)) * # nolint
-    (1 - plba_norm(ydat$rt, 2 * A, 2 * x["b_neg"], t0, 2 * x[ydat$v_neg], sqrt(2))) # nolint
-  no <- dlba_norm(ndat$rt, 2 * A, 2 * x["b_neg"], t0, 2 * x[ndat$v_neg], sqrt(2)) * # nolint
-    (1 - plba_norm(ndat$rt, 2 * A, 2 * x["b_pos"], t0, 2 * x[ndat$v_pos], sqrt(2))) # nolint
-  c(yes, no)
+ll_CB <- function(rt, A, b_pos, b_neg, t0, v_pos, v_neg, positive) { # nolint
+  if (positive) {
+    ll <- dlba_norm(rt, 2 * A, 2 * b_pos, t0, 2 * v_pos, sqrt(2)) * # nolint
+      (1 - plba_norm(rt, 2 * A, 2 * b_neg, t0, 2 * v_neg, sqrt(2))) # nolint
+  } else {
+    ll <- dlba_norm(rt, 2 * A, 2 * b_neg, t0, 2 * v_neg, sqrt(2)) * # nolint
+      (1 - plba_norm(rt, 2 * A, 2 * b_pos, t0, 2 * v_pos, sqrt(2))) # nolint
+  }
+  ll
 }
 
 rll_CB <- function(x, data) {
@@ -159,6 +148,27 @@ rll_CB <- function(x, data) {
 ll_funcs <- c(ll_IST, ll_IEX, ll_CYST, ll_CYEX, ll_CNST, ll_CNEX, ll_CB)
 rll_funcs <- c(rll_IST, rll_IEX, rll_CYST, rll_CYEX, rll_CNST, rll_CNEX, rll_CB)
 ll_names <- c("IST", "IEX", "CYST", "CYEX", "CNST", "CNEX", "CB")
+
+model_wrapper <- function(x, data, model) {
+  ydat <- data[data$response == 2, ]
+  ndat <- data[data$response == 1, ]
+  A <- x["A"] # nolint
+  t0 <- x["t0"]
+  b_pos <- x["b_pos"]
+  b_neg <- x["b_neg"]
+
+  yes <- switch(
+    nrow(ydat) != 0,
+    model(ydat$rt, A, b_pos, b_neg, t0, x[ydat$v_pos], x[ydat$v_neg], 1)
+  )
+  no <- switch(
+    nrow(ndat) != 0,
+    model(ndat$rt, A, b_pos, b_neg, t0, x[ndat$v_pos], x[ndat$v_neg], 1)
+  )
+  c(yes, no)
+}
+
+
 
 # Specify the log likelihood function -----------------------------------------
 dirichlet_mix_ll <- function(x, data) {
@@ -177,7 +187,7 @@ dirichlet_mix_ll <- function(x, data) {
   rdev <- rdirichlet(1, x[mix_counts])
   func_idx <- sample(mix_counts, 1, prob = rdev)
   ll_func <- ll_funcs[[func_idx]]
-  trial_ll <- ll_func(x, data)
+  trial_ll <- model_wrapper(x, data, ll_func)
   new_like <- (1 - p_contam) * trial_ll +
     p_contam * (dunif(data$rt, min_rt, max_rt) / 2)
   sum(log(pmax(new_like, 1e-10)))
