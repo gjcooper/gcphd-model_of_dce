@@ -168,9 +168,37 @@ model_wrapper <- function(x, data, model) {
   c(yes, no)
 }
 
-
-
-# Specify the log likelihood function -----------------------------------------
+#' Top level log-likelihood function that implements the dirichlet sampling
+#'
+#' This function selects one of the possible architectures using a random
+#' dirichlet sample weighted by the \alpha values from the parameter vector. It
+#' then delegates the likelihood for the data to an architecture specific
+#' log-likelihood function.
+#'
+#' @section The parameter vector:
+#'
+#' The vector x should contain the following elements:
+#' A number of /alpha
+#' values 
+#' 
+#' \itemize{
+#'   \item A number of \strong{\alpha} parameter values matching the number and
+#'     order of the ll_funcs vector defined in this same file.
+#'   \item \strong{A} - the start point variability
+#'   \item \strong{b^a} and \strong{b^r}, the thresholds to either accept or
+#'     reject the item.
+#'   \item \strong{t0} - the residual time, bounded above by the minimum
+#'     response time for the participant
+#'   \item 12 drift rates. For each attribute there are three stimulus levels.
+#'     For each of these 6 attribute levels there are two drift rates, one drift
+#'     rate to accept (\strong{v^a}) and one to reject (\strong{v^r})
+#' }
+#'
+#' @param x A named vector containing parameter values to test
+#' @param data The data for a single subject for which the likelihood should be
+#'   calculated
+#'
+#' @return The log of the lilelihood for the data under paramweter values x
 dirichlet_mix_ll <- function(x, data) {
   x <- exp(x)
 
@@ -220,22 +248,3 @@ test.likelihood <- function(x, num.values = 9, fake.data, dimensions, ll_func, s
   par(op)
   return(par_likelihoods)
 }
-
-# n.posterior <- 20 # Number of samples from posterior distribution for each parameter.
-# pp.data <- list()
-# S <- unique(wgnmks2008$subject)
-# data <- split(x = wgnmks2008, f = wgnmks2008$subject)
-# for (s in S) {
-#   cat(s, " ")
-#   iterations <- round(seq(from = 1051, to = sampled$samples$idx, length.out = n.posterior))
-#   for (i in 1:length(iterations)) {
-#     x <- sampled$samples$alpha[, s, iterations[i]]
-#     names(x) <- pars
-#     tmp <- SDT_ll_fast(x = x, data = wgnmks2008[wgnmks2008$subject == s, ], sample = TRUE)
-#     if (i == 1) {
-#       pp.data[[s]] <- cbind(i, tmp)
-#     } else {
-#       pp.data[[s]] <- rbind(pp.data[[s]], cbind(i, tmp))
-#     }
-#   }
-# }
