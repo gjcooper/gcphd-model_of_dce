@@ -1,3 +1,6 @@
 *.RData
 old/
 *.RDS
+*.png
+*.err
+*.out
