@@ -1,0 +1,10 @@
+^packrat/
+^\.Rprofile$
+^LICENSE\.md$
+^data/output/
+^data/input/
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^.osfcli.config$
+^hpc_jobs/

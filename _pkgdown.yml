@@ -1,0 +1,10 @@
+destination: docs
+reference:
+- title: Package
+  desc:  Top level package documentation
+- contents:
+  - mcce
+- title: Log-likelihoods
+  desc: Functions for calculating the log likelihood for individual architectures and the model as a whole.
+- contents:
+  - dirichlet_mix_ll
