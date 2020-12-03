@@ -13,7 +13,7 @@ dirichlet_mix_ll(x, data)
 calculated}
 }
 \value{
-The log of the lilelihood for the data under paramweter values x
+The log of the likelihood for the data under parameter values x
 }
 \description{
 This function selects one of the possible architectures using a random

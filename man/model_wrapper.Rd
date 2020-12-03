@@ -2,7 +2,7 @@
 % Please edit documentation in R/loglike.R
 \name{model_wrapper}
 \alias{model_wrapper}
-\title{Top level log-likelihood function that implements the dirichlet sampling}
+\title{Wrapper for individual model log likelihood function}
 \usage{
 model_wrapper(x, data, model)
 }
@@ -11,34 +11,15 @@ model_wrapper(x, data, model)
 
 \item{data}{The data for a single subject for which the likelihood should be
 calculated}
+
+\item{model}{The model to be wrapped and returned}
 }
 \value{
-The log of the lilelihood for the data under paramweter values x
+The log of the likelihood for the data under parameter values x
 }
 \description{
-This function selects one of the possible architectures using a random
-dirichlet sample weighted by the α values from the parameter vector. It
-then delegates the likelihood for the data to an architecture specific
-log-likelihood function.
+This function performs some common steps such as rearrangeing the data
+pulling out parameter items into variable and combining the results of
+applying to model to different subsets of the data (accept and reject
+responses)
 }
-\section{The parameter vector}{
-
-
-The vector x should contain the following elements:
-A number of \eqn{\alpha}
-values
-
-\itemize{
-\item A number of \strong{\eqn{\alpha}} parameter values matching the number and
-order of the ll_funcs vector defined in this same file.
-\item \strong{A} - the start point variability
-\item \strong{b^a} and \strong{b^r}, the thresholds to either accept or
-reject the item.
-\item \strong{t0} - the residual time, bounded above by the minimum
-response time for the participant
-\item 12 drift rates. For each attribute there are three stimulus levels.
-For each of these 6 attribute levels there are two drift rates, one drift
-rate to accept (\strong{v^a}) and one to reject (\strong{v^r})
-}
-}
-
