@@ -1,6 +1,9 @@
 require(pmwg)
 require(rtdists)
+require(tidyverse)
 library(MCMCpack)
+devtools::load_all()
+
 
 # Get output filename
 args <- commandArgs(trailingOnly = TRUE)
