@@ -49,7 +49,7 @@ parameters <- c(
   # Parallel mixture counts
   "alpha_IST", "alpha_IEX",
   # Coactive mixture probabilities
-  "alpha_CYST", "alpha_CYEX", "alpha_CNST", "alpha_CNEX", "alpha_CB",
+  "alpha_CB",
   # A - start point variability (sampled from U(0, A) where U is uniform dist)
   "A",
   # b_acc - threshold to accept based on evidence accumulaton in channel
