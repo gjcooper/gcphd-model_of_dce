@@ -55,7 +55,7 @@ parameters <- c(
   # b_acc - threshold to accept based on evidence accumulaton in channel
   "b_acc",
   # b_rej - threshold to reject based on evidence accumulation in channel
-  "b_neg",
+  "b_rej",
   # t0 - residual time, bounded above by min response time for participant k
   "t0"
 )
@@ -87,14 +87,15 @@ sampler <- pmwgs(
 
 sampler <- init(sampler)
 
-burned <- run_stage(sampler, stage = "burn", iter = 2000, particles = 500, n_cores = 36)
+burned <- run_stage(sampler, stage = "burn", iter = 2000, particles = 500, n_cores = 26)
 
 save.image(outfile)
 
-adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 500, n_cores = 36)
+adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 500, n_cores = 26)
 
 save.image(outfile)
 
-sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = 36)
+sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = 26)
 
 save.image(outfile)
+
