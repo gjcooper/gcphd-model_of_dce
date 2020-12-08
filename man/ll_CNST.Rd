@@ -4,16 +4,16 @@
 \alias{ll_CNST}
 \title{Coactive No/Self terminating Yes}
 \usage{
-ll_CNST(rt, A, b_pos, b_neg, t0, v_pos, v_neg, positive)
+ll_CNST(rt, A, b_acc, b_rej, t0, v_pos, v_neg, accept)
 }
 \arguments{
 \item{rt}{A vector of response times}
 
 \item{A}{Start point variability}
 
-\item{b_pos}{positive evidence threshold}
+\item{b_acc}{positive evidence threshold}
 
-\item{b_neg}{negative evidence threshold}
+\item{b_rej}{negative evidence threshold}
 
 \item{t0}{non decision time parameter}
 

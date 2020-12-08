@@ -4,24 +4,24 @@
 \alias{ll_IST}
 \title{Independant Self Terminating}
 \usage{
-ll_IST(rt, A, b_pos, b_neg, t0, v_pos, v_neg, positive)
+ll_IST(rt, A, b_acc, b_rej, t0, drifts, accept)
 }
 \arguments{
 \item{rt}{A vector of response times}
 
 \item{A}{Start point variability}
 
-\item{b_pos}{positive evidence threshold}
+\item{b_acc}{positive evidence threshold}
 
-\item{b_neg}{negative evidence threshold}
+\item{b_rej}{negative evidence threshold}
 
 \item{t0}{non decision time parameter}
 
-\item{v_pos}{positive evidence drift rate (vector of)}
+\item{drifts}{An array of drift rates, 4 x length(rt) with the columns being
+vectors of drift rates for accept price, reject price, accept rating,
+reject rating respectively}
 
-\item{v_neg}{vector of negative evidence drift rates}
-
-\item{positive}{Whether we are looking at accept or reject trials}
+\item{accept}{Whether we are looking at accept or reject trials}
 }
 \value{
 The log likelihood of the rts for the accept or reject trials given
