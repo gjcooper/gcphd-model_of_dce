@@ -1,3 +1,14 @@
+# Channel A is Price
+# Channel B is Rating
+# pdf to accept Price is: dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)
+# cdf to accept Price is: plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)
+# pdf to reject Price is: dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)
+# cdf to rejept Price is: plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)
+# pdf to accept Rating is: dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)
+# cdf to accept Rating is: plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)
+# pdf to reject Rating is: dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)
+# cdf to rejept Rating is: plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)
+
 #' Independant Self Terminating
 #'
 #' @param rt A vector of response times
@@ -14,15 +25,19 @@
 #'   the provided parameter values
 ll_IST <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
   if (accept) {
-    ll <- 2 *
-      dlba_norm(rt, A, b_acc, t0, v_pos, 1) *
-      (1 - plba_norm(rt, A, b_acc, t0, v_pos, 1)) *
-      (1 - plba_norm(rt, A, b_rej, t0, v_neg, 1)**2)
+    ll <- (dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+            (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
+            dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
+            (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1))) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
+            plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
   } else {
-    ll <- 2 *
-      dlba_norm(rt, A, b_rej, t0, v_neg, 1) *
-      plba_norm(rt, A, b_rej, t0, v_neg, 1) *
-      (1 - plba_norm(rt, A, b_acc, t0, v_pos, 1))**2
+    ll <- (dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
+            plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) +
+            dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
+            plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
   }
   ll
 }
@@ -256,18 +271,32 @@ ll_names <- c("IST", "IEX", "CYST", "CYEX", "CNST", "CNEX", "CB")
 model_wrapper <- function(x, data, model) {
   adat <- data[data$accept == 2, ]
   rdat <- data[data$accept == 1, ]
+
+
   A <- x["A"] # nolint
   t0 <- x["t0"]
   b_acc <- x["b_acc"]
   b_rej <- x["b_rej"]
+  acc_drifts = tibble(
+    AccPrice = x[adat$v_acc_p],
+    RejPrice = x[adat$v_rej_p],
+    AccRating = x[adat$v_acc_r],
+    RejRating = x[adat$v_rej_r]
+  )
+  rej_drifts = tibble(
+    AccPrice = x[rdat$v_acc_p],
+    RejPrice = x[rdat$v_rej_p],
+    AccRating = x[rdat$v_acc_r],
+    RejRating = x[rdat$v_rej_r]
+  )
 
   accept <- switch(
     nrow(adat) != 0,
-    model(adat$rt, A, b_acc, b_rej, t0, x[adat$v_pos], x[adat$v_neg], 1)
+    model(adat$rt, A, b_acc, b_rej, t0, acc_drifts, 1)
   )
   reject <- switch(
-    nrow(ndat) != 0,
-    model(ndat$rt, A, b_acc, b_rej, t0, x[ndat$v_pos], x[ndat$v_neg], 1)
+    nrow(rdat) != 0,
+    model(rdat$rt, A, b_acc, b_rej, t0, rej_drifts, 1)
   )
   c(accept, reject)
 }
@@ -319,6 +348,50 @@ dirichlet_mix_ll <- function(x, data) {
   # all decision rules
   rdev <- MCMCpack::rdirichlet(1, x[mix_counts])
   func_idx <- sample(mix_counts, 1, prob = rdev)
+  ll_func <- ll_funcs[[func_idx]]
+  trial_ll <- model_wrapper(x, data, ll_func)
+  new_like <- (1 - p_contam) * trial_ll +
+    p_contam * (stats::dunif(data$rt, min_rt, max_rt) / 2)
+  sum(log(pmax(new_like, 1e-10)))
+}
+
+
+#' Top level log-likelihood function that implements the single model sampling
+#'
+#' This function runs one of the possible architectures repeatedly, horrible,
+#' uses a global variable for the selected model.
+#'
+#' @section The parameter vector:
+#'
+#' The vector x should contain the following elements:
+#' A number of \eqn{\alpha}
+#' values
+#'
+#' \itemize{
+#'   \item \strong{A} - the start point variability
+#'   \item \strong{b^a} and \strong{b^r}, the thresholds to either accept or
+#'     reject the item.
+#'   \item \strong{t0} - the residual time, bounded above by the minimum
+#'     response time for the participant
+#'   \item 12 drift rates. For each attribute there are three stimulus levels.
+#'     For each of these 6 attribute levels there are two drift rates, one drift
+#'     rate to accept (\strong{v^a}) and one to reject (\strong{v^r})
+#' }
+#'
+#' @param x A named vector containing parameter values to test
+#' @param data The data for a single subject for which the likelihood should be
+#'   calculated
+#'
+#' @return The log of the likelihood for the data under parameter values x
+single_model_ll <- function(x, data) {
+  x <- exp(x)
+
+  # Enforces b cannot be less than A, b parameter is thus threshold - A
+  x["b_acc"] <- x["b_acc"] + x["A"]
+  x["b_rej"] <- x["b_rej"] + x["A"]
+
+  # all decision rules
+  func_idx <- match(architecture, ll_names)
   ll_func <- ll_funcs[[func_idx]]
   trial_ll <- model_wrapper(x, data, ll_func)
   new_like <- (1 - p_contam) * trial_ll +
