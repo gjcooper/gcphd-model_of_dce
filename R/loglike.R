@@ -229,12 +229,14 @@ rll_CNEX <- function(x, data) {
 #' @return The log likelihood of the rts for the accept or reject trials given
 #'   the provided parameter values
 ll_CB <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
+  acc_co_drifts <- drifts$AccPrice + drifts$AccRating
+  rej_co_drifts <- drifts$RejPrice + drifts$RejRating
   if (accept) {
-    ll <- dlba_norm(rt, 2 * A, 2 * b_acc, t0, 2 * v_pos, sqrt(2)) * # nolint
-      (1 - plba_norm(rt, 2 * A, 2 * b_rej, t0, 2 * v_neg, sqrt(2))) # nolint
+    ll <- dlba_norm(rt, 2 * A, 2 * b_acc, t0, acc_co_drifts, sqrt(2)) * # nolint
+      (1 - plba_norm(rt, 2 * A, 2 * b_rej, t0, rej_co_drifts, sqrt(2))) # nolint
   } else {
-    ll <- dlba_norm(rt, 2 * A, 2 * b_rej, t0, 2 * v_neg, sqrt(2)) * # nolint
-      (1 - plba_norm(rt, 2 * A, 2 * b_acc, t0, 2 * v_pos, sqrt(2))) # nolint
+    ll <- dlba_norm(rt, 2 * A, 2 * b_rej, t0, rej_co_drifts, sqrt(2)) * # nolint
+      (1 - plba_norm(rt, 2 * A, 2 * b_acc, t0, acc_co_drifts, sqrt(2))) # nolint
   }
   ll
 }
