@@ -244,9 +244,9 @@ rll_CB <- function(x, data) {
   stop("Not implemented yet")
 }
 
-ll_funcs <- c(ll_IST, ll_IEX, ll_CYST, ll_CYEX, ll_CNST, ll_CNEX, ll_CB)
-rll_funcs <- c(rll_IST, rll_IEX, rll_CYST, rll_CYEX, rll_CNST, rll_CNEX, rll_CB)
-ll_names <- c("IST", "IEX", "CYST", "CYEX", "CNST", "CNEX", "CB")
+ll_funcs <- c(ll_IST, ll_IEX, ll_CB)
+rll_funcs <- c(rll_IST, rll_IEX, rll_CB)
+ll_names <- c("IST", "IEX", "CB")
 
 
 #' Wrapper for individual model log likelihood function
