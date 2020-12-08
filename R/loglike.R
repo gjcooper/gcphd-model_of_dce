@@ -75,28 +75,25 @@ rll_IST <- function(x, data) {
 
 #' Independant Exhaustive model
 #'
-#' @param rt A vector of response times
-#' @param A Start point variability
-#' @param b_acc positive evidence threshold
-#' @param b_rej negative evidence threshold
-#' @param t0 non decision time parameter
-#' @param v_pos positive evidence drift rate (vector of)
-#' @param v_neg vector of negative evidence drift rates
-#' @param positive Whether we are looking at accept or reject trials
+#' @inheritParams ll_IST
 #'
 #' @return The log likelihood of the rts for the accept or reject trials given
 #'   the provided parameter values
-ll_IEX <- function(rt, A, b_acc, b_rej, t0, v_pos, v_neg, positive) { # nolint
-  if (positive) {
-    ll <- 2 *
-      dlba_norm(rt, A, b_acc, t0, v_pos, 1) *
-      plba_norm(rt, A, b_acc, t0, v_pos, 1) *
-      (1 - plba_norm(rt, A, b_rej, t0, v_neg, 1))**2
+ll_IEX <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
+  if (accept) {
+    ll <- (dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+            plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
+            dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
+            plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
   } else {
-    ll <- 2 *
-      dlba_norm(rt, A, b_rej, t0, v_neg, 1) *
-      (1 - plba_norm(rt, A, b_rej, t0, v_neg, 1)) *
-      (1 - plba_norm(rt, A, b_acc, t0, v_pos, 1)**2)
+    ll <- (dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
+            (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
+            dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
+            (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1))) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+            plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
   }
   ll
 }
@@ -118,8 +115,8 @@ rll_IEX <- function(x, data) {
 #'
 #' @return The log likelihood of the rts for the accept or reject trials given
 #'   the provided parameter values
-ll_CYST <- function(rt, A, b_acc, b_rej, t0, v_pos, v_neg, positive) { # nolint
-  if (positive) {
+ll_CYST <- function(rt, A, b_acc, b_rej, t0, v_pos, v_neg, accept) { # nolint
+  if (accept) {
     ll <- dlba_norm(rt, 2 * A, 2 * b_acc, t0, 2 * v_pos, sqrt(2)) * # nolint
       (1 - plba_norm(rt, A, b_rej, t0, v_neg, 1)**2)
   } else {
@@ -148,8 +145,8 @@ rll_CYST <- function(x, data) {
 #'
 #' @return The log likelihood of the rts for the accept or reject trials given
 #'   the provided parameter values
-ll_CYEX <- function(rt, A, b_acc, b_rej, t0, v_pos, v_neg, positive) { # nolint
-  if (positive) {
+ll_CYEX <- function(rt, A, b_acc, b_rej, t0, v_pos, v_neg, accept) { # nolint
+  if (accept) {
     ll <- dlba_norm(rt, 2 * A, 2 * b_acc, t0, 2 * v_pos, sqrt(2)) * # nolint
       (1 - plba_norm(rt, A, b_rej, t0, v_neg, 1))**2
   } else {
@@ -178,8 +175,8 @@ rll_CYEX <- function(x, data) {
 #'
 #' @return The log likelihood of the rts for the accept or reject trials given
 #'   the provided parameter values
-ll_CNST <- function(rt, A, b_acc, b_rej, t0, v_pos, v_neg, positive) { # nolint
-  if (positive) {
+ll_CNST <- function(rt, A, b_acc, b_rej, t0, v_pos, v_neg, accept) { # nolint
+  if (accept) {
     ll <- 2 *
       dlba_norm(rt, A, b_acc, t0, v_pos, 1) *
       (1 - plba_norm(rt, A, b_acc, t0, v_pos, 1)) *
@@ -208,8 +205,8 @@ rll_CNST <- function(x, data) {
 #'
 #' @return The log likelihood of the rts for the accept or reject trials given
 #'   the provided parameter values
-ll_CNEX <- function(rt, A, b_acc, b_rej, t0, v_pos, v_neg, positive) { # nolint
-  if (positive) {
+ll_CNEX <- function(rt, A, b_acc, b_rej, t0, v_pos, v_neg, accept) { # nolint
+  if (accept) {
     ll <- 2 *
       dlba_norm(rt, A, b_acc, t0, v_pos, 1) *
       plba_norm(rt, A, b_acc, t0, v_pos, 1) *
@@ -227,19 +224,12 @@ rll_CNEX <- function(x, data) {
 
 #' Coactive Both
 #'
-#' @param rt A vector of response times
-#' @param A Start point variability
-#' @param b_acc positive evidence threshold
-#' @param b_rej negative evidence threshold
-#' @param t0 non decision time parameter
-#' @param v_pos positive evidence drift rate (vector of)
-#' @param v_neg vector of negative evidence drift rates
-#' @param positive Whether we are looking at accept or reject trials
+#' @inheritParams ll_IST
 #'
 #' @return The log likelihood of the rts for the accept or reject trials given
 #'   the provided parameter values
-ll_CB <- function(rt, A, b_acc, b_rej, t0, v_pos, v_neg, positive) { # nolint
-  if (positive) {
+ll_CB <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
+  if (accept) {
     ll <- dlba_norm(rt, 2 * A, 2 * b_acc, t0, 2 * v_pos, sqrt(2)) * # nolint
       (1 - plba_norm(rt, 2 * A, 2 * b_rej, t0, 2 * v_neg, sqrt(2))) # nolint
   } else {
