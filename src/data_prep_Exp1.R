@@ -1,4 +1,6 @@
-require(tidyverse)
+library(tidyr)
+library(dplyr)
+library(forcats)
 devtools::load_all()
 
 

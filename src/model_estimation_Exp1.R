@@ -1,6 +1,6 @@
 require(pmwg)
 require(rtdists)
-require(tidyverse)
+library(dplyr)
 library(MCMCpack)
 devtools::load_all()
 
