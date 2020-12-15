@@ -1,6 +1,6 @@
 #!/bin/bash
-#PBS -l select=1:ncpus=36:mem=12gb
-#PBS -l walltime=12:00:00
+#PBS -l select=1:ncpus=26:mem=14gb
+#PBS -l walltime=24:00:00
 #PBS -k oe
 
 # Setup email notifications when the job is aborted(a), begins (b) or ends (e)
@@ -9,11 +9,11 @@
 
 
 source /etc/profile.d/modules.sh 
-module load R/3.6.3
+module load R/4.0.1
 
 cd $PBS_O_WORKDIR
-tag="Try2"
+tag="MultiChannelTry3"
 
-Rscript --no-save --no-restore Task1.R Task1_$tag.RData > vdce_1_$tag.out 2> vdce_1_$tag.err
+Rscript --no-save --no-restore src/model_estimation_Exp1.R Task1_$tag.RData > vdce_1_$tag.out 2> vdce_1_$tag.err
 
 exit 0
