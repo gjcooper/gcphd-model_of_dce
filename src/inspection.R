@@ -152,32 +152,16 @@ original <- get_data()
 compare(original, recovery)
 compare_data(original, recovery, "rt")
 
-# Looking at Multichannel try1
-load(here::here('data', 'output', 'Task1_MultiChannelTry1.RData'), envir = (try1_e <- new.env()))
-burnin_data <- try1_e$burned
-mcmcplot(as_mcmc(burnin_data))
-mcmcplot(as_mcmc(burnin_data, select='alpha'))
-burn_df <- burnin_data %>%
+# Looking at Multichannel try3
+load(here::here('data', 'output', 'Task1_MultiChannelTry3.RData'), envir = (try1_e <- new.env()))
+sample_data <- try1_e$sampled
+mcmcplot(as_mcmc(sample_data, filter="sample"))
+mcmcplot(as_mcmc(sample_data, select='alpha', filter="sample"))
+sample_df <- sample_data %>%
   as_mcmc() %>%
   as_tibble()
-acc_drifts <- burn_df %>%
-  select(starts_with('v_acc')) %>%
-  summarise_all(mean) %>%
-  relocate(contains('_p_'))
-rej_drifts <- burn_df %>%
-  select(starts_with('v_rej')) %>%
-  summarise_all(mean) %>%
-  relocate(contains('_p_'))
-all_drifts <- bind_cols(acc_drifts, rej_drifts) %>%
-  pivot_longer(everything(), names_to = c('drift', 'response', 'attribute', 'salience'), names_sep="_") %>%
-  select(-drift) %>%
-  rename(drift=value)
 
-ggplot(all_drifts, mapping=aes(x=salience, y=drift)) +
-  geom_point() +
-  facet_grid(vars(response), vars(attribute))
-
-burn_df %>%
+sample_df %>%
   select(starts_with('v_')) %>%
   pivot_longer(
     everything(),
