@@ -11,7 +11,7 @@ if (! (displaytype %in% c("Absent", "Greyed"))) {
   stop("System Environment variable VDCE_DISPLAY should be defined")
 }
 
-cores <- Sys.getenv("PBS_NCPUS")
+cores <- Sys.getenv("NCPUS")
 if (cores == ""){
   cores = 1
 }
