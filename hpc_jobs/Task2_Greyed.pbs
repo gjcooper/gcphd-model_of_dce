@@ -1,6 +1,6 @@
 #!/bin/bash
-#PBS -l select=1:ncpus=34:mem=12gb
-#PBS -l walltime=12:00:00
+#PBS -l select=1:ncpus=18:mem=14gb
+#PBS -l walltime=24:00:00
 #PBS -k oe
 
 # Setup email notifications when the job is aborted(a), begins (b) or ends (e)
@@ -9,12 +9,12 @@
 
 
 source /etc/profile.d/modules.sh 
-module load R/3.6.3
+module load R/4.0.1
 
 cd $PBS_O_WORKDIR
 
 export VDCE_DISPLAY="Greyed"
-tag="Try1"
+tag="MultiChannelTry1"
 
 Rscript --no-save --no-restore Task2.R Task2_Greyed_$tag.RData > vdce_2_greyed_$tag.out 2> vdce_2_greyed_$tag.err
 
