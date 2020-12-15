@@ -1,9 +1,8 @@
 require(pmwg)
 require(rtdists)
+library(dplyr)
 library(MCMCpack)
-require(tidyverse)
-source(here::here("src", "read_expyriment.R"))
-source(here::here("src", "loglike.R"))
+devtools::load_all()
 
 #Get display to analyse
 displaytype <- Sys.getenv("VDCE_DISPLAY")
@@ -11,6 +10,12 @@ displaytype <- Sys.getenv("VDCE_DISPLAY")
 if (! (displaytype %in% c("Absent", "Greyed"))) {
   stop("System Environment variable VDCE_DISPLAY should be defined")
 }
+
+cores <- Sys.getenv("PBS_NCPUS")
+if (cores == ""){
+  cores = 1
+}
+
 #Get output filename
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
@@ -22,96 +27,52 @@ if (length(args) == 0) {
   }
 }
 outfile <- here::here("data", "output", args[1])
+infile <- paste0("Task2_preprocessed_", displaytype, ".RDS")
 
-cfix <- function(x) {
-  substr(x, 3, nchar(x) - 1)
-}
+task2_data <- readRDS(here::here("data", "output", infile))
 
-short_codes <- c(H = "High", L = "Low", D = "OutOfBounds")
-
-# Read in data, turn Correct column into logical
-# Get double target, single target and double distractor trials
-# Clean based on minimum % correct in all of four trial categories,
-# Clean the column names and drop rows with no response (NA values)
-# Clean values in the renamed columns too
-task2_data <- read.expyriment.data(here::here("data", "input", "Task2"), "S*") %>%
-  mutate(Correct = as.logical(Correct)) %>%
-  filter(Display == displaytype) %>%
+# Only accept trials
+# Create simplifed data for modelling with rtdists
+# add drift parameter names
+mod_data <- task2_data %>%
+  filter(acceptAND) %>%
+  transmute(
+    rt = RT / 1000,
+    subject = subject_id,
+    accept = as.numeric(Accept) + 1,
+    price = Price,
+    rating = Rating) %>%
   mutate(
-    price_match = PriceSalience %in% c("High", "Low"),
-    rating_match = RatingSalience %in% c("High", "Low")
-  ) %>%
-  mutate(trial_cat = case_when(
-    price_match & rating_match ~ "both",
-    price_match & !rating_match ~ "psing",
-    rating_match & !price_match ~ "rsing",
-    !(price_match | rating_match) ~ "neither"
-  )) %>%
-  group_by(subject_id, trial_cat) %>%
-  mutate(pc_correct = mean(Correct)) %>%
-  group_by(subject_id) %>%
-  filter(min(pc_correct) >= 0.8) %>%
-  rename(
-    PriceRatingOrder = `b'PriceRatingOrder' `,
-    GreyedItemDisplay = `b'GreyedItemDisplay' `,
-    AcceptRejectFocus = `b'AcceptRejectFocus' `
-  ) %>%
-  mutate(
-    PriceRatingOrder = fct_relabel(PriceRatingOrder, cfix),
-    GreyedItemDisplay = fct_relabel(GreyedItemDisplay, cfix),
-    AcceptRejectFocus = fct_relabel(AcceptRejectFocus, cfix)
-  ) %>%
-  mutate(
-    PriceSalience = fct_recode(PriceSalience, !!!short_codes),
-    RatingSalience = fct_recode(RatingSalience, !!!short_codes)
-  ) %>%
-  drop_na()
-
-# Two char labels for each cell of design,
-# first char is price, second is quality, H=High, L=Low, D=Distractor
-stim_levels <- c("HH", "HL", "HD", "LH", "LL", "LD", "DH", "DL", "DD")
-accept_trials <- task2_data %>% filter(AcceptRejectFocus == "Accept")
-mod_data <- data.frame(
-  rt = task2_data$RT / 1000,
-  subject = task2_data$subject_id,
-  response = as.numeric(task2_data$Correct) + 1,
-  cell = factor(
-    paste0(
-      as.character(task2_data$PriceSalience),
-      as.character(task2_data$RatingSalience)
-    ),
-    labels = stim_levels
+    v_acc_p = paste0("v_acc_p_", price),
+    v_rej_p = paste0("v_rej_p_", price),
+    v_acc_r = paste0("v_acc_r_", rating),
+    v_rej_r = paste0("v_rej_r_", rating)
   )
-)
-mod_data$v_pos <- paste0("v_pos_", mod_data$cell)
-mod_data$v_neg <- paste0("v_neg_", mod_data$cell)
 
-#< 0.3 participants were penalised, max trial length was 4.5 seconds
+# < 0.3 participants were penalised, max trial length was 4.5 seconds
 min_rt <- 0
 max_rt <- 4.5
 p_contam <- 0.02
 
-# Sum and difference of evidence rates for positive and negative accumulators
-sum_diff <- c("v_pos", "v_neg")
+acc_rej_drift <- c("v_acc_p", "v_acc_r", "v_rej_p", "v_rej_r")
+stim_levels <- c("H", "L", "D")
 
 parameters <- c(
   # Parallel mixture counts
   "alpha_IST", "alpha_IEX",
   # Coactive mixture probabilities
-  "alpha_CYST", "alpha_CYEX", "alpha_CNST", "alpha_CNEX", "alpha_CB",
+  "alpha_CB",
   # A - start point variability (sampled from U(0, A) where U is uniform dist)
   "A",
-  # b_pos - threshold for positive evidence accumulation
-  "b_pos",
-  # b_neg - threshold for negative evidence accumulation
-  "b_neg",
+  # b_acc - threshold to accept based on evidence accumulaton in channel
+  "b_acc",
+  # b_rej - threshold to reject based on evidence accumulation in channel
+  "b_rej",
   # t0 - residual time, bounded above by min response time for participant k
   "t0"
 )
-# beta and delta - 9 versions each for each of beta and delta,
-# corresponding to the 9 cells of the experimental design
 parameters <- c(parameters, apply(
-  expand.grid(sum_diff, stim_levels), 1, paste,
+  expand.grid(acc_rej_drift, stim_levels), 1, paste,
   collapse = "_"
 ))
 # Mixture counts should always come first
@@ -136,19 +97,17 @@ sampler <- pmwgs(
   prior = priors
 )
 
-start_mu <- c(0, 0, 0, 0, 0, 0, 0, .4, .2, .2, -2, rep(c(1.3, .3), 9))
-start_sig <- MCMCpack::riwish(sampler$n_pars * 2, diag(sampler$n_pars))
+sampler <- init(sampler)
 
-sampler <- init(sampler, start_mu = start_mu, start_sig = start_sig)
-
-burned <- run_stage(sampler, stage = "burn", iter = 2000, particles = 500, n_cores = 34)
+burned <- run_stage(sampler, stage = "burn", iter = 2000, particles = 500, n_cores = cores)
 
 save.image(outfile)
 
-adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 500, n_cores = 34)
+adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 500, n_cores = cores)
 
 save.image(outfile)
 
-sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = 34)
+sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = cores)
 
 save.image(outfile)
+
