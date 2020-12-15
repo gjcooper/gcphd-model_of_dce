@@ -2,8 +2,9 @@ library(coda)
 require(tidyverse)
 require(tcltk)
 require(pmwg)
+require(mcmcplots)
 
-get_data <- function() {
+get_data <- function(final_obj = 'sampled') {
   #Load in the data into the global environment
   f <- tkgetOpenFile(
           title = "RData file",
@@ -12,7 +13,7 @@ get_data <- function() {
 
   load(f, envir = (e <- new.env()))
 
-  sampled <- e$sampled
+  sampled <- e[[final_obj]]
   # *Assumes* final object is named sampled
   knitr::kable(table(sampled$samples$stage))
   sampled
@@ -150,6 +151,30 @@ recovery <- get_data()
 original <- get_data()
 compare(original, recovery)
 compare_data(original, recovery, "rt")
-look_at_alphas(sampled)
-look_at_alphas(sampled, relative=FALSE)
-plot_theta_mu(sampled)
+
+# Looking at Multichannel try3
+load(here::here('data', 'output', 'Task1_MultiChannelTry3.RData'), envir = (try1_e <- new.env()))
+sample_data <- try1_e$sampled
+mcmcplot(as_mcmc(sample_data, filter="sample"))
+mcmcplot(as_mcmc(sample_data, select='alpha', filter="sample"))
+sample_df <- sample_data %>%
+  as_mcmc() %>%
+  as_tibble()
+
+sample_df %>%
+  select(starts_with('v_')) %>%
+  pivot_longer(
+    everything(),
+    names_to = c('drift', 'response', 'attribute', 'salience'),
+    names_transform = list(
+      response = ~ readr::parse_factor(.x, levels=c('acc', 'rej')),
+      attribute = ~ readr::parse_factor(.x, levels=c('p', 'r')),
+      salience = ~ readr::parse_factor(.x, levels=c('H', 'L', 'D'))),
+    names_sep="_") %>%
+  select(-drift) %>%
+  rename(drift=value) %>%
+  mutate(
+   response = fct_recode(response, Accept = 'acc', Reject = "rej"),
+   attribute = fct_recode(attribute, Price = "p", Rating = "r")
+  ) %>%
+  ggplot(mapping=aes(x=salience, y=drift)) + geom_boxplot(aes(fill=salience)) + facet_grid(vars(response), vars(attribute))
