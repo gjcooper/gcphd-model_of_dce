@@ -33,13 +33,16 @@ plot_theta_mu <- function(plot_obj) {
 collect_samples <- function(plot_obj) {
   tmus <- as_mcmc(plot_obj, filter="sample")
   dimnames(tmus) <- list(NULL, plot_obj$par_names)
-  tmu_alphas <- tmus[, 1:7] %>% data.frame() %>% tibble()
+  tmu_alphas <- tmus %>% data.frame() %>% tibble() %>% select(starts_with("alpha"))
   tmu_alphas$subjectid <- 'theta_mu'
 
   as_mcmc(plot_obj, selection="alpha", filter="sample") %>%
     lapply(FUN = function(X) {
       dimnames(X) <- list(NULL, plot_obj$par_names)
-      data.frame(X[, 1:7])
+      X %>%
+        data.frame() %>%
+        tibble() %>%
+        select(starts_with("alpha"))
     }) %>%
   bind_rows(.id="subjectid") %>%
   tibble() %>%
@@ -53,7 +56,7 @@ collect_samples <- function(plot_obj) {
 #'
 #' @return None - side effect is the creation of the plot
 look_at_alphas <- function(plot_obj, relative=TRUE) {
-  medians <- collect(plot_obj) %>%
+  medians <- collect_samples(plot_obj) %>%
     group_by(subjectid) %>%
     summarise(across(.fns=median)) %>%
     mutate_at(vars(contains("alpha")), exp) %>%
@@ -153,6 +156,9 @@ compare(original, recovery)
 compare_data(original, recovery, "rt")
 
 # Looking at Multichannel try3
+ex1mct3 <- get_data()
+look_at_alphas(ex1mct3)
+
 load(here::here('data', 'output', 'Task1_MultiChannelTry3.RData'), envir = (try1_e <- new.env()))
 sample_data <- try1_e$sampled
 mcmcplot(as_mcmc(sample_data, filter="sample"))
@@ -160,6 +166,8 @@ mcmcplot(as_mcmc(sample_data, select='alpha', filter="sample"))
 sample_df <- sample_data %>%
   as_mcmc() %>%
   as_tibble()
+
+sample_data %>% as_mcmc() %>% data.frame() %>% tibble() %>% summarise_all(mean) %>% data.frame()
 
 sample_df %>%
   select(starts_with('v_')) %>%
@@ -178,3 +186,27 @@ sample_df %>%
    attribute = fct_recode(attribute, Price = "p", Rating = "r")
   ) %>%
   ggplot(mapping=aes(x=salience, y=drift)) + geom_boxplot(aes(fill=salience)) + facet_grid(vars(response), vars(attribute))
+
+sample_df %>%
+  select(starts_with('v_')) %>%
+  pivot_longer(
+    everything(),
+    names_to = c('drift', 'response', 'attribute', 'salience'),
+    names_transform = list(
+      response = ~ readr::parse_factor(.x, levels=c('acc', 'rej')),
+      attribute = ~ readr::parse_factor(.x, levels=c('p', 'r')),
+      salience = ~ readr::parse_factor(.x, levels=c('H', 'L', 'D'))),
+    names_sep="_") %>%
+  select(-drift) %>%
+  rename(drift=value) %>%
+  mutate(
+   response = fct_recode(response, Accept = 'acc', Reject = "rej"),
+   attribute = fct_recode(attribute, Price = "p", Rating = "r")
+  ) %>%
+  ggplot(mapping=aes(x=salience, y=drift)) + geom_boxplot(aes(fill=salience)) + facet_grid(vars(attribute), vars(response))
+
+ex2mct1_abs <- get_data()
+ex2mct1_grey <- get_data()
+look_at_alphas(ex2mct1_abs)
+look_at_alphas(ex2mct1_grey)
+
