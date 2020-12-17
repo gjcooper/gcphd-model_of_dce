@@ -1,9 +1,8 @@
 require(pmwg)
 require(rtdists)
+library(dplyr)
 library(MCMCpack)
-require(tidyverse)
-source(here::here("src", "read_expyriment.R"))
-source(here::here("src", "loglike.R"))
+devtools::load_all()
 
 outdir <- here::here("data", "output")
 load(file.path(outdir, "reboot_full.RData"), ex <- new.env())

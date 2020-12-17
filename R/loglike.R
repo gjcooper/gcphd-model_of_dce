@@ -44,28 +44,24 @@ ll_IST <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
 
 #' Independant Self Terminating random samples
 #'
-#' @param x The parameter vector
 #' @param data the data for one subject
+#' @inheritParams ll_IST
 #'
 #' @return A new data object with the same shape and new randomly drawn
 #'   responses and RT's.
-rll_IST <- function(x, data) {
-  data$response <- NA
-  data$rt <- NA
-  x <- exp(x)
-  x["b_acc"] <- x["b_acc"] + x["A"]
-  x["b_rej"] <- x["b_rej"] + x["A"]
-
+rll_IST <- function(rt, A, b_acc, b_rej, t0, drifts, accept, data) {
   for (row in seq_len(nrow(data))) {
-    pos <- rlba_norm(2, x[["A"]], x[["b_acc"]], x[["t0"]], x[[data$v_pos[row]]], 1)
-    neg <- rlba_norm(2, x[["A"]], x[["b_rej"]], x[["t0"]], x[[data$v_neg[row]]], 1)
-    minpos <- min(pos[, "rt"])
-    maxneg <- max(neg[, "rt"])
-    if (minpos < maxneg) {
-      data$rt[row] <- minpos
+    acc_price <- rlba_norm(1, A, b_acc, t0, drifts$AccPrice[[row]], 1)
+    acc_rating <- rlba_norm(1, A, b_acc, t0, drifts$AccRating[[row]], 1)
+    rej_price <- rlba_norm(1, A, b_rej, t0, drifts$RejPrice[[row]], 1)
+    rej_rating <- rlba_norm(1, A, b_rej, t0, drifts$RejRating[[row]], 1)
+    minacc <- min(acc_price[, "rt"], acc_rating[, "rt"])
+    maxrej <- max(rej_price[, "rt"], rej_rating[, "rt"])
+    if (minacc < maxrej) {
+      data$rt[row] <- minacc
       data$response[row] <- 2
     } else {
-      data$rt[row] <- maxneg
+      data$rt[row] <- maxrej
       data$response[row] <- 1
     }
   }
@@ -82,23 +78,52 @@ rll_IST <- function(x, data) {
 ll_IEX <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
   if (accept) {
     ll <- (dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
-            plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
-            dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
-            plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
-          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
-          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
+      plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
+      dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
+        plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+      (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+      (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
   } else {
     ll <- (dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
-            (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
-            dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
-            (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1))) *
-          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
-            plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
+      (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
+      dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
+        (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1))) *
+      (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+        plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
   }
   ll
 }
-rll_IEX <- function(x, data) {
-  stop("Not implemented yet")
+
+#' Independant Exhaustive random samples
+#'
+#' @param data the data for one subject
+#' @inheritParams ll_IST
+#'
+#' @return A new data object with the same shape and new randomly drawn
+#'   responses and RT's.
+rll_IEX <- function(rt, A, b_acc, b_rej, t0, drifts, accept, data) {
+  data$response <- NA
+  data$rt <- NA
+  x <- exp(x)
+  x["b_acc"] <- x["b_acc"] + x["A"]
+  x["b_rej"] <- x["b_rej"] + x["A"]
+
+  for (row in seq_len(nrow(data))) {
+    acc_price <- rlba_norm(1, A, b_acc, t0, drifts$AccPrice[[row]], 1)
+    acc_rating <- rlba_norm(1, A, b_acc, t0, drifts$AccRating[[row]], 1)
+    rej_price <- rlba_norm(1, A, b_rej, t0, drifts$RejPrice[[row]], 1)
+    rej_rating <- rlba_norm(1, A, b_rej, t0, drifts$RejRating[[row]], 1)
+    minacc <- max(acc_price[, "rt"], acc_rating[, "rt"])
+    maxrej <- min(rej_price[, "rt"], rej_rating[, "rt"])
+    if (maxacc < minrej) {
+      data$rt[row] <- minacc
+      data$response[row] <- 2
+    } else {
+      data$rt[row] <- maxrej
+      data$response[row] <- 1
+    }
+  }
+  data
 }
 
 
@@ -240,8 +265,35 @@ ll_CB <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
   }
   ll
 }
-rll_CB <- function(x, data) {
-  stop("Not implemented yet")
+
+#' Coactive Both random samples
+#'
+#' @param data the data for one subject
+#' @inheritParams ll_IST
+#'
+#' @return A new data object with the same shape and new randomly drawn
+#'   responses and RT's.
+rll_CB <- function(rt, A, b_acc, b_rej, t0, drifts, accept, data) {
+  data$response <- NA
+  data$rt <- NA
+  x <- exp(x)
+  x["b_acc"] <- x["b_acc"] + x["A"]
+  x["b_rej"] <- x["b_rej"] + x["A"]
+  acc_co_drifts <- drifts$AccPrice + drifts$AccRating
+  rej_co_drifts <- drifts$RejPrice + drifts$RejRating
+
+  for (row in seq_len(nrow(data))) {
+    acc_coactive <- rlba_norm(1, 2*A, 2*b_acc, t0, acc_co_drifts[[row]], sqrt(2))
+    rej_coactive <- rlba_norm(1, 2*A, 2*b_rej, t0, rej_co_drifts[[row]], sqrt(2))
+    if (acc_coactive < rej_coactive) {
+      data$rt[row] <- acc_coactive
+      data$response[row] <- 2
+    } else {
+      data$rt[row] <- rej_coactive
+      data$response[row] <- 1
+    }
+  }
+  data
 }
 
 ll_funcs <- c(ll_IST, ll_IEX, ll_CB)
@@ -269,19 +321,58 @@ model_wrapper <- function(x, data, model) {
   t0 <- x["t0"]
   b_acc <- x["b_acc"]
   b_rej <- x["b_rej"]
-  acc_drifts = tibble(
+  acc_drifts <- tibble(
     AccPrice = x[adat$v_acc_p],
     RejPrice = x[adat$v_rej_p],
     AccRating = x[adat$v_acc_r],
     RejRating = x[adat$v_rej_r]
   )
-  rej_drifts = tibble(
+  rej_drifts <- tibble(
     AccPrice = x[rdat$v_acc_p],
     RejPrice = x[rdat$v_rej_p],
     AccRating = x[rdat$v_acc_r],
     RejRating = x[rdat$v_rej_r]
   )
 
+  accept <- switch(
+    nrow(adat) != 0,
+    model(adat$rt, A, b_acc, b_rej, t0, acc_drifts, 1)
+  )
+  reject <- switch(
+    nrow(rdat) != 0,
+    model(rdat$rt, A, b_acc, b_rej, t0, rej_drifts, 1)
+  )
+  c(accept, reject)
+}
+
+#' Wrapper for individual model log likelihood function
+#'
+#' This function performs some common steps such as rearrangeing the data
+#' pulling out parameter items into variable and combining the results of
+#' applying to model to different subsets of the data (accept and reject
+#' responses)
+#'
+#' @inheritParams dirichlet_mix_ll
+#' @param model The model to be wrapped and returned
+#'
+#' @return The log of the likelihood for the data under parameter values x
+rmodel_wrapper <- function(x, data, model) {
+  data$response <- NA
+  data$rt <- NA
+  x <- exp(x)
+  x["b_acc"] <- x["b_acc"] + x["A"]
+  x["b_rej"] <- x["b_rej"] + x["A"]
+
+  A <- x["A"] # nolint
+  t0 <- x["t0"]
+  b_acc <- x["b_acc"]
+  b_rej <- x["b_rej"]
+  drifts <- tibble(
+    AccPrice = x[data$v_acc_p],
+    RejPrice = x[data$v_rej_p],
+    AccRating = x[data$v_acc_r],
+    RejRating = x[data$v_rej_r]
+  )
   accept <- switch(
     nrow(adat) != 0,
     model(adat$rt, A, b_acc, b_rej, t0, acc_drifts, 1)

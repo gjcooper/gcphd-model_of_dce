@@ -4,12 +4,28 @@
 \alias{rll_IST}
 \title{Independant Self Terminating random samples}
 \usage{
-rll_IST(x, data)
+rll_IST(rt, A, b_acc, b_rej, t0, drifts, accept, data)
 }
 \arguments{
-\item{x}{The parameter vector}
+\item{rt}{A vector of response times}
+
+\item{A}{Start point variability}
+
+\item{b_acc}{positive evidence threshold}
+
+\item{b_rej}{negative evidence threshold}
+
+\item{t0}{non decision time parameter}
+
+\item{drifts}{An array of drift rates, 4 x length(rt) with the columns being
+vectors of drift rates for accept price, reject price, accept rating,
+reject rating respectively}
+
+\item{accept}{Whether we are looking at accept or reject trials}
 
 \item{data}{the data for one subject}
+
+\item{x}{The parameter vector}
 }
 \value{
 A new data object with the same shape and new randomly drawn
