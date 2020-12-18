@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -l select=1:ncpus=20:mem=14gb
+#PBS -l select=1:ncpus=15:mem=14gb
 #PBS -l walltime=24:00:00
 #PBS -k oe
 
@@ -14,8 +14,8 @@ module load R/4.0.1
 cd $PBS_O_WORKDIR
 
 export VDCE_DISPLAY="Absent"
-tag="MultiChannelTry1"
+tag="CorrectedTry1"
 
-Rscript --no-save --no-restore src/model_estimation_Exp2.R Task2_Absent_$tag.RData > vdce_2_absent_$tag.out 2> vdce_2_absent_$tag.err
+Rscript --no-save --no-restore src/model_estimation_Exp2.R $tag > vdce_2_absent_$tag.out 2> vdce_2_absent_$tag.err
 
 exit 0

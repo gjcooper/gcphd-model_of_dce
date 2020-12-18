@@ -12,8 +12,8 @@ source /etc/profile.d/modules.sh
 module load R/4.0.1
 
 cd $PBS_O_WORKDIR
-tag="MultiChannelTry3"
+tag="CorrectedTry1"
 
-Rscript --no-save --no-restore src/model_estimation_Exp1.R Task1_$tag.RData > vdce_1_$tag.out 2> vdce_1_$tag.err
+Rscript --no-save --no-restore src/model_estimation_Exp1.R $tag > vdce_1_$tag.out 2> vdce_1_$tag.err
 
 exit 0
