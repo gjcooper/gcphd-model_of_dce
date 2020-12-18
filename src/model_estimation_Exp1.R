@@ -4,25 +4,30 @@ library(dplyr)
 library(MCMCpack)
 devtools::load_all()
 
+cores <- Sys.getenv("NCPUS")
+if (cores == ""){
+  cores = 1
+}
 
 # Get output filename
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
-  tag="untagged"
-else {
-  tag=args[1]
+  tag="_untagged"
+} else {
+  tag=paste0("_", args[1])
 }
 
 jobid <- Sys.getenv()["PBS_JOBID"]
 if (is.na(jobid)) {
-  filename <- tempfile(pattern = "Task1_", tmpdir = ".", fileext = "")
+  filename <- tempfile(pattern = "Task1_", tmpdir = ".", fileext = tag)
 } else {
-  filename <- paste0("Task1_", jobid)
+  filename <- paste0("Task1_", jobid, tag)
 }
 
 outfile <- here::here("data", "output", paste0(filename, ".RData"))
 
-task1_data <- readRDS(here::here("data", "output", "Task1_preprocessed.RDS"))
+infile <- "Task1_preprocessed.RDS"
+task1_data <- readRDS(here::here("data", "output", infile))
 
 # Only accept trials
 # Create simplifed data for modelling with rtdists
@@ -92,15 +97,15 @@ sampler <- pmwgs(
 
 sampler <- init(sampler)
 
-burned <- run_stage(sampler, stage = "burn", iter = 2000, particles = 500, n_cores = 26)
+burned <- run_stage(sampler, stage = "burn", iter = 2000, particles = 500, n_cores = cores)
 
 save.image(outfile)
 
-adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 500, n_cores = 26)
+adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 500, n_cores = cores)
 
 save.image(outfile)
 
-sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = 26)
+sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = cores)
 
 save.image(outfile)
 

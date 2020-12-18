@@ -16,19 +16,24 @@ if (cores == ""){
   cores = 1
 }
 
-#Get output filename
+# Get output filename
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
-  jobid <- Sys.getenv()["PBS_JOBID"]
-  if (is.na(jobid)) {
-    args[1] <- tempfile(pattern = paste0("Task2_", displaytype, "_"), tmpdir = ".", fileext = ".RData")
-  } else {
-    args[1] <- paste0("Task2_", displaytype, "_", jobid, ".RData")
-  }
+  tag="_untagged"
+} else {
+  tag=paste0("_", args[1])
 }
-outfile <- here::here("data", "output", args[1])
-infile <- paste0("Task2_preprocessed_", displaytype, ".RDS")
 
+jobid <- Sys.getenv()["PBS_JOBID"]
+if (is.na(jobid)) {
+  filename <- tempfile(pattern = paste0("Task2_", displaytype, "_"), tmpdir = ".", fileext = tag)
+} else {
+  filename <- paste0("Task2_", displaytype, "_", jobid, tag)
+}
+
+outfile <- here::here("data", "output", paste0(filename, ".RData"))
+
+infile <- paste0("Task2_preprocessed_", displaytype, ".RDS")
 task2_data <- readRDS(here::here("data", "output", infile))
 
 # Only accept trials
