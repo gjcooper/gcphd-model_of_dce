@@ -49,7 +49,7 @@ ll_IST <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
 #'
 #' @return A new data object with the same shape and new randomly drawn
 #'   responses and RT's.
-rll_IST <- function(rt, A, b_acc, b_rej, t0, drifts, accept, data) {
+rll_IST <- function(data, A, b_acc, b_rej, t0, drifts) {
   for (row in seq_len(nrow(data))) {
     acc_price <- rlba_norm(1, A, b_acc, t0, drifts$AccPrice[[row]], 1)
     acc_rating <- rlba_norm(1, A, b_acc, t0, drifts$AccRating[[row]], 1)
@@ -101,7 +101,7 @@ ll_IEX <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
 #'
 #' @return A new data object with the same shape and new randomly drawn
 #'   responses and RT's.
-rll_IEX <- function(rt, A, b_acc, b_rej, t0, drifts, accept, data) {
+rll_IEX <- function(data, A, b_acc, b_rej, t0, drifts) {
   data$response <- NA
   data$rt <- NA
   x <- exp(x)
@@ -273,7 +273,7 @@ ll_CB <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
 #'
 #' @return A new data object with the same shape and new randomly drawn
 #'   responses and RT's.
-rll_CB <- function(rt, A, b_acc, b_rej, t0, drifts, accept, data) {
+rll_CB <- function(data, A, b_acc, b_rej, t0, drifts) {
   data$response <- NA
   data$rt <- NA
   x <- exp(x)
@@ -319,8 +319,9 @@ model_wrapper <- function(x, data, model) {
 
   A <- x["A"] # nolint
   t0 <- x["t0"]
-  b_acc <- x["b_acc"]
-  b_rej <- x["b_rej"]
+  # Enforces b cannot be less than A, b parameter is thus threshold - A
+  b_acc <- x["b_acc"] + A
+  b_rej <- x["b_rej"] + A
   acc_drifts <- tibble(
     AccPrice = x[adat$v_acc_p],
     RejPrice = x[adat$v_rej_p],
@@ -360,28 +361,20 @@ rmodel_wrapper <- function(x, data, model) {
   data$response <- NA
   data$rt <- NA
   x <- exp(x)
-  x["b_acc"] <- x["b_acc"] + x["A"]
-  x["b_rej"] <- x["b_rej"] + x["A"]
 
   A <- x["A"] # nolint
   t0 <- x["t0"]
-  b_acc <- x["b_acc"]
-  b_rej <- x["b_rej"]
+  # Enforces b cannot be less than A, b parameter is thus threshold - A
+  b_acc <- x["b_acc"] + A
+  b_rej <- x["b_rej"] + A
   drifts <- tibble(
     AccPrice = x[data$v_acc_p],
     RejPrice = x[data$v_rej_p],
     AccRating = x[data$v_acc_r],
     RejRating = x[data$v_rej_r]
   )
-  accept <- switch(
-    nrow(adat) != 0,
-    model(adat$rt, A, b_acc, b_rej, t0, acc_drifts, 1)
-  )
-  reject <- switch(
-    nrow(rdat) != 0,
-    model(rdat$rt, A, b_acc, b_rej, t0, rej_drifts, 1)
-  )
-  c(accept, reject)
+  # Return newly generated data
+  model(data, A, b_acc, b_rej, t0, drifts)
 }
 
 
@@ -424,10 +417,6 @@ dirichlet_mix_ll <- function(x, data) {
     return(-1e10)
   }
 
-  # Enforces b cannot be less than A, b parameter is thus threshold - A
-  x["b_acc"] <- x["b_acc"] + x["A"]
-  x["b_rej"] <- x["b_rej"] + x["A"]
-
   # all decision rules
   rdev <- MCMCpack::rdirichlet(1, x[mix_counts])
   func_idx <- sample(mix_counts, 1, prob = rdev)
@@ -468,10 +457,6 @@ dirichlet_mix_ll <- function(x, data) {
 #' @return The log of the likelihood for the data under parameter values x
 single_model_ll <- function(x, data) {
   x <- exp(x)
-
-  # Enforces b cannot be less than A, b parameter is thus threshold - A
-  x["b_acc"] <- x["b_acc"] + x["A"]
-  x["b_rej"] <- x["b_rej"] + x["A"]
 
   # all decision rules
   func_idx <- match(architecture, ll_names)
