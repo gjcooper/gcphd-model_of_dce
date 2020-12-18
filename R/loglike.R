@@ -337,11 +337,11 @@ model_wrapper <- function(x, data, model) {
 
   accept <- switch(
     nrow(adat) != 0,
-    model(adat$rt, A, b_acc, b_rej, t0, acc_drifts, 1)
+    model(adat$rt, A, b_acc, b_rej, t0, acc_drifts, TRUE)
   )
   reject <- switch(
     nrow(rdat) != 0,
-    model(rdat$rt, A, b_acc, b_rej, t0, rej_drifts, 1)
+    model(rdat$rt, A, b_acc, b_rej, t0, rej_drifts, FALSE)
   )
   c(accept, reject)
 }
