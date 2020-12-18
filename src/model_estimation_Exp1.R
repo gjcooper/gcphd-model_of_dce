@@ -8,14 +8,19 @@ devtools::load_all()
 # Get output filename
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
-  jobid <- Sys.getenv()["PBS_JOBID"]
-  if (is.na(jobid)) {
-    args[1] <- tempfile(pattern = "Task1_", tmpdir = ".", fileext = ".RData")
-  } else {
-    args[1] <- paste0("Task1_", jobid, ".RData")
-  }
+  tag="untagged"
+else {
+  tag=args[1]
 }
-outfile <- here::here("data", "output", args[1])
+
+jobid <- Sys.getenv()["PBS_JOBID"]
+if (is.na(jobid)) {
+  filename <- tempfile(pattern = "Task1_", tmpdir = ".", fileext = "")
+} else {
+  filename <- paste0("Task1_", jobid)
+}
+
+outfile <- here::here("data", "output", paste0(filename, ".RData"))
 
 task1_data <- readRDS(here::here("data", "output", "Task1_preprocessed.RDS"))
 
