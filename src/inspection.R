@@ -155,12 +155,11 @@ original <- get_data()
 compare(original, recovery)
 compare_data(original, recovery, "rt")
 
-# Looking at Multichannel try3
+# Looking at Task1
 ex1mct3 <- get_data()
 look_at_alphas(ex1mct3)
 
-load(here::here('data', 'output', 'Task1_MultiChannelTry3.RData'), envir = (try1_e <- new.env()))
-sample_data <- try1_e$sampled
+sample_data <- ex1mct3
 mcmcplot(as_mcmc(sample_data, filter="sample"))
 mcmcplot(as_mcmc(sample_data, select='alpha', filter="sample"))
 sample_df <- sample_data %>%
