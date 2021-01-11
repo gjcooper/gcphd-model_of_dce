@@ -4,7 +4,7 @@ require(tcltk)
 require(pmwg)
 require(mcmcplots)
 
-get_data <- function(final_obj = 'sampled') {
+get_data <- function(final_obj = "sampled") {
   #Load in the data into the global environment
   f <- tkgetOpenFile(
           title = "RData file",
@@ -13,40 +13,27 @@ get_data <- function(final_obj = 'sampled') {
 
   load(f, envir = (e <- new.env()))
 
-  sampled <- e[[final_obj]]
-  # *Assumes* final object is named sampled
-  knitr::kable(table(sampled$samples$stage))
-  sampled
+  e[[final_obj]]
 }
 
-#' Plot the model parameter estimates from the sample stage.
-#'
-#' @param plot_obj The pmwgs object containing the estimates
-#'
-#' @return Nothing, side effect is it creates a plot
-plot_theta_mu <- function(plot_obj) {
-  samples <- as_mcmc(plot_obj, filter="sample")
-  dimnames(samples) <- list(NULL,plot_obj$par_names)
-  plot(samples, smooth=TRUE)
-}
+extract_alphas <- function(plot_obj) {
+  tmu_alphas <- plot_obj %>%
+    as_mcmc(filter = "sample") %>%
+    data.frame() %>%
+    tibble() %>%
+    select(starts_with("alpha")) %>%
+    mutate(subjectid = "theta_mu")
 
-collect_samples <- function(plot_obj) {
-  tmus <- as_mcmc(plot_obj, filter="sample")
-  dimnames(tmus) <- list(NULL, plot_obj$par_names)
-  tmu_alphas <- tmus %>% data.frame() %>% tibble() %>% select(starts_with("alpha"))
-  tmu_alphas$subjectid <- 'theta_mu'
-
-  as_mcmc(plot_obj, selection="alpha", filter="sample") %>%
-    lapply(FUN = function(X) {
-      dimnames(X) <- list(NULL, plot_obj$par_names)
-      X %>%
+  as_mcmc(plot_obj, selection = "alpha", filter = "sample") %>%
+    lapply(FUN = function(x) {
+      x %>%
         data.frame() %>%
         tibble() %>%
         select(starts_with("alpha"))
     }) %>%
-  bind_rows(.id="subjectid") %>%
-  tibble() %>%
-  rbind(tmu_alphas)
+    bind_rows(.id = "subjectid") %>%
+    tibble() %>%
+    rbind(tmu_alphas)
 }
 
 #' Plot the evidence for each model by subject
@@ -55,7 +42,7 @@ collect_samples <- function(plot_obj) {
 #' @param relative - Whether to plot the evidence as relative or absolute
 #'
 #' @return None - side effect is the creation of the plot
-look_at_alphas <- function(plot_obj, relative=TRUE) {
+plot_alphas <- function(plot_obj, relative=TRUE) {
   medians <- collect_samples(plot_obj) %>%
     group_by(subjectid) %>%
     summarise(across(.fns=median)) %>%
