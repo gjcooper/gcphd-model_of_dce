@@ -5,11 +5,14 @@ library(MCMCpack)
 devtools::load_all()
 
 outdir <- here::here("data", "output")
-load(file.path(outdir, "reboot_full.RData"), ex <- new.env())
-medians <- readRDS(file.path(outdir, "median_alpha_exp1.RDS"))
 
-model_data <- ex$sampled$data %>%
-  tibble()
+get_estimation_data <- function(filename) {
+  load(file.path(outdir, filename), ex <- new.env())
+  ex$sampled$data %>%
+    tibble()
+}
+
+medians <- readRDS(file.path(outdir, "median_alpha_exp1.RDS"))
 
 test_model <- "IST"
 
@@ -17,17 +20,21 @@ sample_func <- rll_funcs[[match(test_model, ll_names)]]
 
 # Get output filename
 args <- commandArgs(trailingOnly = TRUE)
-file_prefix <- paste0("Exp1_Recovery_", test_model, "_")
 if (length(args) == 0) {
-  jobid <- Sys.getenv()["PBS_JOBID"]
-  if (is.na(jobid)) {
-    args[1] <- tempfile(pattern = file_prefix, tmpdir = ".")
-  } else {
-    args[1] <- paste0(file_prefix, jobid)
-  }
+  tag <- paste0("_untagged_recovery_", test_model)
+} else {
+  tag <- paste0("_", args[1], "_recovery_", test_model)
 }
-outfile <- file.path(outdir, paste0(args[1], ".RData"))
-datafile <- file.path(outdir, paste0(args[1], "_data.RDS"))
+
+jobid <- Sys.getenv()["PBS_JOBID"]
+if (is.na(jobid)) {
+  filename <- tempfile(pattern = "Task1_", tmpdir = ".", fileext = tag)
+} else {
+  filename <- paste0("Task1_", jobid, tag)
+}
+
+outfile <- here::here("data", "output", paste0(filename, ".RData"))
+datafile <- here::here("data", "output", paste0(filename, "_data.RDS"))
 
 subjects <- unique(model_data$subject)
 
