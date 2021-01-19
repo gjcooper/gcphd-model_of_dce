@@ -296,9 +296,11 @@ rll_CB <- function(data, A, b_acc, b_rej, t0, drifts) {
   data
 }
 
-ll_funcs <- c(ll_IST, ll_IEX, ll_CB)
-rll_funcs <- c(rll_IST, rll_IEX, rll_CB)
-ll_names <- c("IST", "IEX", "CB")
+ll_funcs <- list(
+  IST = list(likelihood = ll_IST, sample = rll_IST),
+  IEX = list(likelihood = ll_IEX, sample = rll_IEX),
+  CB = list(likelihood = ll_CB, sample = rll_CB)
+)
 
 
 #' Wrapper for individual model log likelihood function
@@ -420,7 +422,7 @@ dirichlet_mix_ll <- function(x, data) {
   # all decision rules
   rdev <- MCMCpack::rdirichlet(1, x[mix_counts])
   func_idx <- sample(mix_counts, 1, prob = rdev)
-  ll_func <- ll_funcs[[func_idx]]
+  ll_func <- ll_funcs[[func_idx]]$likelihood
   trial_ll <- model_wrapper(x, data, ll_func)
   new_like <- (1 - p_contam) * trial_ll +
     p_contam * (stats::dunif(data$rt, min_rt, max_rt) / 2)
