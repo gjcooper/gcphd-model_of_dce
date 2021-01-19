@@ -4,35 +4,57 @@ library(dplyr)
 library(MCMCpack)
 devtools::load_all()
 
+# For debugging:
+# Sys.setenv(DCE_EST_EXP="NumericVDCE")
+# Sys.setenv(DCE_EST_EXP="SymbolicVDCE", VDCE_DISPLAY="Absent")
+# Get experiment to model
+experiment <- Sys.getenv("DCE_EST_EXP")
+if (! (experiment %in% c("NumericVDCE", "SymbolicVDCE"))) {
+  stop("System Environment Variable DCE_EST_EXP not defined or unknown value")
+}
+
+if (experiment == "NumericVDCE") {
+  fileprefix <- "NumericVDCE_"
+  infile <- "Task1_preprocessed.RDS"
+} else if (experiment == "SymbolicVDCE") {
+  #Get display to analyse
+  displaytype <- Sys.getenv("VDCE_DISPLAY")
+  # If VDCE_DISPLAY not defined should error out
+  if (! (displaytype %in% c("Absent", "Greyed"))) {
+    stop("System Environment variable VDCE_DISPLAY should be defined")
+  }
+  fileprefix <- paste0("SymbolicVDCE_", displaytype, "_")
+  infile <- paste0("Task2_preprocessed_", displaytype, ".RDS")
+}
+
 cores <- Sys.getenv("NCPUS")
-if (cores == ""){
-  cores = 1
+if (cores == "") {
+  cores <- 1
 }
 
 # Get output filename
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
-  tag="_untagged"
+  tag <- "_untagged"
 } else {
-  tag=paste0("_", args[1])
+  tag <- paste0("_", args[1])
 }
 
-jobid <- Sys.getenv()["PBS_JOBID"]
-if (is.na(jobid)) {
-  filename <- tempfile(pattern = "Task1_", tmpdir = ".", fileext = tag)
+jobid <- Sys.getenv("PBS_JOBID")
+if (jobid == "") {
+  filename <- tempfile(pattern = fileprefix, tmpdir = ".", fileext = tag)
 } else {
-  filename <- paste0("Task1_", jobid, tag)
+  filename <- paste0(fileprefix, jobid, tag)
 }
 
 outfile <- here::here("data", "output", paste0(filename, ".RData"))
 
-infile <- "Task1_preprocessed.RDS"
-task1_data <- readRDS(here::here("data", "output", infile))
+cleaned_data <- readRDS(here::here("data", "output", infile))
 
 # Only accept trials
 # Create simplifed data for modelling with rtdists
 # add drift parameter names
-mod_data <- task1_data %>%
+mod_data <- cleaned_data %>%
   filter(acceptAND) %>%
   transmute(
     rt = RT / 1000,
@@ -108,4 +130,3 @@ save.image(outfile)
 sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = cores)
 
 save.image(outfile)
-
