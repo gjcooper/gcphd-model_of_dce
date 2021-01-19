@@ -2,53 +2,46 @@ require(pmwg)
 require(rtdists)
 library(dplyr)
 library(MCMCpack)
+library(stringi)
 devtools::load_all()
 
 # For debugging:
 # Sys.setenv(DCE_EST_EXP="NumericVDCE")
-# Sys.setenv(DCE_EST_EXP="SymbolicVDCE", VDCE_DISPLAY="Absent")
-# Get experiment to model
-experiment <- Sys.getenv("DCE_EST_EXP")
+Sys.setenv(DCE_EST_EXP="SymbolicVDCE", VDCE_DISPLAY="Absent", NCPUS=3)
+# Get environment variables to normal vars
+known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG")
+envars <- as.list(Sys.getenv(known_vars))
+experiment <- envars$DCE_EST_EXP
+displaytype <- envars$VDCE_DISPLAY
+cores <- ifelse(envars$NCPUS == "", 1, as.numeric(envars$NCPUS))
+jobid <- ifelse(
+  envars$PBS_JOBID == "",
+  stri_rand_strings(1, 12),
+  envars$PBS_JOBID
+)
+tag <- ifelse(envars$VDCE_TAG == "", "untagged", envars$VDCE_TAG)
+
+
+#Tests
+
 if (! (experiment %in% c("NumericVDCE", "SymbolicVDCE"))) {
   stop("System Environment Variable DCE_EST_EXP not defined or unknown value")
 }
 
+# Experiment specific details/checks
 if (experiment == "NumericVDCE") {
-  fileprefix <- "NumericVDCE_"
+  filename <- paste(experiment, jobid, tag, sep = "_")
   infile <- "Task1_preprocessed.RDS"
 } else if (experiment == "SymbolicVDCE") {
-  #Get display to analyse
-  displaytype <- Sys.getenv("VDCE_DISPLAY")
-  # If VDCE_DISPLAY not defined should error out
   if (! (displaytype %in% c("Absent", "Greyed"))) {
     stop("System Environment variable VDCE_DISPLAY should be defined")
   }
-  fileprefix <- paste0("SymbolicVDCE_", displaytype, "_")
+  filename <- paste(experiment, displaytype, jobid, tag, sep = "_")
   infile <- paste0("Task2_preprocessed_", displaytype, ".RDS")
 }
 
-cores <- Sys.getenv("NCPUS")
-if (cores == "") {
-  cores <- 1
-}
-
-# Get output filename
-args <- commandArgs(trailingOnly = TRUE)
-if (length(args) == 0) {
-  tag <- "_untagged"
-} else {
-  tag <- paste0("_", args[1])
-}
-
-jobid <- Sys.getenv("PBS_JOBID")
-if (jobid == "") {
-  filename <- tempfile(pattern = fileprefix, tmpdir = ".", fileext = tag)
-} else {
-  filename <- paste0(fileprefix, jobid, tag)
-}
-
+# Get output filename and input data
 outfile <- here::here("data", "output", paste0(filename, ".RData"))
-
 cleaned_data <- readRDS(here::here("data", "output", infile))
 
 # Only accept trials
