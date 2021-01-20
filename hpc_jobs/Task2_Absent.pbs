@@ -2,6 +2,7 @@
 #PBS -l select=1:ncpus=15:mem=14gb
 #PBS -l walltime=24:00:00
 #PBS -k oe
+#PBS -v DCE_EST_EXP=SymbolicVDCE,VDCE_DISPLAY=Absent,VDCE_TAG=TestDevPMWG
 
 # Setup email notifications when the job is aborted(a), begins (b) or ends (e)
 #PBS -M gavin@gavincooper.net
@@ -13,9 +14,6 @@ module load R/4.0.1
 
 cd $PBS_O_WORKDIR
 
-export VDCE_DISPLAY="Absent"
-tag="CorrectedTry1"
-
-Rscript --no-save --no-restore src/model_estimation_Exp2.R $tag > vdce_2_absent_$tag.out 2> vdce_2_absent_$tag.err
+Rscript --no-save --no-restore src/model_estimation_Exp1.R > vdce_2_absent_$VDCE_TAG.out 2> vdce_2_absent_$VDCE_TAG.err
 
 exit 0
