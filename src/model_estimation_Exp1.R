@@ -7,7 +7,7 @@ devtools::load_all()
 
 # For debugging:
 # Sys.setenv(DCE_EST_EXP="NumericVDCE")
-Sys.setenv(DCE_EST_EXP="SymbolicVDCE", VDCE_DISPLAY="Absent", NCPUS=3)
+# Sys.setenv(DCE_EST_EXP="SymbolicVDCE", VDCE_DISPLAY="Absent", NCPUS=3)
 # Get environment variables to normal vars
 known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG")
 envars <- as.list(Sys.getenv(known_vars))
