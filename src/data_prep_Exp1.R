@@ -19,7 +19,9 @@ short_codes <- c(H = "High", L = "Low", D = "OutOfBounds")
 # Clean based on minimum % correct in all of four trial categories,
 # Drop rows with no response (NA values)
 # 
-task1_data <- read_expyriment_data(here::here("data", "input", "Task1"), "S*") %>%
+
+raw_data <- read_expyriment_data(here::here("data", "input", "Task1"), "S*")
+task1_data <- raw_data %>%
   filter(BlockName != "Practice Block") %>%
   rename(
     PriceRatingOrder = `b'PriceRatingOrder' `,
@@ -65,6 +67,9 @@ task1_data <- read_expyriment_data(here::here("data", "input", "Task1"), "S*") %
     !acceptRight & !RespRight ~ TRUE,
     TRUE ~ FALSE)
   )
+
+task1_data %>%
+  filter(acceptAND)
 
 # task1_data %>%
 #   filter(trial_cat != "both") %>%
