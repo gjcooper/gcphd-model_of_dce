@@ -140,7 +140,6 @@ compare_data(original, recovery, "rt")
 
 # Looking at Task1
 ex1mct3 <- get_data()
-look_at_alphas(ex1mct3)
 
 sample_data <- ex1mct3
 mcmcplot(as_mcmc(sample_data, filter = "sample"))
@@ -199,8 +198,3 @@ sample_df %>%
   ggplot(mapping = aes(x = salience, y = drift)) +
   geom_boxplot(aes(fill = salience)) +
   facet_grid(vars(attribute), vars(response))
-
-ex2mct1_abs <- get_data()
-ex2mct1_grey <- get_data()
-look_at_alphas(ex2mct1_abs)
-look_at_alphas(ex2mct1_grey)

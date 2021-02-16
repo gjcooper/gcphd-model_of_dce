@@ -48,7 +48,6 @@ cleaned_data <- readRDS(here::here("data", "output", infile))
 # Create simplifed data for modelling with rtdists
 # add drift parameter names
 mod_data <- cleaned_data %>%
-  filter(acceptAND) %>%
   transmute(
     rt = RT / 1000,
     subject = subject_id,

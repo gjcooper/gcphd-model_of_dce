@@ -1,6 +1,7 @@
 library(tidyr)
 library(dplyr)
 library(forcats)
+library(ggplot2)
 devtools::load_all()
 
 
@@ -21,7 +22,7 @@ short_codes <- c(H = "High", L = "Low", D = "OutOfBounds")
 # 
 
 raw_data <- read_expyriment_data(here::here("data", "input", "Task1"), "S*")
-task1_data <- raw_data %>%
+reformatted_data <- raw_data %>%
   filter(BlockName != "Practice Block") %>%
   rename(
     PriceRatingOrder = `b'PriceRatingOrder' `,
@@ -49,32 +50,81 @@ task1_data <- raw_data %>%
     rating_match & !price_match ~ "rsing",
     !(price_match | rating_match) ~ "neither"
   )) %>%
-  group_by(subject_id, trial_cat) %>%
-  mutate(pc_correct = mean(Correct)) %>%
-  group_by(subject_id) %>%
-  filter(min(pc_correct) >= 0.8) %>%
-  drop_na() %>%
+  tibble() %>%
   mutate(
     acceptAND = AcceptRejectFocus == "Accept",
-    acceptRight = ResponseCounterbalancing == "RIGHT (/)"
+    acceptRight = ResponseCounterbalancing == "RIGHT (/)",
+    RespRight = Button == "RIGHT"
   ) %>%
-  select(-c(BlockName, ResponseCounterbalancing, AcceptRejectFocus, pc_correct,
-            price_match, rating_match)) %>%
   rename(Price = PriceSalience, Rating = RatingSalience) %>%
-  mutate(RespRight = Button == "RIGHT") %>%
   mutate(Accept = case_when(
     acceptRight & RespRight ~ TRUE,
     !acceptRight & !RespRight ~ TRUE,
     TRUE ~ FALSE)
-  )
+  ) %>%
+  select(
+    -c(
+      ResponseCounterbalancing, AcceptRejectFocus,
+      price_match, rating_match,
+      acceptRight, RespRight
+    )
+  ) %>%
+  mutate(subject_id = factor(subject_id))
 
-task1_data %>%
+# Plot NA per subject
+reformatted_data %>%
+  filter_all(any_vars(is.na(.))) %>%
+  count(subject_id) %>%
+  ggplot(map = aes(x = subject_id, y = n)) + geom_col()
+
+responded_trials <- reformatted_data %>%
+  drop_na()
+
+responded_trials
+
+filtered_by_trial_category <- responded_trials %>%
+  group_by(subject_id, trial_cat) %>%
+  mutate(pc_correct = mean(Correct)) %>%
+  group_by(subject_id) %>%
+  filter(min(pc_correct) >= 0.8) %>%
   filter(acceptAND)
 
-# task1_data %>%
-#   filter(trial_cat != "both") %>%
-#   sample_n(1) %>%
-#   head() %>%
-#   data.frame()
+filtered_by_trial_category
 
-saveRDS(task1_data, file=here::here("data", "output", "Task1_preprocessed.RDS"))
+filtered_by_global_correct <- responded_trials %>%
+  group_by(subject_id) %>%
+  filter(mean(Correct) >= 0.8) %>%
+  filter(acceptAND)
+
+filtered_by_global_correct
+
+responded_trials %>%
+  group_by(subject_id) %>%
+  mutate(pc_correct = mean(Correct)) %>%
+  ungroup() %>%
+  mutate(subject_id = fct_reorder(subject_id, pc_correct)) %>%
+  ggplot(map = aes(x=subject_id, y=pc_correct, colour=acceptAND)) +
+  geom_point() +
+  scale_x_discrete() +
+  geom_hline(yintercept=0.8) + geom_hline(yintercept=0.75, linetype = "dashed")
+
+responded_trials %>%
+  group_by(subject_id, trial_cat) %>%
+  mutate(pc_correct = mean(Correct)) %>%
+  ungroup() %>%
+  group_by(subject_id) %>%
+  mutate(min_pc_correct = min(pc_correct)) %>%
+  ungroup() %>%
+  mutate(subject_id = fct_reorder(subject_id, min_pc_correct)) %>%
+  ggplot(map = aes(x=subject_id, y=pc_correct, colour=acceptAND, shape=trial_cat)) +
+  geom_point(size = 4) +
+  scale_x_discrete() +
+  geom_hline(yintercept=0.8) + geom_hline(yintercept=0.75, linetype = "dashed")
+
+
+saveRDS(filtered_by_trial_category, file=here::here("data", "output", "Task1_preprocessed.RDS"))
+prev2 <- readRDS(file=here::here("data", "output", "old_T1_prepr.RDS"))
+
+t1 <- prev2 %>% filter(acceptAND) %>% select(-c(acceptRight, RespRight))
+t2 <- filtered_by_trial_category %>% select(-c(BlockName, pc_correct))
+all(t1 == t2)
