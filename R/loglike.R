@@ -59,10 +59,10 @@ rll_IST <- function(data, A, b_acc, b_rej, t0, drifts) {
     maxrej <- max(rej_price[, "rt"], rej_rating[, "rt"])
     if (minacc < maxrej) {
       data$rt[row] <- minacc
-      data$response[row] <- 2
+      data$accept[row] <- 2
     } else {
       data$rt[row] <- maxrej
-      data$response[row] <- 1
+      data$accept[row] <- 1
     }
   }
   data
@@ -111,10 +111,10 @@ rll_IEX <- function(data, A, b_acc, b_rej, t0, drifts) {
     minrej <- min(rej_price[, "rt"], rej_rating[, "rt"])
     if (maxacc < minrej) {
       data$rt[row] <- maxacc
-      data$response[row] <- 2
+      data$accept[row] <- 2
     } else {
       data$rt[row] <- minrej
-      data$response[row] <- 1
+      data$accept[row] <- 1
     }
   }
   data
@@ -273,10 +273,10 @@ rll_CB <- function(data, A, b_acc, b_rej, t0, drifts) {
     rej_coactive <- rlba_norm(1, 2*A, 2*b_rej, t0, rej_co_drifts[[row]], sqrt(2))
     if (acc_coactive < rej_coactive) {
       data$rt[row] <- acc_coactive
-      data$response[row] <- 2
+      data$accept[row] <- 2
     } else {
       data$rt[row] <- rej_coactive
-      data$response[row] <- 1
+      data$accept[row] <- 1
     }
   }
   data
@@ -346,7 +346,7 @@ model_wrapper <- function(x, data, model) {
 #'
 #' @return The log of the likelihood for the data under parameter values x
 rmodel_wrapper <- function(x, data, model) {
-  data$response <- NA
+  data$accept <- NA
   data$rt <- NA
   x <- exp(x)
 
