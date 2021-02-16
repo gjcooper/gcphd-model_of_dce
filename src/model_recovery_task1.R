@@ -2,19 +2,40 @@ require(pmwg)
 require(rtdists)
 library(dplyr)
 library(MCMCpack)
+library(stringi)
 devtools::load_all()
 
-outdir <- here::here("data", "output")
+print(sessionInfo())
+
+# For debugging:
+# Sys.setenv(DCE_EST_EXP="NumericVDCE")
+# Sys.setenv(DCE_EST_EXP="SymbolicVDCE", VDCE_DISPLAY="Absent", NCPUS=3, DCE_REC_MODEL="IEX", DCE_REC_MED="median_alpha_exp2_abs.RDS", DCE_MODEL_FILE="Task2_Absent_1069903.rcgbcm_CorrectedTry1.RData", DCE_REC_DATA="SymbolicVDCE_IEX_Absent_0P6QGThVC9il_untagged_data.RDS")
+# Get environment variables to normal vars
+known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG",
+                "DCE_REC_MODEL", "DCE_REC_MED", "DCE_MODEL_FILE", "DCE_REC_DATA")
+envars <- as.list(Sys.getenv(known_vars))
+experiment <- envars$DCE_EST_EXP
+displaytype <- envars$VDCE_DISPLAY
+cores <- ifelse(envars$NCPUS == "", 1, as.numeric(envars$NCPUS))
+jobid <- ifelse(
+  envars$PBS_JOBID == "",
+  stri_rand_strings(1, 12),
+  envars$PBS_JOBID
+)
+tag <- ifelse(envars$VDCE_TAG == "", "untagged", envars$VDCE_TAG)
+test_model <- envars$DCE_REC_MODEL
+median_file <- envars$DCE_REC_MED
+model_file <- envars$DCE_MODEL_FILE
+recovery_data <- envars$DCE_REC_DATA
 
 get_estimation_data <- function(filename) {
-  load(file.path(outdir, filename), ex <- new.env())
+  load(here::here("data", "output", filename), ex <- new.env())
   ex$sampled$data %>%
     tibble()
 }
 
-medians <- readRDS(file.path(outdir, "median_alpha_exp1.RDS"))
+medians <- readRDS(here::here("data", "output", median_file))
 
-test_model <- Sys.getenv("DCE_REC_MODEL")
 if (test_model == "") {
   stop("DCE_REC_MODEL environment variable must be set for recovery")
 }
@@ -24,40 +45,44 @@ if (is.null(sample_func)) {
   stop("DCE_REC_MODEL env variable must be exposed in mcce package rll_funcs vector")
 }
 
-# Get output filename
-args <- commandArgs(trailingOnly = TRUE)
-if (length(args) == 0) {
-  tag <- paste0("_untagged_recovery_", test_model)
-} else {
-  tag <- paste0("_", args[1], "_recovery_", test_model)
+if (! (experiment %in% c("NumericVDCE", "SymbolicVDCE"))) {
+  stop("System Environment Variable DCE_EST_EXP not defined or unknown value")
 }
 
-jobid <- Sys.getenv("PBS_JOBID")
-if (jobid == "") {
-  filename <- tempfile(pattern = "Task1_", tmpdir = ".", fileext = tag)
-} else {
-  filename <- paste0("Task1_", jobid, tag)
+# Experiment specific details/checks
+if (experiment == "NumericVDCE") {
+  filename <- paste(experiment, test_model, jobid, tag, sep = "_")
+} else if (experiment == "SymbolicVDCE") {
+  if (! (displaytype %in% c("Absent", "Greyed"))) {
+    stop("System Environment variable VDCE_DISPLAY should be defined")
+  }
+  filename <- paste(experiment, test_model, displaytype, jobid, tag, sep = "_")
 }
 
-outfile <- file.path(outdir, paste0(filename, ".RData"))
-datafile <- file.path(outdir, paste0(filename, "_data.RDS"))
+# Get output filename and input data
+outfile <- here::here("data", "output", paste0(filename, ".RData"))
+datafile <- here::here("data", "output", paste0(filename, "_data.RDS"))
 
-model_data <- get_estimation_data("Task1_1069902.rcgbcm_CorrectedTry1.RData")
+model_data <- get_estimation_data(model_file)
 subjects <- unique(model_data$subject)
 
-print("Creating test dataset")
-test_data <- lapply(subjects, FUN = function(subjectid) {
-  s_idx <- match(subjectid, subjects)
-  subject_data <- model_data %>% filter(subject == subjectid)
-  pars <- medians[s_idx, ]
+if (recovery_data == "") {
+  print("Creating test dataset")
+  test_data <- lapply(subjects, FUN = function(subjectid) {
+    s_idx <- match(subjectid, subjects)
+    subject_data <- model_data %>% filter(subject == subjectid)
+    pars <- medians[s_idx, ]
 
-  rmodel_wrapper(pars, subject_data, sample_func)
-})
+    rmodel_wrapper(pars, subject_data, sample_func)
+  })
 
-test_data <- test_data %>%
-  bind_rows()
+  test_data <- test_data %>%
+    bind_rows()
 
-saveRDS(test_data, file = datafile)
+  saveRDS(test_data, file = datafile)
+} else {
+  test_data <- readRDS(file = here::here("data", "output", recovery_data))
+}
 
 # Model specification - should be identical to model estimation file
 # < 0.3 participants were penalised, max trial length was 4.5 seconds
@@ -69,10 +94,8 @@ acc_rej_drift <- c("v_acc_p", "v_acc_r", "v_rej_p", "v_rej_r")
 stim_levels <- c("H", "L", "D")
 
 parameters <- c(
-  # Parallel mixture counts
-  "alpha_IST", "alpha_IEX",
-  # Coactive mixture probabilities
-  "alpha_CB",
+  # alpha (dirichlet mixture pars) for each likelihood function exposed in mcce
+  apply(expand.grid("alpha", names(ll_funcs)), 1, paste, collapse = "_"),
   # A - start point variability (sampled from U(0, A) where U is uniform dist)
   "A",
   # b_acc - threshold to accept based on evidence accumulaton in channel
@@ -80,12 +103,11 @@ parameters <- c(
   # b_rej - threshold to reject based on evidence accumulation in channel
   "b_rej",
   # t0 - residual time, bounded above by min response time for participant k
-  "t0"
+  "t0",
+  # Drift rates rto accept/reject for different stimulus levels/attributes
+  apply(expand.grid(acc_rej_drift, stim_levels), 1, paste, collapse = "_")
 )
-parameters <- c(parameters, apply(
-  expand.grid(acc_rej_drift, stim_levels), 1, paste,
-  collapse = "_"
-))
+
 # Mixture counts should always come first
 mix_counts <- 1:sum(startsWith(parameters, "alpha"))
 
@@ -108,14 +130,14 @@ sampler <- pmwgs(
 
 sampler <- init(sampler)
 
-burned <- run_stage(sampler, stage = "burn", iter = 2000, particles = 500, n_cores = 26)
+burned <- run_stage(sampler, stage = "burn", iter = 3000, particles = 600, n_cores = cores)
 
 save.image(outfile)
 
-adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 500, n_cores = 26)
+adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 600, n_cores = cores, n_unique = 40)
 
 save.image(outfile)
 
-sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = 26)
+sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = cores, pdist_update_n = NA)
 
 save.image(outfile)
