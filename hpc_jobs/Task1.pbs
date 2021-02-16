@@ -2,7 +2,7 @@
 #PBS -l select=1:ncpus=26:mem=14gb
 #PBS -l walltime=24:00:00
 #PBS -k oe
-#PBS -v DCE_EST_EXP=NumericVDCE,VDCE_TAG=TestDevPMWG
+#PBS -v DCE_EST_EXP=NumericVDCE,VDCE_TAG=TestRelease
 
 # Setup email notifications when the job is aborted(a), begins (b) or ends (e)
 #PBS -M gavin@gavincooper.net
