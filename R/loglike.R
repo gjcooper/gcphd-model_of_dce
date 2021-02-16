@@ -102,24 +102,18 @@ ll_IEX <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
 #' @return A new data object with the same shape and new randomly drawn
 #'   responses and RT's.
 rll_IEX <- function(data, A, b_acc, b_rej, t0, drifts) {
-  data$response <- NA
-  data$rt <- NA
-  x <- exp(x)
-  x["b_acc"] <- x["b_acc"] + x["A"]
-  x["b_rej"] <- x["b_rej"] + x["A"]
-
   for (row in seq_len(nrow(data))) {
     acc_price <- rlba_norm(1, A, b_acc, t0, drifts$AccPrice[[row]], 1)
     acc_rating <- rlba_norm(1, A, b_acc, t0, drifts$AccRating[[row]], 1)
     rej_price <- rlba_norm(1, A, b_rej, t0, drifts$RejPrice[[row]], 1)
     rej_rating <- rlba_norm(1, A, b_rej, t0, drifts$RejRating[[row]], 1)
-    minacc <- max(acc_price[, "rt"], acc_rating[, "rt"])
-    maxrej <- min(rej_price[, "rt"], rej_rating[, "rt"])
+    maxacc <- max(acc_price[, "rt"], acc_rating[, "rt"])
+    minrej <- min(rej_price[, "rt"], rej_rating[, "rt"])
     if (maxacc < minrej) {
-      data$rt[row] <- minacc
+      data$rt[row] <- maxacc
       data$response[row] <- 2
     } else {
-      data$rt[row] <- maxrej
+      data$rt[row] <- minrej
       data$response[row] <- 1
     }
   }
@@ -274,14 +268,6 @@ ll_CB <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
 #' @return A new data object with the same shape and new randomly drawn
 #'   responses and RT's.
 rll_CB <- function(data, A, b_acc, b_rej, t0, drifts) {
-  data$response <- NA
-  data$rt <- NA
-  x <- exp(x)
-  x["b_acc"] <- x["b_acc"] + x["A"]
-  x["b_rej"] <- x["b_rej"] + x["A"]
-  acc_co_drifts <- drifts$AccPrice + drifts$AccRating
-  rej_co_drifts <- drifts$RejPrice + drifts$RejRating
-
   for (row in seq_len(nrow(data))) {
     acc_coactive <- rlba_norm(1, 2*A, 2*b_acc, t0, acc_co_drifts[[row]], sqrt(2))
     rej_coactive <- rlba_norm(1, 2*A, 2*b_rej, t0, rej_co_drifts[[row]], sqrt(2))
@@ -462,7 +448,7 @@ single_model_ll <- function(x, data) {
 
   # all decision rules
   func_idx <- match(architecture, ll_names)
-  ll_func <- ll_funcs[[func_idx]]
+  ll_func <- ll_funcs[[func_idx]]$likelihood
   trial_ll <- model_wrapper(x, data, ll_func)
   new_like <- (1 - p_contam) * trial_ll +
     p_contam * (stats::dunif(data$rt, min_rt, max_rt) / 2)
