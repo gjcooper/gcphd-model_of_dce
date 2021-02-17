@@ -1,0 +1,18 @@
+#!/bin/bash
+#PBS -l select=1:ncpus=26:mem=20gb
+#PBS -l walltime=18:00:00
+#PBS -k oe
+#PBS -v DCE_EST_EXP=NumericVDCE,VDCE_TAG=TestRecovery,DCE_REC_MED=median_alpha_exp1.RDS,DCE_MODEL_FILE=Task1_1069902.rcgbcm_CorrectedTry1.RData
+
+# Setup email notifications when the job is aborted(a), begins (b) or ends (e)
+#PBS -M gavin@gavincooper.net
+#PBS -m abe
+
+source /etc/profile.d/modules.sh 
+module load R/4.0.1
+
+cd $PBS_O_WORKDIR
+
+Rscript --no-save --no-restore src/model_recovery_task1.R > recovery_Exp1_$VDCE_TAG.$DCE_REC_MODEL.$PBS_JOBID.out 2> recovery_Exp1_$VDCE_TAG.$DCE_REC_MODEL.$PBS_JOBID.err
+
+exit 0
