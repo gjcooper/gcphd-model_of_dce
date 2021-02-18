@@ -13,8 +13,10 @@ print(sessionInfo())
 # Get environment variables to normal vars
 known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG",
                 "DCE_REC_MODEL", "DCE_REC_MED", "DCE_MODEL_FILE", "DCE_REC_DATA")
-envars <- as.list(Sys.getenv(known_vars))
+
+envars <- Sys.getenv(known_vars)
 print(envars)
+envars <- as.list(envars)
 experiment <- envars$DCE_EST_EXP
 displaytype <- envars$VDCE_DISPLAY
 cores <- ifelse(envars$NCPUS == "", 1, as.numeric(envars$NCPUS))
