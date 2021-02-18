@@ -268,15 +268,19 @@ ll_CB <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
 #' @return A new data object with the same shape and new randomly drawn
 #'   responses and RT's.
 rll_CB <- function(data, A, b_acc, b_rej, t0, drifts) {
+  acc_co_drifts <- drifts$AccPrice + drifts$AccRating
+  rej_co_drifts <- drifts$RejPrice + drifts$RejRating
   for (row in seq_len(nrow(data))) {
     acc_coactive <- rlba_norm(1, 2*A, 2*b_acc, t0, acc_co_drifts[[row]], sqrt(2))
     rej_coactive <- rlba_norm(1, 2*A, 2*b_rej, t0, rej_co_drifts[[row]], sqrt(2))
-    if (acc_coactive < rej_coactive) {
-      data$rt[row] <- acc_coactive
-      data$accept[row] <- 2
+    acc_coactive_time <- acc_coactive[,'rt']
+    rej_coactive_time <- rej_coactive[,'rt']
+    if (acc_coactive_time < rej_coactive_time) {
+      data$rt[row] <- acc_coactive_time
+      data$accept[row] <- 2 # Accept the option
     } else {
-      data$rt[row] <- rej_coactive
-      data$accept[row] <- 1
+      data$rt[row] <- rej_coactive_time
+      data$accept[row] <- 1 # Reject the option
     }
   }
   data
