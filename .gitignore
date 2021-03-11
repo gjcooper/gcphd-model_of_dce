@@ -8,3 +8,4 @@ packrat/src/
 # grabbed from expyriment github
 *.swp
 docs
+data/input/
