@@ -286,6 +286,7 @@ rll_CB <- function(data, A, b_acc, b_rej, t0, drifts) {
   data
 }
 
+#' export
 ll_funcs <- list(
   IST = list(likelihood = ll_IST, sample = rll_IST),
   IEX = list(likelihood = ll_IEX, sample = rll_IEX),
