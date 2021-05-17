@@ -273,8 +273,8 @@ rll_CB <- function(data, A, b_acc, b_rej, t0, drifts) {
   for (row in seq_len(nrow(data))) {
     acc_coactive <- rlba_norm(1, 2*A, 2*b_acc, t0, acc_co_drifts[[row]], sqrt(2))
     rej_coactive <- rlba_norm(1, 2*A, 2*b_rej, t0, rej_co_drifts[[row]], sqrt(2))
-    acc_coactive_time <- acc_coactive[,'rt']
-    rej_coactive_time <- rej_coactive[,'rt']
+    acc_coactive_time <- acc_coactive[,"rt"]
+    rej_coactive_time <- rej_coactive[,"rt"]
     if (acc_coactive_time < rej_coactive_time) {
       data$rt[row] <- acc_coactive_time
       data$accept[row] <- 2 # Accept the option
@@ -286,12 +286,36 @@ rll_CB <- function(data, A, b_acc, b_rej, t0, drifts) {
   data
 }
 
-#' export
+
 ll_funcs <- list(
   IST = list(likelihood = ll_IST, sample = rll_IST),
   IEX = list(likelihood = ll_IEX, sample = rll_IEX),
   CB = list(likelihood = ll_CB, sample = rll_CB)
 )
+
+
+#' Select log likelihood function
+#'
+#' @param name The name of the log likelihpood function to select
+#' @param sample If TRUE then return the sample function instead of the density
+#'   function
+#'
+#' @return the requested function
+#' @export
+select_ll <- function(name, sample = FALSE) {
+  if (sample) {
+    return(ll_funcs[[name]]$sample)
+  }
+  ll_funcs[[name]]$likelihood
+}
+
+#' Return names of all implemented models (log likelihood functions)
+#'
+#' @return names of the ll_funcs package object
+#' @export
+names_ll <- function() {
+  names(ll_funcs)
+}
 
 
 #' Wrapper for individual model log likelihood function
@@ -305,6 +329,7 @@ ll_funcs <- list(
 #' @param model The model to be wrapped and returned
 #'
 #' @return The log of the likelihood for the data under parameter values x
+#' @export
 model_wrapper <- function(x, data, model) {
   adat <- data[data$accept == 2, ]
   rdat <- data[data$accept == 1, ]
@@ -315,13 +340,13 @@ model_wrapper <- function(x, data, model) {
   # Enforces b cannot be less than A, b parameter is thus threshold - A
   b_acc <- x["b_acc"] + A
   b_rej <- x["b_rej"] + A
-  acc_drifts <- tibble(
+  acc_drifts <- tibble::tibble(
     AccPrice = x[adat$v_acc_p],
     RejPrice = x[adat$v_rej_p],
     AccRating = x[adat$v_acc_r],
     RejRating = x[adat$v_rej_r]
   )
-  rej_drifts <- tibble(
+  rej_drifts <- tibble::tibble(
     AccPrice = x[rdat$v_acc_p],
     RejPrice = x[rdat$v_rej_p],
     AccRating = x[rdat$v_acc_r],
@@ -350,6 +375,7 @@ model_wrapper <- function(x, data, model) {
 #' @param model The model to be wrapped and returned
 #'
 #' @return The log of the likelihood for the data under parameter values x
+#' @export
 rmodel_wrapper <- function(x, data, model) {
   data$accept <- NA
   data$rt <- NA
@@ -360,7 +386,7 @@ rmodel_wrapper <- function(x, data, model) {
   # Enforces b cannot be less than A, b parameter is thus threshold - A
   b_acc <- x["b_acc"] + A
   b_rej <- x["b_rej"] + A
-  drifts <- tibble(
+  drifts <- tibble::tibble(
     AccPrice = x[data$v_acc_p],
     RejPrice = x[data$v_rej_p],
     AccRating = x[data$v_acc_r],
@@ -402,6 +428,7 @@ rmodel_wrapper <- function(x, data, model) {
 #'   calculated
 #'
 #' @return The log of the likelihood for the data under parameter values x
+#' @export
 dirichlet_mix_ll <- function(x, data) {
   x <- exp(x)
 
@@ -448,6 +475,7 @@ dirichlet_mix_ll <- function(x, data) {
 #'   calculated
 #'
 #' @return The log of the likelihood for the data under parameter values x
+#' @export
 single_model_ll <- function(x, data) {
   x <- exp(x)
 

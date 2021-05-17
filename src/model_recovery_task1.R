@@ -3,7 +3,7 @@ require(rtdists)
 library(dplyr)
 library(MCMCpack)
 library(stringi)
-devtools::load_all()
+library(mcce)
 
 print(sessionInfo())
 
@@ -44,7 +44,7 @@ if (test_model == "") {
   stop("DCE_REC_MODEL environment variable must be set for recovery")
 }
 
-sample_func <- ll_funcs[[match(test_model, names(ll_funcs))]]$sample
+sample_func <- select_ll(test_model, sample=TRUE)
 if (is.null(sample_func)) {
   stop("DCE_REC_MODEL env variable must be exposed in mcce package rll_funcs vector")
 }
@@ -99,7 +99,7 @@ stim_levels <- c("H", "L", "D")
 
 parameters <- c(
   # alpha (dirichlet mixture pars) for each likelihood function exposed in mcce
-  apply(expand.grid("alpha", names(ll_funcs)), 1, paste, collapse = "_"),
+  apply(expand.grid("alpha", names_ll()), 1, paste, collapse = "_"),
   # A - start point variability (sampled from U(0, A) where U is uniform dist)
   "A",
   # b_acc - threshold to accept based on evidence accumulaton in channel
