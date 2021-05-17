@@ -130,7 +130,7 @@ rll_IEX <- function(data, A, b_acc, b_rej, t0, drifts) {
 #' @param t0 non decision time parameter
 #' @param v_pos positive evidence drift rate (vector of)
 #' @param v_neg vector of negative evidence drift rates
-#' @param positive Whether we are looking at accept or reject trials
+#' @param accept Whether we are looking at accept or reject trials
 #'
 #' @return The log likelihood of the rts for the accept or reject trials given
 #'   the provided parameter values
@@ -160,7 +160,7 @@ rll_CYST <- function(x, data) {
 #' @param t0 non decision time parameter
 #' @param v_pos positive evidence drift rate (vector of)
 #' @param v_neg vector of negative evidence drift rates
-#' @param positive Whether we are looking at accept or reject trials
+#' @param accept Whether we are looking at accept or reject trials
 #'
 #' @return The log likelihood of the rts for the accept or reject trials given
 #'   the provided parameter values
@@ -190,7 +190,7 @@ rll_CYEX <- function(x, data) {
 #' @param t0 non decision time parameter
 #' @param v_pos positive evidence drift rate (vector of)
 #' @param v_neg vector of negative evidence drift rates
-#' @param positive Whether we are looking at accept or reject trials
+#' @param accept Whether we are looking at accept or reject trials
 #'
 #' @return The log likelihood of the rts for the accept or reject trials given
 #'   the provided parameter values
@@ -220,7 +220,7 @@ rll_CNST <- function(x, data) {
 #' @param t0 non decision time parameter
 #' @param v_pos positive evidence drift rate (vector of)
 #' @param v_neg vector of negative evidence drift rates
-#' @param positive Whether we are looking at accept or reject trials
+#' @param accept Whether we are looking at accept or reject trials
 #'
 #' @return The log likelihood of the rts for the accept or reject trials given
 #'   the provided parameter values

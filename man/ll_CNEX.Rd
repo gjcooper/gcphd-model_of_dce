@@ -21,7 +21,7 @@ ll_CNEX(rt, A, b_acc, b_rej, t0, v_pos, v_neg, accept)
 
 \item{v_neg}{vector of negative evidence drift rates}
 
-\item{positive}{Whether we are looking at accept or reject trials}
+\item{accept}{Whether we are looking at accept or reject trials}
 }
 \value{
 The log likelihood of the rts for the accept or reject trials given
