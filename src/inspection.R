@@ -3,6 +3,7 @@ require(tidyverse)
 require(tcltk)
 require(pmwg)
 require(mcmcplots)
+library(patchwork)
 
 get_data <- function(final_obj = "sampled") {
   # Load in the data into the global environment
@@ -116,17 +117,20 @@ compare_data <- function(original, recovery, comparison = "rt") {
   if (comparison == "rt") {
     alldata %>%
       filter(rt < 5) %>%
+      unite("cell", price:rating, sep='') %>%
       ggplot(mapping = aes(x = rt, colour = source)) +
       geom_density() +
       facet_wrap(~cell)
   } else if (comparison == "rtbox") {
     alldata %>%
       filter(rt < 5) %>%
+      unite("cell", price:rating, sep='') %>%
       ggplot(mapping = aes(x = cell, y = rt, colour = source)) +
       geom_boxplot()
   } else if (comparison == "response") {
     alldata %>%
-      ggplot(mapping = aes(x = response, group = source, fill = source)) +
+      mutate(accept=factor(accept, labels=c('reject', 'accept'))) %>%
+      ggplot(mapping = aes(x = accept, group = source, fill = source)) +
       geom_bar(position = "dodge") +
       facet_wrap(~subject)
   }
@@ -135,8 +139,12 @@ compare_data <- function(original, recovery, comparison = "rt") {
 # Look at the estimates in absolute and relative terms, then use coda mcmc plot for theta_mu
 recovery <- get_data()
 original <- get_data()
+(g+ggtitle("Recovery from Coactive")) / (go+ggtitle("Original Data"))
 compare(original, recovery)
+compare(original, recovery, relative = FALSE)
 compare_data(original, recovery, "rt")
+compare_data(original, recovery, "rtbox")
+compare_data(original, recovery, "response")
 
 # Looking at Task1
 ex1mct3 <- get_data()
