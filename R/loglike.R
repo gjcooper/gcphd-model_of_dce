@@ -466,7 +466,7 @@ single_model_ll <- function(x, data) {
   x <- exp(x)
 
   # all decision rules
-  func_idx <- match(architecture, ll_names)
+  func_idx <- match(architecture, names_ll())
   ll_func <- ll_funcs[[func_idx]]$likelihood
   trial_ll <- model_wrapper(x, data, ll_func)
   new_like <- (1 - p_contam) * trial_ll +
