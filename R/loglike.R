@@ -274,6 +274,8 @@ rll_CB <- function(data, A, b_acc, b_rej, t0, drifts) {
 ll_funcs <- list(
   IST = list(likelihood = ll_IST, sample = rll_IST),
   IEX = list(likelihood = ll_IEX, sample = rll_IEX),
+  FPP = list(likelihood = ll_FPP, sample = rll_FPP),
+  MW = list(likelihood = ll_MW, sample = rll_MW),
   CB = list(likelihood = ll_CB, sample = rll_CB)
 )
 
