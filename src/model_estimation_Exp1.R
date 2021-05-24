@@ -3,16 +3,20 @@ require(rtdists)
 library(dplyr)
 library(MCMCpack)
 library(stringi)
-devtools::load_all()
+library(mcce)
 
 print(sessionInfo())
 
 # For debugging:
-# Sys.setenv(DCE_EST_EXP="NumericVDCE")
 # Sys.setenv(DCE_EST_EXP="SymbolicVDCE", VDCE_DISPLAY="Absent", NCPUS=3)
+# Sys.setenv(DCE_EST_EXP="NumericVDCE", NCPUS=3, DCE_EXP_DATA="Task1_preprocessed.RDS")
 # Get environment variables to normal vars
-known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG")
-envars <- as.list(Sys.getenv(known_vars))
+known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG",
+                "DCE_EXP_DATA")
+
+envars <- Sys.getenv(known_vars)
+print(envars)
+envars <- as.list(envars)
 experiment <- envars$DCE_EST_EXP
 displaytype <- envars$VDCE_DISPLAY
 cores <- ifelse(envars$NCPUS == "", 1, as.numeric(envars$NCPUS))
@@ -22,6 +26,7 @@ jobid <- ifelse(
   envars$PBS_JOBID
 )
 tag <- ifelse(envars$VDCE_TAG == "", "untagged", envars$VDCE_TAG)
+experimental_data <- envars$DCE_EXP_DATA
 
 
 #Tests
@@ -33,18 +38,16 @@ if (! (experiment %in% c("NumericVDCE", "SymbolicVDCE"))) {
 # Experiment specific details/checks
 if (experiment == "NumericVDCE") {
   filename <- paste(experiment, jobid, tag, sep = "_")
-  infile <- "Task1_preprocessed.RDS"
 } else if (experiment == "SymbolicVDCE") {
   if (! (displaytype %in% c("Absent", "Greyed"))) {
     stop("System Environment variable VDCE_DISPLAY should be defined")
   }
   filename <- paste(experiment, displaytype, jobid, tag, sep = "_")
-  infile <- paste0("Task2_preprocessed_", displaytype, ".RDS")
 }
 
 # Get output filename and input data
 outfile <- here::here("data", "output", paste0(filename, ".RData"))
-cleaned_data <- readRDS(here::here("data", "output", infile))
+cleaned_data <- readRDS(here::here("data", "output", experimental_data))
 
 # Only accept trials
 # Create simplifed data for modelling with rtdists
@@ -73,7 +76,7 @@ stim_levels <- c("H", "L", "D")
 
 parameters <- c(
   # alpha (dirichlet mixture pars) for each likelihood function exposed in mcce
-  apply(expand.grid("alpha", names(ll_funcs)), 1, paste, collapse = "_"),
+  apply(expand.grid("alpha", names_ll()), 1, paste, collapse = "_"),
   # A - start point variability (sampled from U(0, A) where U is uniform dist)
   "A",
   # b_acc - threshold to accept based on evidence accumulaton in channel
@@ -88,8 +91,6 @@ parameters <- c(
 
 # Mixture counts should always come first
 mix_counts <- 1:sum(startsWith(parameters, "alpha"))
-
-# Likelihood functions from separate file
 
 priors <- list(
   theta_mu_mean = rep(0, length(parameters)),

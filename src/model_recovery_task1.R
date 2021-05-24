@@ -8,7 +8,6 @@ library(mcce)
 print(sessionInfo())
 
 # For debugging:
-# Sys.setenv(DCE_EST_EXP="NumericVDCE")
 # Sys.setenv(DCE_EST_EXP="SymbolicVDCE", VDCE_DISPLAY="Absent", NCPUS=3, DCE_REC_MODEL="IEX", DCE_REC_MED="median_alpha_exp2_abs.RDS", DCE_MODEL_FILE="Task2_Absent_1069903.rcgbcm_CorrectedTry1.RData", DCE_REC_DATA="SymbolicVDCE_IEX_Absent_0P6QGThVC9il_untagged_data.RDS")
 # Sys.setenv(DCE_EST_EXP="NumericVDCE", NCPUS=3, DCE_REC_MODEL="IST", DCE_REC_MED="median_alpha_exp1.RDS", DCE_MODEL_FILE="Task1_1069902.rcgbcm_CorrectedTry1.RData")
 # Get environment variables to normal vars
