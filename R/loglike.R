@@ -9,6 +9,7 @@
 # pdf to reject Rating is: dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)
 # cdf to rejept Rating is: plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)
 
+
 #' Independant Self Terminating
 #'
 #' @param rt A vector of response times
@@ -96,8 +97,7 @@ ll_IEX <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
 
 #' Independant Exhaustive random samples
 #'
-#' @param data the data for one subject
-#' @inheritParams ll_IST
+#' @inheritParams rll_IST
 #'
 #' @return A new data object with the same shape and new randomly drawn
 #'   responses and RT's.
@@ -121,123 +121,112 @@ rll_IEX <- function(data, A, b_acc, b_rej, t0, drifts) {
 }
 
 
-#' Coactive Yes Self terminating No
+#' First Past the Post
 #'
-#' @param rt A vector of response times
-#' @param A Start point variability
-#' @param b_acc positive evidence threshold
-#' @param b_rej negative evidence threshold
-#' @param t0 non decision time parameter
-#' @param v_pos positive evidence drift rate (vector of)
-#' @param v_neg vector of negative evidence drift rates
-#' @param accept Whether we are looking at accept or reject trials
+#' @inheritParams ll_IST
 #'
 #' @return The log likelihood of the rts for the accept or reject trials given
 #'   the provided parameter values
-ll_CYST <- function(rt, A, b_acc, b_rej, t0, v_pos, v_neg, accept) { # nolint
+ll_FPP <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
+  stop("Not updated yet")
   if (accept) {
-    ll <- dlba_norm(rt, 2 * A, 2 * b_acc, t0, 2 * v_pos, sqrt(2)) * # nolint
-      (1 - plba_norm(rt, A, b_rej, t0, v_neg, 1)**2)
+    ll <- (dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+            (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
+            dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
+            (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1))) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
+            plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
   } else {
-    ll <- 2 *
-      dlba_norm(rt, A, b_rej, t0, v_neg, 1) *
-      plba_norm(rt, A, b_rej, t0, v_neg, 1) *
-      (1 - plba_norm(rt, 2 * A, 2 * b_acc, t0, 2 * v_pos, sqrt(2))) # nolint
+    ll <- (dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
+            plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) +
+            dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
+            plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
   }
   ll
 }
-rll_CYST <- function(x, data) {
-  stop("Not implemented yet")
+
+#' First Past the Post random samples
+#'
+#' @inheritParams rll_IST
+#'
+#' @return A new data object with the same shape and new randomly drawn
+#'   responses and RT's.
+rll_FPP <- function(data, A, b_acc, b_rej, t0, drifts) {
+  stop("Not updated yet")
+  for (row in seq_len(nrow(data))) {
+    acc_price <- rlba_norm(1, A, b_acc, t0, drifts$AccPrice[[row]], 1)
+    acc_rating <- rlba_norm(1, A, b_acc, t0, drifts$AccRating[[row]], 1)
+    rej_price <- rlba_norm(1, A, b_rej, t0, drifts$RejPrice[[row]], 1)
+    rej_rating <- rlba_norm(1, A, b_rej, t0, drifts$RejRating[[row]], 1)
+    minacc <- min(acc_price[, "rt"], acc_rating[, "rt"])
+    maxrej <- max(rej_price[, "rt"], rej_rating[, "rt"])
+    if (minacc < maxrej) {
+      data$rt[row] <- minacc
+      data$accept[row] <- 2
+    } else {
+      data$rt[row] <- maxrej
+      data$accept[row] <- 1
+    }
+  }
+  data
 }
 
 
-#' Coactive Yes Exhaustive No
+#' Max Winner model
 #'
-#' @param rt A vector of response times
-#' @param A Start point variability
-#' @param b_acc positive evidence threshold
-#' @param b_rej negative evidence threshold
-#' @param t0 non decision time parameter
-#' @param v_pos positive evidence drift rate (vector of)
-#' @param v_neg vector of negative evidence drift rates
-#' @param accept Whether we are looking at accept or reject trials
+#' A model where both accumulators for Price and Rating must terminate before
+#' either the option is accepted or rejected.
+#'
+#' @inheritParams ll_IST
 #'
 #' @return The log likelihood of the rts for the accept or reject trials given
 #'   the provided parameter values
-ll_CYEX <- function(rt, A, b_acc, b_rej, t0, v_pos, v_neg, accept) { # nolint
+ll_MW <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
+  stop("Not updated yet")
   if (accept) {
-    ll <- dlba_norm(rt, 2 * A, 2 * b_acc, t0, 2 * v_pos, sqrt(2)) * # nolint
-      (1 - plba_norm(rt, A, b_rej, t0, v_neg, 1))**2
+    ll <- (dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+      plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
+      dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
+        plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+      (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+      (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
   } else {
-    ll <- 2 *
-      dlba_norm(rt, A, b_rej, t0, v_neg, 1) *
-      (1 - plba_norm(rt, A, b_rej, t0, v_neg, 1)) *
-      (1 - plba_norm(rt, 2 * A, 2 * b_acc, t0, 2 * v_pos, sqrt(2))) # nolint
+    ll <- (dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
+      (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
+      dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
+        (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1))) *
+      (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+        plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
   }
   ll
 }
-rll_CYEX <- function(x, data) {
-  stop("Not implemented yet")
-}
 
-
-#' Coactive No/Self terminating Yes
+#' Max Winner random samples
 #'
-#' @param rt A vector of response times
-#' @param A Start point variability
-#' @param b_acc positive evidence threshold
-#' @param b_rej negative evidence threshold
-#' @param t0 non decision time parameter
-#' @param v_pos positive evidence drift rate (vector of)
-#' @param v_neg vector of negative evidence drift rates
-#' @param accept Whether we are looking at accept or reject trials
+#' @inheritParams rll_IST
 #'
-#' @return The log likelihood of the rts for the accept or reject trials given
-#'   the provided parameter values
-ll_CNST <- function(rt, A, b_acc, b_rej, t0, v_pos, v_neg, accept) { # nolint
-  if (accept) {
-    ll <- 2 *
-      dlba_norm(rt, A, b_acc, t0, v_pos, 1) *
-      (1 - plba_norm(rt, A, b_acc, t0, v_pos, 1)) *
-      (1 - plba_norm(rt, 2 * A, 2 * b_rej, t0, 2 * v_neg, sqrt(2))) # nolint
-  } else {
-    ll <- dlba_norm(rt, 2 * A, 2 * b_rej, t0, 2 * v_neg, sqrt(2)) * # nolint
-      (1 - plba_norm(rt, A, b_acc, t0, v_pos, 1))**2
+#' @return A new data object with the same shape and new randomly drawn
+#'   responses and RT's.
+rll_MW <- function(data, A, b_acc, b_rej, t0, drifts) {
+  stop("Not updated yet")
+  for (row in seq_len(nrow(data))) {
+    acc_price <- rlba_norm(1, A, b_acc, t0, drifts$AccPrice[[row]], 1)
+    acc_rating <- rlba_norm(1, A, b_acc, t0, drifts$AccRating[[row]], 1)
+    rej_price <- rlba_norm(1, A, b_rej, t0, drifts$RejPrice[[row]], 1)
+    rej_rating <- rlba_norm(1, A, b_rej, t0, drifts$RejRating[[row]], 1)
+    maxacc <- max(acc_price[, "rt"], acc_rating[, "rt"])
+    minrej <- min(rej_price[, "rt"], rej_rating[, "rt"])
+    if (maxacc < minrej) {
+      data$rt[row] <- maxacc
+      data$accept[row] <- 2
+    } else {
+      data$rt[row] <- minrej
+      data$accept[row] <- 1
+    }
   }
-  ll
-}
-rll_CNST <- function(x, data) {
-  stop("Not implemented yet")
-}
-
-
-#' Coactive No / Exhaustive Yes
-#'
-#' @param rt A vector of response times
-#' @param A Start point variability
-#' @param b_acc positive evidence threshold
-#' @param b_rej negative evidence threshold
-#' @param t0 non decision time parameter
-#' @param v_pos positive evidence drift rate (vector of)
-#' @param v_neg vector of negative evidence drift rates
-#' @param accept Whether we are looking at accept or reject trials
-#'
-#' @return The log likelihood of the rts for the accept or reject trials given
-#'   the provided parameter values
-ll_CNEX <- function(rt, A, b_acc, b_rej, t0, v_pos, v_neg, accept) { # nolint
-  if (accept) {
-    ll <- 2 *
-      dlba_norm(rt, A, b_acc, t0, v_pos, 1) *
-      plba_norm(rt, A, b_acc, t0, v_pos, 1) *
-      (1 - plba_norm(rt, 2 * A, 2 * b_rej, t0, 2 * v_neg, sqrt(2))) # nolint
-  } else {
-    ll <- dlba_norm(rt, 2 * A, 2 * b_rej, t0, 2 * v_neg, sqrt(2)) * # nolint
-      (1 - plba_norm(rt, A, b_acc, t0, v_pos, 1)**2)
-  }
-  ll
-}
-rll_CNEX <- function(x, data) {
-  stop("Not implemented yet")
+  data
 }
 
 
@@ -262,8 +251,7 @@ ll_CB <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
 
 #' Coactive Both random samples
 #'
-#' @param data the data for one subject
-#' @inheritParams ll_IST
+#' @inheritParams rll_IST
 #'
 #' @return A new data object with the same shape and new randomly drawn
 #'   responses and RT's.
