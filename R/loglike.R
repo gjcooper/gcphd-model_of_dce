@@ -128,7 +128,6 @@ rll_IEX <- function(data, A, b_acc, b_rej, t0, drifts) {
 #' @return The log likelihood of the rts for the accept or reject trials given
 #'   the provided parameter values
 ll_FPP <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
-  stop("Not updated yet")
   if (accept) {
     ll <- (dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
             (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
@@ -138,11 +137,11 @@ ll_FPP <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
             plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
   } else {
     ll <- (dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
-            plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) +
+            (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
             dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
-            plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
-          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
-          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
+            (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1))) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+            plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
   }
   ll
 }
@@ -154,19 +153,18 @@ ll_FPP <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
 #' @return A new data object with the same shape and new randomly drawn
 #'   responses and RT's.
 rll_FPP <- function(data, A, b_acc, b_rej, t0, drifts) {
-  stop("Not updated yet")
   for (row in seq_len(nrow(data))) {
     acc_price <- rlba_norm(1, A, b_acc, t0, drifts$AccPrice[[row]], 1)
     acc_rating <- rlba_norm(1, A, b_acc, t0, drifts$AccRating[[row]], 1)
     rej_price <- rlba_norm(1, A, b_rej, t0, drifts$RejPrice[[row]], 1)
     rej_rating <- rlba_norm(1, A, b_rej, t0, drifts$RejRating[[row]], 1)
     minacc <- min(acc_price[, "rt"], acc_rating[, "rt"])
-    maxrej <- max(rej_price[, "rt"], rej_rating[, "rt"])
-    if (minacc < maxrej) {
+    minrej <- min(rej_price[, "rt"], rej_rating[, "rt"])
+    if (minacc < minrej) {
       data$rt[row] <- minacc
       data$accept[row] <- 2
     } else {
-      data$rt[row] <- maxrej
+      data$rt[row] <- minrej
       data$accept[row] <- 1
     }
   }
@@ -184,7 +182,6 @@ rll_FPP <- function(data, A, b_acc, b_rej, t0, drifts) {
 #' @return The log likelihood of the rts for the accept or reject trials given
 #'   the provided parameter values
 ll_MW <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
-  stop("Not updated yet")
   if (accept) {
     ll <- (dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
       plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
@@ -194,11 +191,11 @@ ll_MW <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
       (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
   } else {
     ll <- (dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
-      (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
-      dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
-        (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1))) *
-      (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
-        plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
+            plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) +
+            dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
+            plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
   }
   ll
 }
@@ -210,19 +207,18 @@ ll_MW <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
 #' @return A new data object with the same shape and new randomly drawn
 #'   responses and RT's.
 rll_MW <- function(data, A, b_acc, b_rej, t0, drifts) {
-  stop("Not updated yet")
   for (row in seq_len(nrow(data))) {
     acc_price <- rlba_norm(1, A, b_acc, t0, drifts$AccPrice[[row]], 1)
     acc_rating <- rlba_norm(1, A, b_acc, t0, drifts$AccRating[[row]], 1)
     rej_price <- rlba_norm(1, A, b_rej, t0, drifts$RejPrice[[row]], 1)
     rej_rating <- rlba_norm(1, A, b_rej, t0, drifts$RejRating[[row]], 1)
     maxacc <- max(acc_price[, "rt"], acc_rating[, "rt"])
-    minrej <- min(rej_price[, "rt"], rej_rating[, "rt"])
-    if (maxacc < minrej) {
+    maxrej <- max(rej_price[, "rt"], rej_rating[, "rt"])
+    if (maxacc < maxrej) {
       data$rt[row] <- maxacc
       data$accept[row] <- 2
     } else {
-      data$rt[row] <- minrej
+      data$rt[row] <- maxrej
       data$accept[row] <- 1
     }
   }
