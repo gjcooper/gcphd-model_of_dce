@@ -22,3 +22,8 @@ par <- function() {
 prr <- function() {
   plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)
 }
+
+# A macro
+*jll"py$jggn
+# B macro
+df)"pPn
