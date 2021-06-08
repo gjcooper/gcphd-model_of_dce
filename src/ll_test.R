@@ -3,7 +3,6 @@ library(tidyr)
 pkg <- asNamespace("mcce")
 library(mcce)
 library(rtdists)
-source("abbrev.R")
 library(ggplot2)
 library(patchwork)
 library(parallel)
@@ -104,7 +103,7 @@ get_proportions <- function(pp_data, int_data) {
     dplyr::select(-c(accept, n))
 
   combined <- int_data %>%
-    inner_join(sample_prop, by = "cell") %>%
+    full_join(sample_prop, by = "cell") %>%
     relocate(c(cell, accept, reject, prop)) %>%
     mutate(adiff = prop - accept, rdiff = prop - (1 - reject)) %>%
     mutate(across(where(is.double), round, 2))
@@ -114,28 +113,70 @@ get_proportions <- function(pp_data, int_data) {
 
 new_IST <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
   if (accept) {
-    ll <- dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) ) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
-          dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) ) * plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) +
-          dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) * plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)  * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
-          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) ) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
-          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) ) * plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) +
-          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) * plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)  * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
+    ll <- dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
+          dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) +
+          dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) *
+          plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)  *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
+          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
+          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) +
+          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)  *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
   } else {
-    ll <- dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) * dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
+    ll <- dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
+          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
   }
   ll
 }
 
 new_IEX <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
   if (accept) {
-    ll <- dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) * dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) ) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
+    ll <- dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
   } else {
-    ll <- dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
-          dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) * plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
-          dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) * plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
-          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) ) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
-          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) ) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) * plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
-          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) ) * plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
+    ll <- dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
+          dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
+          dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) *
+          plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
+          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
+          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
+          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
   }
   ll
 }
@@ -170,17 +211,33 @@ combined <- bind_rows(all_runs, .id = "function_set") %>%
     function_set = factor(function_set, levels = names(function_list))
   )
 acc_diff <- combined %>%
-  ggplot(aes(x = cell, y = adiff, colour = function_set, group = function_set)) +
+  ggplot(aes(
+    x = cell,
+    y = adiff,
+    colour = function_set,
+    group = function_set
+  )) +
   geom_line() +
-  labs(title = "% Accept in samples - integrate using accept = TRUE",
-               x = "Cell from Design", y = "Difference") +
+  labs(
+    title = "% Accept in samples - integrate using accept = TRUE",
+    x = "Cell from Design",
+    y = "Difference"
+  ) +
   ylim(-1, 1)
 rej_diff <- combined %>%
-  ggplot(aes(x = cell, y = rdiff, colour = function_set, group = function_set)) +
+  ggplot(aes(
+    x = cell,
+    y = rdiff,
+    colour = function_set,
+    group = function_set
+  )) +
   geom_line() +
-  labs(title = "% Accept in samples - (1 - integrate using accept = FALSE)",
-               x = "Cell from Design", y = "Difference") +
+  labs(
+    title = "% Accept in samples - (1 - integrate using accept = FALSE)",
+    x = "Cell from Design",
+    y = "Difference"
+  ) +
   ylim(-1, 1)
 
-saveRDS(file="combined.RDS", combined)
+saveRDS(file = "combined.RDS", combined)
 acc_diff / rej_diff
