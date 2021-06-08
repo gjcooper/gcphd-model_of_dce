@@ -114,37 +114,37 @@ get_proportions <- function(pp_data, int_data) {
 
 new_IST <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
   if (accept) {
-    ll <- dap() * (1 - par()) * (1 - prp()) * (1 - prr()) +
-          dap() * (1 - par()) * (1 - prp()) * prr() +
-          dap() * (1 - par()) * prp() * (1 - prr()) +
-          dar() * (1 - pap()) * (1 - prp()) * (1 - prr()) +
-          dar() * (1 - pap()) * (1 - prp()) * prr() +
-          dar() * (1 - pap()) * prp() * (1 - prr())
+    ll <- dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) ) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
+          dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) ) * plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) +
+          dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) * plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)  * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
+          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) ) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
+          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) ) * plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) +
+          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) * plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)  * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
   } else {
-    ll <- drp() * drr() * (1 - pap()) * (1 - par())
+    ll <- dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) * dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
   }
   ll
 }
 
 new_IEX <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
   if (accept) {
-    ll <- dap() * dar() * (1 - prp()) * (1 - prr())
+    ll <- dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) * dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) ) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
   } else {
-    ll <- drp() * (1 - prr()) * (1 - pap()) * (1 - par()) +
-          drp() * (1 - prr()) * (1 - pap()) * par() +
-          drp() * (1 - prr()) * pap() * (1 - par()) +
-          drr() * (1 - prp()) * (1 - pap()) * (1 - par()) +
-          drr() * (1 - prp()) * (1 - pap()) * par() +
-          drr() * (1 - prp()) * pap() * (1 - par())
+    ll <- dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
+          dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) * plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
+          dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) * plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
+          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) ) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
+          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) ) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) * plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
+          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) * (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) ) * plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) * (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
   }
   ll
 }
 
 function_list <- list(
   old_IST = list(ll = pkg$ll_IST, rsample = pkg$rll_IST),
-#  new_IST = list(ll = new_IST, rsample = pkg$rll_IST),
+  new_IST = list(ll = new_IST, rsample = pkg$rll_IST),
   old_IEX = list(ll = pkg$ll_IEX, rsample = pkg$rll_IEX),
-#  new_IEX = list(ll = new_IEX, rsample = pkg$rll_IEX),
+  new_IEX = list(ll = new_IEX, rsample = pkg$rll_IEX),
   old_CB = list(ll = pkg$ll_CB, rsample = pkg$rll_CB),
   new_FPP = list(ll = pkg$ll_FPP, rsample = pkg$rll_FPP),
   new_MW = list(ll = pkg$ll_MW, rsample = pkg$rll_MW)
@@ -152,21 +152,22 @@ function_list <- list(
 
 
 # Start the clock!
-ptm <- proc.time()
-all_runs <- lapply(function_list, function(func_pair) {
+# 2 cores, 10k samples, 31 minutes
+# ptm <- proc.time()
+all_runs <- mclapply(function_list, function(func_pair) {
   pars <- get_plausible_vals()
-  pred <- get_predicted_data(10, pars$all, func_pair$rsample)
+  pred <- get_predicted_data(10000, pars$all, func_pair$rsample)
   intf <- run_integrate(pars$drifts, pars$fixed, func_pair$ll)
   res <- get_proportions(pred, intf)
   res
 })
 # Stop the clock
-proc.time() - ptm
+# proc.time() - ptm
 
 combined <- bind_rows(all_runs, .id = "function_set") %>%
   mutate(
     cell = factor(cell, levels = cells),
-    function_set = factor(function_set, levels=names(function_list))
+    function_set = factor(function_set, levels = names(function_list))
   )
 acc_diff <- combined %>%
   ggplot(aes(x = cell, y = adiff, colour = function_set, group = function_set)) +
@@ -181,4 +182,5 @@ rej_diff <- combined %>%
                x = "Cell from Design", y = "Difference") +
   ylim(-1, 1)
 
+saveRDS(file="combined.RDS", combined)
 acc_diff / rej_diff
