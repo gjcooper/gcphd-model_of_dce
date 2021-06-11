@@ -105,8 +105,7 @@ get_proportions <- function(pp_data, int_data) {
   combined <- int_data %>%
     full_join(sample_prop, by = "cell") %>%
     relocate(c(cell, accept, reject, prop)) %>%
-    mutate(adiff = prop - accept, rdiff = prop - (1 - reject)) %>%
-    mutate(across(where(is.double), round, 2))
+    mutate(adiff = prop - accept, rdiff = prop - (1 - reject))
 
   combined
 }
@@ -139,7 +138,11 @@ new_IST <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
           (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
   } else {
     ll <- dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
+          plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
           dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
+          plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
           (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
           (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
   }
@@ -149,7 +152,11 @@ new_IST <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
 new_IEX <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
   if (accept) {
     ll <- dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+          plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
           dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
+          plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
           (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
           (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
   } else {
@@ -238,6 +245,36 @@ rej_diff <- combined %>%
     y = "Difference"
   ) +
   ylim(-1, 1)
-
-saveRDS(file = "combined.RDS", combined)
 acc_diff / rej_diff
+
+acc_abs <- combined %>%
+  ggplot(aes(
+    x = cell,
+    y = accept,
+    colour = function_set,
+    group = function_set
+  )) +
+  geom_line() +
+  labs(
+    title = "Integrate Accept",
+    x = "Cell from Design",
+    y = "Accept percentage"
+  ) +
+  ylim(0, 1)
+rej_abs <- combined %>%
+  ggplot(aes(
+    x = cell,
+    y = reject,
+    colour = function_set,
+    group = function_set
+  )) +
+  geom_line() +
+  labs(
+    title = "Integrate Reject",
+    x = "Cell from Design",
+    y = "Reject percentage"
+  ) +
+  ylim(0, 1)
+acc_abs / rej_abs
+
+saveRDS(combined, "combined.RDS")
