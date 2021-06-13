@@ -257,16 +257,16 @@ function_list <- list(
 
 # Start the clock!
 # 2 cores, 10k samples, 31 minutes
-# ptm <- proc.time()
+ptm <- proc.time()
 all_runs <- mclapply(function_list, function(func_pair) {
   pars <- get_plausible_vals()
-  pred <- get_predicted_data(100, pars$all, func_pair$rsample)
+  pred <- get_predicted_data(1e4, pars$all, func_pair$rsample)
   intf <- run_integrate(pars$drifts, pars$fixed, func_pair$ll)
   res <- get_proportions(pred, intf)
   res
 })
 # Stop the clock
-# proc.time() - ptm
+proc.time() - ptm
 
 combined <- bind_rows(all_runs, .id = "function_set") %>%
   mutate(
