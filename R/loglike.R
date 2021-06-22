@@ -79,17 +79,17 @@ rll_IST <- function(data, A, b_acc, b_rej, t0, drifts) {
 ll_IEX <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
   if (accept) {
     ll <- (dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
-      plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
-      dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
-        plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
-      (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
-      (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
+          plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
+          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
+          plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
   } else {
     ll <- (dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
-      (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
-      dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
-        (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1))) *
-      (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
+          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1))) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
         plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
   }
   ll
@@ -129,19 +129,23 @@ rll_IEX <- function(data, A, b_acc, b_rej, t0, drifts) {
 #'   the provided parameter values
 ll_FPP <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
   if (accept) {
-    ll <- (dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
-            (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
-            dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
-            (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1))) *
-          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
-            plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
+    ll <- dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
+          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
   } else {
-    ll <- (dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
-            (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
-            dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
-            (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1))) *
-          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
-            plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
+    ll <- dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
+          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
   }
   ll
 }
@@ -184,18 +188,18 @@ rll_FPP <- function(data, A, b_acc, b_rej, t0, drifts) {
 ll_MW <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
   if (accept) {
     ll <- (dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
-      plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
-      dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
-        plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
-      (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
-      (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
+          plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
+          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
+          plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
+          plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
   } else {
     ll <- (dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
-            plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) +
-            dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
-            plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
-          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
-          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
+          plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) +
+          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
+          plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
+          plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
   }
   ll
 }
@@ -472,4 +476,42 @@ single_model_ll <- function(x, data) {
   new_like <- (1 - p_contam) * trial_ll +
     p_contam * (stats::dunif(data$rt, min_rt, max_rt) / 2)
   sum(log(pmax(new_like, 1e-10)))
+}
+
+#' Simple wrapper for integrate testing
+#'
+#' This function does the parameter transformations necessary for the model to
+#' run.
+#'
+#' @section The parameter vector:
+#'
+#' The vector x should contain the following elements:
+#' A number of \eqn{\alpha}
+#' values
+#'
+#' \itemize{
+#'   \item \strong{A} - the start point variability
+#'   \item \strong{b^a} and \strong{b^r}, the thresholds to either accept or
+#'     reject the item.
+#'   \item \strong{t0} - the residual time, bounded above by the minimum
+#'     response time for the participant
+#'   \item 12 drift rates. For each attribute there are three stimulus levels.
+#'     For each of these 6 attribute levels there are two drift rates, one drift
+#'     rate to accept (\strong{v^a}) and one to reject (\strong{v^r})
+#' }
+#'
+#' @inheritParams ll_IST
+#' @param model The loglikelihood function currently being tested
+#'
+#' @return The log of the likelihood for the rt's for the parameters from the
+#'   model
+#' @export
+simple_model_wrapper <- function(rt, A, b_acc, b_rej, t0, drifts, accept, model) {
+  A <- exp(A)
+  b_acc <- exp(b_acc) + A
+  b_rej <- exp(b_rej) + A
+  t0 <- exp(t0)
+  drifts <- exp(drifts)
+
+  model(rt, A, b_acc, b_rej, t0, drifts, accept)
 }
