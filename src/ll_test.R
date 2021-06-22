@@ -11,10 +11,22 @@ cells <- c("HH", "HL", "LH", "LL", "HD", "LD", "DH", "DL", "DD")
 
 get_plausible_vals <- function() {
   medians <- readRDS(here::here("data", "output", "median_alpha_exp1.RDS"))
-  example_vals <- medians %>% summarise_all(mean) %>% round(1)
+  medians %>% summarise_all(mean) %>% round(1) %>% mutate(t0 = -Inf)
+}
+
+get_modded_vals <- function() {
+  original <- get_plausible_vals()
+  original %>%
+    exp %>%
+    mutate(across(c(v_rej_p_H, v_rej_r_H, v_rej_p_L, v_rej_r_L), ~ .x + 1)) %>%
+    mutate(b_rej = b_rej / 4) %>%
+    mutate(v_acc_p_H = 1) %>%
+    log
+}
+
+get_rearranged_vals <- function(example_vals) {
   test_vals <- example_vals %>%
-    dplyr::select(!(starts_with("v") | starts_with("alpha"))) %>%
-    mutate(t0 = -Inf)
+    dplyr::select(!(starts_with("v") | starts_with("alpha")))
 
   drifts <- sapply(cells, function(cell) {
     drifts <- example_vals %>%
@@ -259,7 +271,7 @@ function_list <- list(
 # 2 cores, 10k samples, 31 minutes
 ptm <- proc.time()
 all_runs <- mclapply(function_list, function(func_pair) {
-  pars <- get_plausible_vals()
+  pars <- get_modded_vals() %>% get_rearranged_vals()
   pred <- get_predicted_data(1e4, pars$all, func_pair$rsample)
   intf <- run_integrate(pars$drifts, pars$fixed, func_pair$ll)
   res <- get_proportions(pred, intf)
