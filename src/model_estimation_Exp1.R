@@ -111,14 +111,14 @@ sampler <- pmwgs(
 
 sampler <- init(sampler)
 
-burned <- run_stage(sampler, stage = "burn", iter = 3000, particles = 600, n_cores = cores)
+burned <- run_stage(sampler, stage = "burn", iter = 5000, particles = 500, n_cores = cores)
 
 save.image(outfile)
 
-adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 600, n_cores = cores, n_unique = 40)
+adapted <- run_stage(burned, stage = "adapt", iter = 10000, particles = 500, n_cores = cores, n_unique = 40)
 
 save.image(outfile)
 
-sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = cores, pdist_update_n = NA)
+sampled <- run_stage(adapted, stage = "sample", iter = 10000, particles = 100, n_cores = cores, pdist_update_n = NA)
 
 save.image(outfile)
