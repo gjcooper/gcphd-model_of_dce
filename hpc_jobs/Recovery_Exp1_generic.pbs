@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -l select=1:ncpus=26:mem=20gb
-#PBS -l walltime=18:00:00
+#PBS -l walltime=20:00:00
 #PBS -k oe
 
 # Setup email notifications when the job is aborted(a), begins (b) or ends (e)
