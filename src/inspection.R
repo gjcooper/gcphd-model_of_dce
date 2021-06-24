@@ -157,11 +157,13 @@ sample_df <- sample_data %>%
   as_tibble()
 
 sample_data %>%
-  as_mcmc() %>%
+  as_mcmc(filter="sample") %>%
   data.frame() %>%
   tibble() %>%
   summarise_all(mean) %>%
-  data.frame()
+  data.frame() %>%
+  exp %>%
+  round(2)
 
 sample_df %>%
   select(starts_with("v_")) %>%
@@ -185,6 +187,7 @@ sample_df %>%
   geom_boxplot(aes(fill = salience)) +
   facet_grid(vars(response), vars(attribute))
 
+dev.new()
 sample_df %>%
   select(starts_with("v_")) %>%
   pivot_longer(

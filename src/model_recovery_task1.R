@@ -9,7 +9,7 @@ print(sessionInfo())
 
 # For debugging:
 # Sys.setenv(DCE_EST_EXP="SymbolicVDCE", VDCE_DISPLAY="Absent", NCPUS=3, DCE_REC_MODEL="IEX", DCE_REC_MED="median_alpha_exp2_abs.RDS", DCE_MODEL_FILE="Task2_Absent_1069903.rcgbcm_CorrectedTry1.RData", DCE_REC_DATA="SymbolicVDCE_IEX_Absent_0P6QGThVC9il_untagged_data.RDS")
-# Sys.setenv(DCE_EST_EXP="NumericVDCE", NCPUS=3, DCE_REC_MODEL="IST", DCE_REC_MED="median_alpha_exp1.RDS", DCE_MODEL_FILE="Task1_1069902.rcgbcm_CorrectedTry1.RData")
+# Sys.setenv(DCE_EST_EXP="NumericVDCE", NCPUS=3, DCE_REC_MODEL="IEX", DCE_REC_MED="median_alpha_exp1.RDS", DCE_MODEL_FILE="NumericVDCE_1878182.rcgbcm_Estimation5Model.RData")
 # Get environment variables to normal vars
 known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG",
                 "DCE_REC_MODEL", "DCE_REC_MED", "DCE_MODEL_FILE", "DCE_REC_DATA")
@@ -133,14 +133,14 @@ sampler <- pmwgs(
 
 sampler <- init(sampler)
 
-burned <- run_stage(sampler, stage = "burn", iter = 3000, particles = 600, n_cores = cores)
+burned <- run_stage(sampler, stage = "burn", iter = 5000, particles = 500, n_cores = cores)
 
 save.image(outfile)
 
-adapted <- run_stage(burned, stage = "adapt", iter = 5000, particles = 600, n_cores = cores, n_unique = 40)
+adapted <- run_stage(burned, stage = "adapt", iter = 10000, particles = 500, n_cores = cores, n_unique = 40)
 
 save.image(outfile)
 
-sampled <- run_stage(adapted, stage = "sample", iter = 5000, particles = 100, n_cores = cores, pdist_update_n = NA)
+sampled <- run_stage(adapted, stage = "sample", iter = 10000, particles = 100, n_cores = cores, pdist_update_n = NA)
 
 save.image(outfile)

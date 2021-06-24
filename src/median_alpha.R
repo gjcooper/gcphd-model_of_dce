@@ -56,6 +56,6 @@ run_all <- function(filename, output) {
   saveRDS(alpha_median, file = here::here("data", "output", output))
 }
   
-run_all("Task1_1069902.rcgbcm_CorrectedTry1.RData", "median_alpha_exp1.RDS")
+run_all("NumericVDCE_1878182.rcgbcm_Estimation5Model.RData", "median_alpha_exp1.RDS")
 run_all("Task2_Absent_1069903.rcgbcm_CorrectedTry1.RData", "median_alpha_exp2_abs.RDS")
 run_all("Task2_Greyed_1069904.rcgbcm_CorrectedTry1.RData", "median_alpha_exp2_grey.RDS")
