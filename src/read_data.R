@@ -43,8 +43,7 @@ parse_data_line <- function(data_line, line_index) {
 #' with each line representing a JSON object from the PrefSFT2020 code
 #'
 #' **returns** A list containing each participants data converted from JSON
-get_data <- function() {
-  datafile <- as.character(tkgetOpenFile())
+get_data <- function(datafile) {
   connection <- file(datafile, open = "r")
   data_lines <- readLines(connection)
   raw_data <- c()

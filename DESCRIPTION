@@ -1,6 +1,6 @@
 Package: mcce
 Title: Models of Consumer Choice Experiments
-Version: 0.0.0.9012
+Version: 0.0.0.9015
 Authors@R: 
     person(given = "Gavin",
            family = "Cooper",
@@ -19,6 +19,9 @@ Imports:
     pmwg,
     MCMCpack,
     rtdists,
-    tibble
+    tibble,
+    rjson,
+    dplyr,
+    readr
 Depends: 
     R (>= 3.5.0)
