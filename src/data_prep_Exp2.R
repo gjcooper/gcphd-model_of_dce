@@ -144,11 +144,32 @@ responded_trials %>%
   facet_wrap(~Display) +
   geom_hline(yintercept=0.8) + geom_hline(yintercept=0.75, linetype = "dashed")
 
-saveRDS(filtered_by_trial_category_absent,
-        file=here::here("data", "output", "Task2_preprocessed_Absent.RDS"))
+model_data_format <- function(cleaned_data) {
+  # Only accept trials
+  # Create simplifed data for modelling with rtdists
+  # add drift parameter names
+  cleaned_data %>%
+    transmute(
+      rt = RT / 1000,
+      subject = subject_id,
+      accept = as.numeric(Accept) + 1,
+      price = Price,
+      rating = Rating) %>%
+    mutate(
+      v_acc_p = paste0("v_acc_p_", price),
+      v_rej_p = paste0("v_rej_p_", price),
+      v_acc_r = paste0("v_acc_r_", rating),
+      v_rej_r = paste0("v_rej_r_", rating)
+    )
+}
 
-saveRDS(filtered_by_trial_category_greyed,
-        file=here::here("data", "output", "Task2_preprocessed_Greyed.RDS"))
+filtered_by_trial_category_absent %>%
+  model_data_format %>%
+  saveRDS(file = here::here("data", "output", "Task2_preprocessed_Absent.RDS"))
+
+filtered_by_trial_category_greyed %>%
+  model_data_format %>%
+  saveRDS(file = here::here("data", "output", "Task2_preprocessed_Greyed.RDS"))
 
 prevAbs <- readRDS(file=here::here("data", "output", "old_T2_prepr_Abs.RDS"))
 prevGrey <- readRDS(file=here::here("data", "output", "old_T2_prepr_Gre.RDS"))

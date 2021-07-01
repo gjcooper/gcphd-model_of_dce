@@ -31,40 +31,24 @@ experimental_data <- envars$DCE_EXP_DATA
 
 #Tests
 
-if (! (experiment %in% c("NumericVDCE", "SymbolicVDCE"))) {
+if (! (experiment %in% c("NumericVDCE", "SymbolicVDCE", "PrefDCE"))) {
   stop("System Environment Variable DCE_EST_EXP not defined or unknown value")
 }
 
 # Experiment specific details/checks
-if (experiment == "NumericVDCE") {
-  filename <- paste(experiment, jobid, tag, sep = "_")
-} else if (experiment == "SymbolicVDCE") {
+if (experiment == "SymbolicVDCE") {
   if (! (displaytype %in% c("Absent", "Greyed"))) {
     stop("System Environment variable VDCE_DISPLAY should be defined")
   }
   filename <- paste(experiment, displaytype, jobid, tag, sep = "_")
+} else {
+  filename <- paste(experiment, jobid, tag, sep = "_")
 }
 
 # Get output filename and input data
 outfile <- here::here("data", "output", paste0(filename, ".RData"))
-cleaned_data <- readRDS(here::here("data", "output", experimental_data))
+model_data <- readRDS(here::here("data", "output", experimental_data))
 
-# Only accept trials
-# Create simplifed data for modelling with rtdists
-# add drift parameter names
-mod_data <- cleaned_data %>%
-  transmute(
-    rt = RT / 1000,
-    subject = subject_id,
-    accept = as.numeric(Accept) + 1,
-    price = Price,
-    rating = Rating) %>%
-  mutate(
-    v_acc_p = paste0("v_acc_p_", price),
-    v_rej_p = paste0("v_rej_p_", price),
-    v_acc_r = paste0("v_acc_r_", rating),
-    v_rej_r = paste0("v_rej_r_", rating)
-  )
 
 # < 0.3 participants were penalised, max trial length was 4.5 seconds
 min_rt <- 0
@@ -103,7 +87,7 @@ diag(priors$theta_mu_var)[mix_counts] <- 2
 # Create the Particle Metropolis within Gibbs sampler object ------------------
 
 sampler <- pmwgs(
-  data = mod_data,
+  data = model_data,
   pars = parameters,
   ll_func = dirichlet_mix_ll,
   prior = priors

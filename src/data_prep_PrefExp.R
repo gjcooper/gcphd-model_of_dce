@@ -21,6 +21,7 @@ pref_data <- extracted %>%
   mutate(price = factor(price, levels = c("H", "L", "D")),
          rating = factor(rating, levels = c("H", "L", "D"))) %>%
   select(-sonaID) %>%
+  drop_na %>%
   mutate(
     v_acc_p = paste0("v_acc_p_", price),
     v_rej_p = paste0("v_rej_p_", price),

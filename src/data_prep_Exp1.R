@@ -122,7 +122,24 @@ responded_trials %>%
   geom_hline(yintercept=0.8) + geom_hline(yintercept=0.75, linetype = "dashed")
 
 
-saveRDS(filtered_by_trial_category, file=here::here("data", "output", "Task1_preprocessed.RDS"))
+# Only accept trials
+# Create simplifed data for modelling with rtdists
+# add drift parameter names
+preprocessed_data <- filtered_by_trial_category %>%
+  transmute(
+    rt = RT / 1000,
+    subject = subject_id,
+    accept = as.numeric(Accept) + 1,
+    price = Price,
+    rating = Rating) %>%
+  mutate(
+    v_acc_p = paste0("v_acc_p_", price),
+    v_rej_p = paste0("v_rej_p_", price),
+    v_acc_r = paste0("v_acc_r_", rating),
+    v_rej_r = paste0("v_rej_r_", rating)
+  )
+
+saveRDS(preprocessed_data, file=here::here("data", "output", "Task1_preprocessed.RDS"))
 prev2 <- readRDS(file=here::here("data", "output", "old_T1_prepr.RDS"))
 
 t1 <- prev2 %>% filter(acceptAND) %>% select(-c(acceptRight, RespRight))
