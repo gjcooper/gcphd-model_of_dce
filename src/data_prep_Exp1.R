@@ -2,7 +2,7 @@ library(tidyr)
 library(dplyr)
 library(forcats)
 library(ggplot2)
-devtools::load_all()
+library(mcce)
 
 
 cfix <- function(x) {
@@ -140,8 +140,3 @@ preprocessed_data <- filtered_by_trial_category %>%
   )
 
 saveRDS(preprocessed_data, file=here::here("data", "output", "Task1_preprocessed.RDS"))
-prev2 <- readRDS(file=here::here("data", "output", "old_T1_prepr.RDS"))
-
-t1 <- prev2 %>% filter(acceptAND) %>% select(-c(acceptRight, RespRight))
-t2 <- filtered_by_trial_category %>% select(-c(BlockName, pc_correct))
-all(t1 == t2)
