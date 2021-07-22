@@ -139,6 +139,7 @@ compare_data <- function(original, recovery, comparison = "rt") {
 # Look at the estimates in absolute and relative terms, then use coda mcmc plot for theta_mu
 recovery <- get_data()
 original <- get_data()
+
 (g+ggtitle("Recovery from Coactive")) / (go+ggtitle("Original Data"))
 compare(original, recovery)
 compare(original, recovery, relative = FALSE)
