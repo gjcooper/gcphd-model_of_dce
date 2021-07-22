@@ -139,3 +139,17 @@ extract_data <- function(raw_data) {
   ))
   dplyr::bind_rows(part_data_list)
 }
+
+#' Load an RData file with pmwg samples for further analysis
+#'
+#' @param pmwg_file The environment from a run of pmwg as RData
+#' @param final_obj The object (generally a pmwgs object) to extract
+#'
+#' @return The pmwgs object
+#'
+#' @export
+get_samples <- function(pmwg_file, final_obj = "sampled") {
+  # Load in the data into the global environment
+  load(pmwg_file, envir = (e <- new.env()))
+  e[[final_obj]]
+}
