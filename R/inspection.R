@@ -1,10 +1,3 @@
-library(coda)
-require(tidyverse)
-require(tcltk)
-require(pmwg)
-require(mcmcplots)
-library(patchwork)
-
 get_data <- function(final_obj = "sampled") {
   # Load in the data into the global environment
   f <- tkgetOpenFile(
