@@ -2,18 +2,17 @@
 % Please edit documentation in R/inspection.R
 \name{get_medians}
 \alias{get_medians}
-\title{Return median values for alpha parameters (from extract_alphas)}
+\title{Return median values for  parameters (from extract_parameters)}
 \usage{
-get_medians(alphas)
+get_medians(pars)
 }
 \arguments{
-\item{alphas}{The result of extract_alphas, tibble containing samples for
-the architecture parameter estimates.}
+\item{pars}{The result of extract_parameters, tibble containing samples for
+the selected parameter estimates.}
 }
 \value{
-A tibble containing the medians of the samples for each subject as
-well as the relative weight for each architecture.
+A tibble containing the medians of the samples for each subject
 }
 \description{
-Return median values for alpha parameters (from extract_alphas)
+Return median values for  parameters (from extract_parameters)
 }

@@ -4,78 +4,7 @@ library(ggplot2)
 library(tidyr)
 library(forcats)
 library(pmwg)
-
-
-#' Plot the evidence for each model by subject
-#'
-#' @param plot_obj - the pmwg sampler object containing estimates
-#' @param relative - Whether to plot the evidence as relative or absolute
-#'
-#' @return None - side effect is the creation of the plot
-plot_alphas <- function(plot_obj, relative = TRUE) {
-  medians <- extract_alphas(plot_obj) %>%
-    get_medians()
-
-  if (relative) {
-    ggplot(medians, aes(x = subjectid, y = rel_val, fill = Parameter)) +
-      geom_col() +
-      xlab("Subject Identifier") +
-      ylab("Relative Evidence") +
-      scale_fill_brewer(palette = "Set2", name = "Model")
-  } else {
-    ggplot(medians, aes(x = subjectid, y = value, fill = Parameter)) +
-      geom_col() +
-      xlab("Subject Identifier") +
-      ylab("Absolute Evidence") +
-      scale_fill_brewer(palette = "Set2", name = "Model")
-  }
-}
-
-
-
-compare <- function(original, recovery, relative = TRUE) {
-  original <- extract_alphas(original) %>%
-    get_medians()
-  recovery <- extract_alphas(recovery) %>%
-    get_medians()
-
-  medians <- bind_rows(
-    estimates = original,
-    recovery = recovery,
-    .id = "source"
-  )
-
-}
-
-compare_data <- function(original, recovery, comparison = "rt") {
-  odata <- original$data %>%
-    as_tibble()
-  rdata <- recovery$data %>%
-    as_tibble()
-  alldata <- bind_rows(original = odata, recovery = rdata, .id = "source")
-  if (comparison == "rt") {
-    alldata %>%
-      filter(rt < 5) %>%
-      unite("cell", price:rating, sep='') %>%
-      ggplot(mapping = aes(x = rt, colour = source)) +
-      geom_density() +
-      facet_wrap(~cell)
-  } else if (comparison == "rtbox") {
-    alldata %>%
-      filter(rt < 5) %>%
-      unite("cell", price:rating, sep='') %>%
-      ggplot(mapping = aes(x = cell, y = rt, colour = source)) +
-      geom_boxplot()
-  } else if (comparison == "response") {
-    alldata %>%
-      mutate(accept=factor(accept, labels=c('reject', 'accept'))) %>%
-      ggplot(mapping = aes(x = accept, group = source, fill = source)) +
-      geom_bar(position = "dodge") +
-      facet_wrap(~subject)
-  }
-}
-# Look at the estimates in absolute and relative terms, then use coda mcmc plot for theta_mu
-
+library(stringr)
 
 # Load all the samples
 data_location <- here::here("data", "output", "5ModelRecovery")
@@ -87,10 +16,11 @@ recovery_files <- c(
   "NumericVDCE_MW_1878516.rcgbcm_5ModelRecovery.RData"
 )
 
-recovery_samples <- lapply(recovery_files, function(x) {
+samples <- lapply(recovery_files, function(x) {
+  print(paste("Extracting", x))
   get_samples(here::here(data_location, x))
 })
-names(recovery_samples) <- sapply(strsplit(recovery_files, "_"), "[[", 2)
+names(samples) <- sapply(strsplit(recovery_files, "_"), "[[", 2)
 
 original_samples <- get_samples(
   here::here(
@@ -100,39 +30,99 @@ original_samples <- get_samples(
   )
 )
 
-all_samples <- c(recovery_samples, Original=original_samples)
+samples[["Original"]] <- original_samples
 
-recovery_medians <- sapply(recovery_samples, function(x) {
-  extract_alphas(x) %>% get_medians()
+model_medians <- sapply(samples, function(x) {
+  extract_parameters(x, str_subset(x$par_names, "alpha")) %>%
+    get_medians() %>%
+    group_by(subjectid) %>%
+    mutate(rel_val = value / sum(value))
   },
   USE.NAMES = TRUE,
   simplify = FALSE
 )
 
-original_medians <- original_samples %>%
-  extract_alphas %>%
-  get_medians
-
-all_medians <- append(recovery_medians, original_medians)
-
 model_order <- c("CB", "FPP", "MW", "IST", "IEX", "Original")
 
-medians <- bind_rows(recovery_medians, .id = "source") %>%
-  bind_rows(Original = original_medians) %>%
-  replace_na(list(source = "Original")) %>%
-  mutate(source = factor(source, levels = model_order))
+model_medians <- bind_rows(model_medians, .id = "source") %>%
+  mutate(source = factor(source, levels = model_order)) %>%
+  mutate(subjectid = case_when(
+    subjectid == "theta_mu" ~ "Group",
+    TRUE ~ str_pad(subjectid, 2, pad = "0")
+  ))
 
-ggplot(medians, aes(x = subjectid, y = rel_val, fill = Parameter)) +
+ggplot(model_medians, aes(x = subjectid, y = rel_val, fill = Parameter)) +
   geom_col() +
   xlab("Subject Identifier") +
   ylab("Relative Evidence") +
   scale_fill_brewer(palette = "Dark2", name = "Model") +
-  facet_grid(rows = vars(source))
+  facet_grid(rows = vars(source)) +
+  scale_y_continuous(labels = NULL, breaks = NULL)
 
-dev.new()
-ggplot(medians, aes(x = subjectid, y = value, fill = Parameter)) +
-  geom_col() +
-  xlab("Subject Identifier") +
-  ylab("Absolute Evidence") +
-  scale_fill_brewer(palette = "Dark2", name = "Model") +
-  facet_grid(rows = vars(source))
+par_medians <- sapply(samples, function(x) {
+  extract_parameters(x, str_subset(x$par_names, "alpha", negate = TRUE)) %>%
+    get_medians(alpha = FALSE)
+  },
+  USE.NAMES = TRUE,
+  simplify = FALSE
+)
+
+model_order <- c("CB", "FPP", "MW", "IST", "IEX", "Original")
+
+par_medians <- bind_rows(par_medians, .id = "source")
+
+recovery <- par_medians %>% filter(source != "Original")
+original <- par_medians %>% filter(source == "Original")
+
+combined <- recovery %>%
+  left_join(original, by = c("Parameter", "subjectid")) %>%
+  select(-source.y) %>%
+  rename(
+    recovered_value = value.x,
+    estimated_value = value.y,
+    recovery_model = source.x
+  ) %>%
+  mutate(source = factor(recovery_model, levels = model_order[-6])) %>%
+  mutate(subjectid = case_when(
+    subjectid == "theta_mu" ~ "Group",
+    TRUE ~ str_pad(subjectid, 2, pad = "0")
+  ))
+
+scatter_theme <- theme(
+  plot.title = element_text(hjust = 0.5),
+  plot.caption = element_text(hjust = 0),
+  axis.text.x = element_text(size = 7),
+  axis.text.y = element_text(size = 7),
+)
+scatter_caption <- str_wrap(paste(
+  "The data generating values are the medians of the posterior for the full",
+  "model estimated with the dirichlet process. The generation process uses the",
+  "random sample function from only one of the 5 models.",
+  "The recovered values are again the medians of the posterior for the full",
+  "model (again with the dirichlet process)."
+), 100)
+scatter_caption <- paste(
+  scatter_caption,
+  "\n",
+  str_wrap(paste(
+    "Shown in red is the theta_mu value from the original data and the",
+    "recovered data, but is not actually used to generate anything"
+    ), 100)
+)
+
+for (model in model_order[-6]) {
+  recovered <- combined %>% filter(recovery_model == model)
+  p <- ggplot(recovered, aes(x = estimated_value, y = recovered_value)) +
+    geom_point(size = 0.5) +
+    geom_point(data = recovered %>% filter(subjectid == "Group"), colour = "red", size = 0.5) +
+    geom_abline(intercept = 0, slope = 1) +
+    facet_wrap(vars(Parameter), scales = "free") +
+    labs(
+      x = "Generating Value",
+      y = "Recovered Value",
+      title = paste("Generated from", model),
+      caption = scatter_caption
+    ) +
+    scatter_theme
+    print(p)
+}
