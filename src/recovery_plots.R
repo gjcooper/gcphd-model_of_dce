@@ -44,6 +44,32 @@ model_medians <- sapply(samples, function(x) {
 
 model_order <- c("CB", "FPP", "MW", "IST", "IEX", "Original")
 
+recovery_data_files <- c(
+  "NumericVDCE_CB_1878514.rcgbcm_5ModelRecovery_data.RDS",
+  "NumericVDCE_FPP_1878515.rcgbcm_5ModelRecovery_data.RDS",
+  "NumericVDCE_IEX_1878513.rcgbcm_5ModelRecovery_data.RDS",
+  "NumericVDCE_IST_1878369.rcgbcm_5ModelRecovery_data.RDS",
+  "NumericVDCE_MW_1878516.rcgbcm_5ModelRecovery_data.RDS"
+)
+
+recovery_data <- lapply(recovery_data_files, function(x) {
+  print(paste("Reading data", x))
+  readRDS(here::here(data_location, x))
+})
+names(recovery_data) <- sapply(strsplit(recovery_data_files, "_"), "[[", 2)
+
+original_data <- readRDS(here::here("data", "output", "Task1_preprocessed.RDS"))
+recovery_data[["Original"]] <- original_data
+recovery_data <- bind_rows(recovery_data, .id = "source")
+
+recovery_data %>%
+  filter(rt < 5) %>%
+  mutate(cell=paste0(price, rating)) %>%
+  ggplot(aes(x = rt, colour = source)) +
+  geom_density() +
+  facet_wrap(~ cell)
+
+
 model_medians <- bind_rows(model_medians, .id = "source") %>%
   mutate(source = factor(source, levels = model_order)) %>%
   mutate(subjectid = case_when(
@@ -67,9 +93,7 @@ par_medians <- sapply(samples, function(x) {
   simplify = FALSE
 )
 
-model_order <- c("CB", "FPP", "MW", "IST", "IEX", "Original")
-
-par_medians <- bind_rows(par_medians, .id = "source")
+par_medians <- bind_rows(par_medians, .id = "source") %>% mutate(value = log(value))
 
 recovery <- par_medians %>% filter(source != "Original")
 original <- par_medians %>% filter(source == "Original")
