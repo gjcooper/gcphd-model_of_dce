@@ -12,6 +12,9 @@
 #' @param folder The data folder (string)
 #' @param filename_pattern The pattern with which the names of each data file
 #'   start (string)
+#' @return A list containing each participants data converted from JSON
+#'
+#' @export
 read_expyriment_data <- function(folder, filename_pattern) {
   pattern <- paste("^", filename_pattern, ".*\\.xpd", sep = "")
 
