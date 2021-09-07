@@ -12,6 +12,9 @@ read_expyriment_data(folder, filename_pattern)
 \item{filename_pattern}{The pattern with which the names of each data file
 start (string)}
 }
+\value{
+A list containing each participants data converted from JSON
+}
 \description{
 Import Exypriment data into R. The function concatinates all data and returns
 a R data frame with all subjects. Between subject factors will be added as

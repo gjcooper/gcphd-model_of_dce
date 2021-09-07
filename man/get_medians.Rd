@@ -4,7 +4,7 @@
 \alias{get_medians}
 \title{Return median values for  parameters (from extract_parameters)}
 \usage{
-get_medians(pars)
+get_medians(pars, alpha = TRUE)
 }
 \arguments{
 \item{pars}{The result of extract_parameters, tibble containing samples for
