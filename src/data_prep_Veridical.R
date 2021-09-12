@@ -6,7 +6,8 @@ library(mcce)
 
 # Global options
 task <- "Task1"  # Other option is Task2 for Symbolic task
-condition <- "Accept"  # Other option is Reject
+condition <- "Reject"  # Other option is Reject
+display <- "Absent"  # Other option is Greyed
 
 cfix <- function(x, end = 1) {
   substr(x, 3, nchar(x) - end)
@@ -107,13 +108,11 @@ filtered_by_trial_category <- responded_trials %>%
     group_categories %>%
     mutate(pc_correct = mean(Correct)) %>%
     group_outer %>%
-    filter(min(pc_correct) >= 0.8) %>%
-    filter(acceptAND)
+    filter(min(pc_correct) >= 0.8)
 
 filtered_by_global_correct <- responded_trials %>%
   group_outer %>%
-  filter(mean(Correct) >= 0.8) %>%
-  filter(acceptAND)
+  filter(mean(Correct) >= 0.8)
 
 global_correct_plot <- responded_trials %>%
   group_outer %>%
@@ -156,11 +155,12 @@ if (task == "Task1") {
   category_split_plot + facet_wrap(~Display)
 }
 
-model_data_format <- function(cleaned_data) {
+model_data_format <- function(cleaned_data, accept_trials = TRUE) {
   # Only accept trials
   # Create simplifed data for modelling with rtdists
   # add drift parameter names
   cleaned_data %>%
+    filter(acceptAND == accept_trials) %>%
     transmute(
       rt = RT / 1000,
       subject = subject_id,
@@ -176,17 +176,13 @@ model_data_format <- function(cleaned_data) {
 }
 
 if (task == "Task1") {
-  filtered_by_trial_category %>%
-    model_data_format %>%
-    saveRDS(file = here::here("data", "output", "Task1_preprocessed.RDS"))
+  savefile <- paste0("Task1_preprocessed_", condition, ".RDS")
 } else {
-  filtered_by_trial_category %>%
-    filter(Display == "Absent") %>%
-    model_data_format %>%
-    saveRDS(file = here::here("data", "output", "Task2_preprocessed_Absent.RDS"))
-
-  filtered_by_trial_category %>%
-    filter(Display == "Greyed") %>%
-    model_data_format %>%
-    saveRDS(file = here::here("data", "output", "Task2_preprocessed_Greyed.RDS"))
+  savefile <- paste0("Task2_preprocessed_", condition, "_", display, ".RDS")
+  filtered_by_trial_category <- filtered_by_trial_category %>%
+    filter(Display == display)
 }
+
+filtered_by_trial_category %>%
+  model_data_format(accept_trials = (condition == "Accept")) %>%
+  saveRDS(file = here::here("data", "output", savefile))
