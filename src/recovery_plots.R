@@ -3,8 +3,16 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(forcats)
+library(tidytext)
 library(pmwg)
 library(stringr)
+library(paletti)
+library(readr)
+
+waterside_cols <- read_lines(file = "palette.txt")
+viz_palette(waterside_cols, "waterside park")
+fill_palette <- get_scale_fill(get_pal(waterside_cols))
+col_palette <- get_scale_colour(get_pal(waterside_cols))
 
 # Load all the samples
 data_location <- here::here("data", "output", "5ModelRecovery")
@@ -32,16 +40,6 @@ original_samples <- get_samples(
 
 samples[["Original"]] <- original_samples
 
-model_medians <- sapply(samples, function(x) {
-  extract_parameters(x, str_subset(x$par_names, "alpha")) %>%
-    get_medians() %>%
-    group_by(subjectid) %>%
-    mutate(rel_val = value / sum(value))
-  },
-  USE.NAMES = TRUE,
-  simplify = FALSE
-)
-
 model_order <- c("CB", "FPP", "MW", "IST", "IEX", "Original")
 
 recovery_data_files <- c(
@@ -66,24 +64,69 @@ recovery_data %>%
   filter(rt < 5) %>%
   mutate(cell=paste0(price, rating)) %>%
   ggplot(aes(x = rt, colour = source)) +
-  geom_density() +
+  geom_density(size=1) +
+  col_palette() +
   facet_wrap(~ cell)
 
-
-model_medians <- bind_rows(model_medians, .id = "source") %>%
+model_medians <- sapply(samples, function(x) {
+    extract_parameters(x, str_subset(x$par_names, "alpha")) %>%
+      get_medians() %>%
+      group_by(subjectid) %>%
+      mutate(rel_val = value / sum(value))
+    },
+    USE.NAMES = TRUE,
+    simplify = FALSE
+  ) %>%
+  bind_rows(.id = "source") %>%
   mutate(source = factor(source, levels = model_order)) %>%
+  mutate(Parameter = as.character(Parameter)) %>%
   mutate(subjectid = case_when(
     subjectid == "theta_mu" ~ "Group",
     TRUE ~ str_pad(subjectid, 2, pad = "0")
   ))
 
-ggplot(model_medians, aes(x = subjectid, y = rel_val, fill = Parameter)) +
+subject_order <- model_medians %>%
+  filter(source == "Original", Parameter == "IEX") %>%
+  arrange(desc(rel_val)) %>%
+  pull(subjectid)
+
+Par_order <- model_medians %>%
+  filter(source == "Original") %>%
+  group_by(Parameter) %>%
+  summarise(median_val = median(rel_val)) %>%
+  arrange(median_val) %>%
+  pull(Parameter)
+
+model_medians %>%
+  mutate(subjectid = factor(subjectid, subject_order)) %>%
+  mutate(subjectid = fct_relevel(subjectid, "Group", after=Inf)) %>%
+  mutate(subjectid = factor(as.numeric(subjectid), levels = 1:27, labels = c(letters, "Group"))) %>%
+  mutate(highlight = ifelse(subjectid == "Group", "Highlight", "Normal")) %>%
+  mutate(Parameter = factor(Parameter, Par_order)) %>%
+  ggplot(aes(x = subjectid, y = rel_val, fill = Parameter, alpha = highlight)) +
+    geom_col() +
+    xlab("Subject Identifier") +
+    ylab("Relative Evidence") +
+    fill_palette() +
+    scale_alpha_manual(values=c(1,0.8)) +
+    facet_grid(rows = vars(source)) +
+    scale_y_continuous(labels = NULL, breaks = NULL)
+
+model_medians %>%
+  mutate(subjectid = factor(subjectid, subject_order)) %>%
+  mutate(subjectid = fct_relevel(subjectid, "Group", after=Inf)) %>%
+  mutate(subjectid = group_indices(subjectid))
+
+  mutate(Parameter = factor(Parameter, Par_order)) %>%
+  ggplot(aes(x = Parameter, y = rel_val, fill = Parameter)) +
   geom_col() +
-  xlab("Subject Identifier") +
-  ylab("Relative Evidence") +
-  scale_fill_brewer(palette = "Dark2", name = "Model") +
-  facet_grid(rows = vars(source)) +
-  scale_y_continuous(labels = NULL, breaks = NULL)
+  fill_palette() +
+  labs(y = "Relative Evidence") +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank()) +
+  facet_grid(rows = vars(source), cols = vars(subjectid))
+
 
 par_medians <- sapply(samples, function(x) {
   extract_parameters(x, str_subset(x$par_names, "alpha", negate = TRUE)) %>%
@@ -137,8 +180,8 @@ scatter_caption <- paste(
 for (model in model_order[-6]) {
   recovered <- combined %>% filter(recovery_model == model)
   p <- ggplot(recovered, aes(x = estimated_value, y = recovered_value)) +
-    geom_point(size = 0.5) +
-    geom_point(data = recovered %>% filter(subjectid == "Group"), colour = "red", size = 0.5) +
+    geom_point(size = 0.5, colour = waterside_cols[3]) +
+    geom_point(data = recovered %>% filter(subjectid == "Group"), colour = waterside_cols[6], size = 0.5) +
     geom_abline(intercept = 0, slope = 1) +
     facet_wrap(vars(Parameter), scales = "free") +
     labs(
@@ -147,6 +190,7 @@ for (model in model_order[-6]) {
       title = paste("Generated from", model),
       caption = scatter_caption
     ) +
-    scatter_theme
+    scatter_theme +
+    col_palette()
     print(p)
 }
