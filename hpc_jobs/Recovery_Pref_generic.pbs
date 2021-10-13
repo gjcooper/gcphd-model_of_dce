@@ -1,6 +1,6 @@
 #!/bin/bash
-#PBS -l select=1:ncpus=26:mem=20gb
-#PBS -l walltime=20:00:00
+#PBS -l select=1:ncpus=32:mem=20gb
+#PBS -l walltime=48:00:00
 #PBS -k oe
 
 # Setup email notifications when the job is aborted(a), begins (b) or ends (e)
@@ -12,6 +12,6 @@ module load R/4.0.1
 
 cd $PBS_O_WORKDIR
 
-Rscript --no-save --no-restore src/model_recovery.R > recovery_Exp1_$VDCE_TAG.$DCE_REC_MODEL.$PBS_JOBID.out 2> recovery_Exp1_$VDCE_TAG.$DCE_REC_MODEL.$PBS_JOBID.err
+Rscript --no-save --no-restore src/model_recovery.R > recovery_Pref_$VDCE_TAG.$DCE_REC_MODEL.$PBS_JOBID.out 2> recovery_Pref_$VDCE_TAG.$DCE_REC_MODEL.$PBS_JOBID.err
 
 exit 0
