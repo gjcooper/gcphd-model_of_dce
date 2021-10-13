@@ -56,6 +56,7 @@ recovery_data <- lapply(recovery_data_files, function(x) {
 })
 names(recovery_data) <- sapply(strsplit(recovery_data_files, "_"), "[[", 2)
 
+#original_data <- readRDS(here::here("data", "output", "Pref_preprocessed.RDS"))
 original_data <- readRDS(here::here("data", "output", "Task1_preprocessed.RDS"))
 recovery_data[["Original"]] <- original_data
 recovery_data <- bind_rows(recovery_data, .id = "source")

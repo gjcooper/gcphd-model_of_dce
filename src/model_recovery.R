@@ -11,6 +11,7 @@ print(sessionInfo())
 # Sys.setenv(DCE_EST_EXP="SymbolicVDCE", VDCE_DISPLAY="Absent", NCPUS=3, DCE_REC_MODEL="IEX", DCE_REC_MED="median_alpha_exp2_abs.RDS", DCE_MODEL_FILE="Task2_Absent_1069903.rcgbcm_CorrectedTry1.RData", DCE_REC_DATA="SymbolicVDCE_IEX_Absent_0P6QGThVC9il_untagged_data.RDS")
 # Sys.setenv(DCE_EST_EXP="NumericVDCE", NCPUS=3, DCE_REC_MODEL="IEX", DCE_REC_MED="median_alpha_exp1.RDS", DCE_MODEL_FILE="NumericVDCE_1878182.rcgbcm_Estimation5Model.RData")
 # Sys.setenv(DCE_EST_EXP="NumericVDCE", NCPUS=3, DCE_REC_MODEL="CB", DCE_REC_MED="median_alpha_exp1.RDS", DCE_MODEL_FILE="NumericVDCE_1878182.rcgbcm_Estimation5Model.RData", DCE_REC_DATA="5ModelRecovery/NumericVDCE_CB_1878514.rcgbcm_5ModelRecovery_data.RDS")
+# Sys.setenv(DCE_EST_EXP="PrefDCE", NCPUS=3, DCE_REC_MODEL="CB", DCE_REC_MED="median_alpha_pref.RDS", DCE_MODEL_FILE="PrefDCE_1896523.rcgbcm_Estimation5Model.RData")
 # Get environment variables to normal vars
 known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG",
                 "DCE_REC_MODEL", "DCE_REC_MED", "DCE_MODEL_FILE", "DCE_REC_DATA")
@@ -49,18 +50,18 @@ if (is.null(sample_func)) {
   stop("DCE_REC_MODEL env variable must be exposed in mcce package rll_funcs vector")
 }
 
-if (! (experiment %in% c("NumericVDCE", "SymbolicVDCE"))) {
+if (! (experiment %in% c("NumericVDCE", "SymbolicVDCE", "PrefDCE"))) {
   stop("System Environment Variable DCE_EST_EXP not defined or unknown value")
 }
 
 # Experiment specific details/checks
-if (experiment == "NumericVDCE") {
-  filename <- paste(experiment, test_model, jobid, tag, sep = "_")
-} else if (experiment == "SymbolicVDCE") {
+if (experiment == "SymbolicVDCE") {
   if (! (displaytype %in% c("Absent", "Greyed"))) {
     stop("System Environment variable VDCE_DISPLAY should be defined")
   }
   filename <- paste(experiment, test_model, displaytype, jobid, tag, sep = "_")
+} else {
+  filename <- paste(experiment, test_model, jobid, tag, sep = "_")
 }
 
 # Get output filename and input data
