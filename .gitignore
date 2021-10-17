@@ -10,3 +10,5 @@ packrat/src/
 docs
 data/input/
 results/
+*.err
+*.out
