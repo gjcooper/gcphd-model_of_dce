@@ -54,7 +54,7 @@ if (experiment == "SymbolicVDCE") {
 new_outfile <- here::here("data", "output", paste0(filename, ".RData"))
 
 # Pull in vars etc from earlier run
-load(file = early_data)
+load(file = here::here("data", "output", early_data))
 
 outfile <- new_outfile
 cores <- new_cores
