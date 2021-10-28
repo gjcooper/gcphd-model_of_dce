@@ -9,6 +9,7 @@ packrat/src/
 *.swp
 docs
 data/input/
+data/output/
 results/
 *.err
 *.out

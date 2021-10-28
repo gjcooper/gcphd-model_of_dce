@@ -3,7 +3,14 @@ library(dplyr)
 library(ggplot2)
 library(stringr)
 library(patchwork)
+library(paletti)
+library(readr)
 library(forcats)
+
+frankwebb_cols <- read_lines(file = "palette.txt")
+viz_palette(frankwebb_cols, "Frank Webb palette")
+fill_palette <- get_scale_fill(get_pal(frankwebb_cols))
+col_palette <- get_scale_colour(get_pal(frankwebb_cols))
 
 # Load all the samples
 pref_file <- here::here("data", "output", "PrefDCE_1896523.rcgbcm_Estimation5Model.RData")
@@ -32,17 +39,18 @@ Par_order <- model_medians %>%
   pull(Parameter)
 
 model_plot <- function(medians) {
+  Par_order <- c("IST", "CB", "FPP", "MW", "IEX")
   medians %>%
+    filter(subjectid != "Group") %>%
+    mutate(Parameter = factor(Parameter, Par_order)) %>%
     ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
     geom_col() +
-    xlab("Subject Identifier") +
-    ylab("Relative Evidence") +
-    scale_alpha_manual(values=c(1,0.8)) +
-    scale_y_continuous(labels = NULL, breaks = NULL) +
-    scale_fill_brewer(palette = "Dark2", name = "Model") +
-    theme(axis.title.x=element_blank(),
-          axis.text.x=element_blank(),
-          axis.ticks.x=element_blank())
+    fill_palette() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank()) +
+    labs(y = "Relative Evidence") +
+    scale_y_continuous(labels = NULL, breaks = NULL)
 }
 
 model_medians %>%

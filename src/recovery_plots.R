@@ -9,10 +9,10 @@ library(stringr)
 library(paletti)
 library(readr)
 
-waterside_cols <- read_lines(file = "palette.txt")
-viz_palette(waterside_cols, "waterside park")
-fill_palette <- get_scale_fill(get_pal(waterside_cols))
-col_palette <- get_scale_colour(get_pal(waterside_cols))
+frankwebb_cols <- read_lines(file = "palette.txt")
+viz_palette(frankwebb_cols, "Frank Webb palette")
+fill_palette <- get_scale_fill(get_pal(frankwebb_cols))
+col_palette <- get_scale_colour(get_pal(frankwebb_cols))
 
 # Load all the samples
 data_location <- here::here("data", "output", "5ModelRecovery")
@@ -87,9 +87,14 @@ model_medians <- sapply(samples, function(x) {
   ))
 
 subject_order <- model_medians %>%
-  filter(source == "Original", Parameter == "IEX") %>%
-  arrange(desc(rel_val)) %>%
+  filter(subjectid != "Group") %>%
+  group_by(subjectid, source) %>%
+  summarise(maxRel = max(rel_val)) %>%
+  group_by(subjectid) %>%
+  summarise(meanMax = mean(maxRel)) %>%
+  arrange(desc(meanMax)) %>%
   pull(subjectid)
+
 
 Par_order <- model_medians %>%
   filter(source == "Original") %>%
@@ -99,35 +104,21 @@ Par_order <- model_medians %>%
   pull(Parameter)
 
 model_medians %>%
+  filter(source != "Original") %>%
+  filter(subjectid != "Group") %>%
   mutate(subjectid = factor(subjectid, subject_order)) %>%
-  mutate(subjectid = fct_relevel(subjectid, "Group", after=Inf)) %>%
-  mutate(subjectid = factor(as.numeric(subjectid), levels = 1:27, labels = c(letters, "Group"))) %>%
-  mutate(highlight = ifelse(subjectid == "Group", "Highlight", "Normal")) %>%
+  mutate(subjectid = factor(as.numeric(subjectid), levels = 1:26, labels = letters)) %>%
   mutate(Parameter = factor(Parameter, Par_order)) %>%
-  ggplot(aes(x = subjectid, y = rel_val, fill = Parameter, alpha = highlight)) +
+  mutate(source = factor(source, Par_order)) %>%
+  ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
     geom_col() +
-    xlab("Subject Identifier") +
-    ylab("Relative Evidence") +
+    labs(y = "Relative Evidence") +
     fill_palette() +
-    scale_alpha_manual(values=c(1,0.8)) +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank()) +
     facet_grid(rows = vars(source)) +
     scale_y_continuous(labels = NULL, breaks = NULL)
-
-model_medians %>%
-  mutate(subjectid = factor(subjectid, subject_order)) %>%
-  mutate(subjectid = fct_relevel(subjectid, "Group", after=Inf)) %>%
-  mutate(subjectid = group_indices(subjectid))
-
-  mutate(Parameter = factor(Parameter, Par_order)) %>%
-  ggplot(aes(x = Parameter, y = rel_val, fill = Parameter)) +
-  geom_col() +
-  fill_palette() +
-  labs(y = "Relative Evidence") +
-  theme(axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.ticks.x = element_blank()) +
-  facet_grid(rows = vars(source), cols = vars(subjectid))
-
 
 par_medians <- sapply(samples, function(x) {
   extract_parameters(x, str_subset(x$par_names, "alpha", negate = TRUE)) %>%

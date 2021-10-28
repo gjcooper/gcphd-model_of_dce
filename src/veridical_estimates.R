@@ -1,11 +1,15 @@
 library(mcce)
 library(dplyr)
 library(ggplot2)
-#library(tidyr)
-#library(forcats)
-#library(pmwg)
 library(stringr)
 library(patchwork)
+library(paletti)
+library(readr)
+
+frankwebb_cols <- read_lines(file = "palette.txt")
+viz_palette(frankwebb_cols, "Frank Webb palette")
+fill_palette <- get_scale_fill(get_pal(frankwebb_cols))
+col_palette <- get_scale_colour(get_pal(frankwebb_cols))
 
 # Load all the samples
 accept_file <- here::here("data", "output", "NumericVDCE_1878182.rcgbcm_Estimation5Model.RData")
@@ -34,18 +38,35 @@ model_medians <- bind_rows(model_medians, .id = "source") %>%
   ))
 
 model_plot <- function(medians) {
+  Par_order <- c("IST", "CB", "FPP", "MW", "IEX")
   medians %>%
+    filter(subjectid != "Group") %>%
+    mutate(Parameter = factor(Parameter, Par_order)) %>%
     ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
     geom_col() +
-    xlab("Subject Identifier") +
-    ylab("Relative Evidence") +
-    scale_fill_brewer(palette = "Dark2", name = "Model") +
+    fill_palette() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank()) +
+    labs(y = "Relative Evidence") +
     scale_y_continuous(labels = NULL, breaks = NULL)
 }
 
+design <- "
+  11111
+  22333
+"
 accept_plot <- model_medians %>% filter(source == "accept")  %>% model_plot
 reject_plot <- model_medians %>% filter(source == "reject")  %>% model_plot
-accept_plot / reject_plot
+accept_plot + reject_plot + guide_area() + plot_layout(design = design, guides = "collect")
+
+plot_layout(widths = c(3, 2), heights = c(1, 1), guides = "collect")
+
+accept_plot / (reject_plot | guide_area()) + plot_layout(widths = c(3, 2), guides = "collect")
+
+((p2 / p3 + plot_layout(guides = 'auto')) | p1) + plot_layout(guides = 'collect')
+
+plot_layout(widths = c(2, 1), heights = unit(c(5, 1), c('cm', 'null')))
 
 par_medians <- sapply(samples, function(x) {
   extract_parameters(x, str_subset(x$par_names, "alpha", negate = TRUE)) %>%
