@@ -8,21 +8,52 @@ library(pmwg)
 library(stringr)
 library(paletti)
 library(readr)
+library(patchwork)
 
 frankwebb_cols <- read_lines(file = "palette.txt")
 viz_palette(frankwebb_cols, "Frank Webb palette")
 fill_palette <- get_scale_fill(get_pal(frankwebb_cols))
 col_palette <- get_scale_colour(get_pal(frankwebb_cols))
 
-# Load all the samples
-data_location <- here::here("data", "output", "5ModelRecovery")
-recovery_files <- c(
-  "NumericVDCE_CB_wvuhRfvyySjv_untagged.RData",
-  "NumericVDCE_FPP_1878515.rcgbcm_5ModelRecovery.RData",
-  "NumericVDCE_IEX_1878513.rcgbcm_5ModelRecovery.RData",
-  "NumericVDCE_IST_1878369.rcgbcm_5ModelRecovery.RData",
-  "NumericVDCE_MW_1878516.rcgbcm_5ModelRecovery.RData"
-)
+task <- "Veridical" ## Other option, something like Preferential
+
+if (task == "Veridical") {
+  # Load all the samples
+  data_location <- here::here("data", "output", "5ModelRecovery")
+  recovery_files <- c(
+    "NumericVDCE_CB_wvuhRfvyySjv_untagged.RData",
+    "NumericVDCE_FPP_1878515.rcgbcm_5ModelRecovery.RData",
+    "NumericVDCE_IEX_1878513.rcgbcm_5ModelRecovery.RData",
+    "NumericVDCE_IST_1878369.rcgbcm_5ModelRecovery.RData",
+    "NumericVDCE_MW_1878516.rcgbcm_5ModelRecovery.RData"
+  )
+  recovery_data_files <- c(
+    "NumericVDCE_CB_1878514.rcgbcm_5ModelRecovery_data.RDS",
+    "NumericVDCE_FPP_1878515.rcgbcm_5ModelRecovery_data.RDS",
+    "NumericVDCE_IEX_1878513.rcgbcm_5ModelRecovery_data.RDS",
+    "NumericVDCE_IST_1878369.rcgbcm_5ModelRecovery_data.RDS",
+    "NumericVDCE_MW_1878516.rcgbcm_5ModelRecovery_data.RDS"
+  )
+  odata <- "NumericVDCE_1878182.rcgbcm_Estimation5Model.RData"
+} else {
+  # Load all the samples
+  data_location <- here::here("data", "output", "PrefRecovery")
+  recovery_files <- c(
+    "PrefDCE_CB_2367931.rcgbcm_5ModelRecovery.RData",
+    "PrefDCE_FPP_2371859.rcgbcm_5ModelRecovery.RData",
+    "PrefDCE_IEX_2371858.rcgbcm_5ModelRecovery.RData",
+    "PrefDCE_IST_2371857.rcgbcm_5ModelRecovery.RData",
+    "PrefDCE_MW_2371860.rcgbcm_5ModelRecovery.RData"
+  )
+  recovery_data_files <- c(
+    "PrefDCE_CB_2367931.rcgbcm_5ModelRecovery_data.RDS",
+    "PrefDCE_FPP_2367930.rcgbcm_5ModelRecovery_data.RDS",
+    "PrefDCE_IEX_2367932.rcgbcm_5ModelRecovery_data.RDS",
+    "PrefDCE_IST_2367933.rcgbcm_5ModelRecovery_data.RDS",
+    "PrefDCE_MW_2367928.rcgbcm_5ModelRecovery_data.RDS"
+  )
+  odata <- "PrefDCE_1896523.rcgbcm_Estimation5Model.RData"
+}
 
 samples <- lapply(recovery_files, function(x) {
   print(paste("Extracting", x))
@@ -34,7 +65,7 @@ original_samples <- get_samples(
   here::here(
     "data",
     "output",
-    "NumericVDCE_1878182.rcgbcm_Estimation5Model.RData"
+    odata
   )
 )
 
@@ -42,13 +73,6 @@ samples[["Original"]] <- original_samples
 
 model_order <- c("CB", "FPP", "MW", "IST", "IEX", "Original")
 
-recovery_data_files <- c(
-  "NumericVDCE_CB_1878514.rcgbcm_5ModelRecovery_data.RDS",
-  "NumericVDCE_FPP_1878515.rcgbcm_5ModelRecovery_data.RDS",
-  "NumericVDCE_IEX_1878513.rcgbcm_5ModelRecovery_data.RDS",
-  "NumericVDCE_IST_1878369.rcgbcm_5ModelRecovery_data.RDS",
-  "NumericVDCE_MW_1878516.rcgbcm_5ModelRecovery_data.RDS"
-)
 
 recovery_data <- lapply(recovery_data_files, function(x) {
   print(paste("Reading data", x))
@@ -63,8 +87,9 @@ recovery_data <- bind_rows(recovery_data, .id = "source")
 
 recovery_data %>%
   filter(rt < 5) %>%
+  mutate(simulated = ifelse(source == "Original", "No", "Yes")) %>%
   mutate(cell=paste0(price, rating)) %>%
-  ggplot(aes(x = rt, colour = source)) +
+  ggplot(aes(x = rt, colour = source, linetype=simulated)) +
   geom_density(size=1) +
   col_palette() +
   facet_wrap(~ cell)
@@ -103,11 +128,10 @@ Par_order <- model_medians %>%
   arrange(median_val) %>%
   pull(Parameter)
 
-model_medians %>%
+subject_recovery <- model_medians %>%
   filter(source != "Original") %>%
   filter(subjectid != "Group") %>%
   mutate(subjectid = factor(subjectid, subject_order)) %>%
-  mutate(subjectid = factor(as.numeric(subjectid), levels = 1:26, labels = letters)) %>%
   mutate(Parameter = factor(Parameter, Par_order)) %>%
   mutate(source = factor(source, Par_order)) %>%
   ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
@@ -116,9 +140,36 @@ model_medians %>%
     fill_palette() +
     theme(axis.title.x = element_blank(),
           axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          strip.background = element_blank(),
+          strip.text.y = element_blank()) +
+    facet_grid(rows = vars(source)) +
+    scale_y_continuous(labels = NULL, breaks = NULL) +
+    ggtitle("Indidividual Subjects")
+
+group_recovery <- model_medians %>%
+  filter(source != "Original") %>%
+  filter(subjectid == "Group") %>%
+  mutate(subjectid = factor(subjectid, subject_order)) %>%
+  mutate(Parameter = factor(Parameter, Par_order)) %>%
+  mutate(source = factor(source, Par_order)) %>%
+  ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
+    geom_col() +
+    fill_palette() +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_blank(),
           axis.ticks.x = element_blank()) +
     facet_grid(rows = vars(source)) +
-    scale_y_continuous(labels = NULL, breaks = NULL)
+    scale_y_continuous(labels = NULL, breaks = NULL) +
+    ggtitle("Group Level")
+
+subject_recovery + group_recovery +
+  plot_layout(widths = c(6, 1), guides = "collect") +
+  plot_annotation(
+    title = "Relative Evidence for each of the 5 architectures",
+    subtitle = "Each row corresponds to the generating architecture",
+    caption = "The area of each stacked bar is the relative proportion of each of the five possible modelled architectures as their dirichlet process"
+    )
 
 par_medians <- sapply(samples, function(x) {
   extract_parameters(x, str_subset(x$par_names, "alpha", negate = TRUE)) %>%
