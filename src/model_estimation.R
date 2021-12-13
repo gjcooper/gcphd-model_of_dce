@@ -87,10 +87,12 @@ diag(priors$theta_mu_var)[mix_counts] <- 2
 
 # Create the Particle Metropolis within Gibbs sampler object ------------------
 
+dirichlet_func <- partial(dirichlet_mix_ll, contaminant_prob = p_contam, alpha_indices = mix_counts)
+
 sampler <- pmwgs(
   data = model_data,
   pars = parameters,
-  ll_func = dirichlet_mix_ll,
+  ll_func = dirichlet_func,
   prior = priors
 )
 

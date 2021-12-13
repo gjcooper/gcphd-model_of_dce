@@ -419,21 +419,21 @@ rmodel_wrapper <- function(x, data, model) {
 #'
 #' @return The log of the likelihood for the data under parameter values x
 #' @export
-dirichlet_mix_ll <- function(x, data) {
+dirichlet_mix_ll <- function(x, data, contaminant_prob = 0.02, alpha_indices = c(1, 2)) {
   x <- exp(x)
 
   # Enforce alphas to be greater than 0.01 and less than 100
-  if (any(x[mix_counts] < 0.01) || any(x[mix_counts] > 100)) {
+  if (any(x[alpha_indices] < 0.01) || any(x[alpha_indices] > 100)) {
     return(-1e10)
   }
 
   # all decision rules
-  rdev <- MCMCpack::rdirichlet(1, x[mix_counts])
-  func_idx <- sample(mix_counts, 1, prob = rdev)
+  rdev <- MCMCpack::rdirichlet(1, x[alpha_indices])
+  func_idx <- sample(alpha_indices, 1, prob = rdev)
   ll_func <- ll_funcs[[func_idx]]$likelihood
   trial_ll <- model_wrapper(x, data, ll_func)
-  new_like <- (1 - p_contam) * trial_ll +
-    p_contam * (stats::dunif(data$rt, min_rt, max_rt) / 2)
+  new_like <- (1 - contaminant_prob) * trial_ll +
+    contaminant_prob * (stats::dunif(data$rt, min_rt, max_rt) / 2)
   sum(log(pmax(new_like, 1e-10)))
 }
 
@@ -466,7 +466,7 @@ dirichlet_mix_ll <- function(x, data) {
 #'
 #' @return The log of the likelihood for the data under parameter values x
 #' @export
-single_model_ll <- function(x, data) {
+single_model_ll <- function(x, data, p_contam = 0.02) {
   x <- exp(x)
 
   # all decision rules

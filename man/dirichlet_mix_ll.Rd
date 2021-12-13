@@ -4,7 +4,7 @@
 \alias{dirichlet_mix_ll}
 \title{Top level log-likelihood function that implements the dirichlet sampling}
 \usage{
-dirichlet_mix_ll(x, data)
+dirichlet_mix_ll(x, data, contaminant_prob = 0.02, alpha_indices = c(1, 2))
 }
 \arguments{
 \item{x}{A named vector containing parameter values to test}

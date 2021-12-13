@@ -4,7 +4,7 @@
 \alias{single_model_ll}
 \title{Top level log-likelihood function that implements the single model sampling}
 \usage{
-single_model_ll(x, data)
+single_model_ll(x, data, p_contam = 0.02)
 }
 \arguments{
 \item{x}{A named vector containing parameter values to test}
