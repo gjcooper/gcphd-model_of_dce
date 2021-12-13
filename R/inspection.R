@@ -10,15 +10,15 @@
 #'
 #' @import dplyr
 #' @export
-extract_parameters <- function(sampler, par_names) {
+extract_parameters <- function(sampler, par_names, filter = "sample") {
   tmu <- sampler %>%
-    pmwg::as_mcmc(filter = "sample") %>%
+    pmwg::as_mcmc(filter = filter) %>%
     data.frame() %>%
     tibble() %>%
     select(all_of(par_names)) %>%
     mutate(subjectid = "theta_mu")
 
-  pmwg::as_mcmc(sampler, selection = "alpha", filter = "sample") %>%
+  pmwg::as_mcmc(sampler, selection = "alpha", filter = filter) %>%
     lapply(FUN = function(x) {
       x %>%
         data.frame() %>%

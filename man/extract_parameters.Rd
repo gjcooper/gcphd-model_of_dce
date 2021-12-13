@@ -4,7 +4,7 @@
 \alias{extract_parameters}
 \title{Extract parameters from the samples}
 \usage{
-extract_parameters(sampler, par_names)
+extract_parameters(sampler, par_names, filter = "sample")
 }
 \arguments{
 \item{sampler}{The pmwgs sampler object}
