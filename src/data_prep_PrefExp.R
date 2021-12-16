@@ -180,15 +180,34 @@ short_removed_sft %>%
   arrange(n) %>%
   head
 
-# Consistency by cell
+# Participants ordered by percentage of RT's greater than 10s
 short_removed_sft %>%
+  mutate(too_long = rt > 10000) %>%
+  group_by(sonaID) %>%
+  summarise(percent_long = sum(too_long) / n()) %>%
+  mutate(percent_long = round(percent_long, 3)) %>%
+  arrange(desc(percent_long))
+
+
+# Drop long RT trials
+long_removed_sft <- short_removed_sft %>%
+  filter(rt < 10000)
+
+#Check trial numbers at the lower end
+long_removed_sft %>%
+  count(sonaID) %>%
+  arrange(n) %>%
+  head
+
+# Consistency by cell
+long_removed_sft %>%
   group_by(cell_name) %>%
   summarise(num_consistent = sum(consistent) / n()) %>%
   ggplot(aes(x = cell_name, y = num_consistent)) +
   geom_bar(stat = "identity")
 
 # Overall consistency (collapsed across cell types)
-short_removed_sft %>%
+long_removed_sft %>%
   group_by(sonaID) %>%
   summarise(avg_consistency = mean(consistent)) %>%
   arrange(avg_consistency) %>%
@@ -206,7 +225,7 @@ short_removed_sft %>%
 ggsave(filename = "Consistency_Overall.png", dpi = 200)
 
 # Consistency by easiest cell types
-short_removed_sft %>%
+long_removed_sft %>%
   filter(cell_name %in% c("HH", "DD")) %>%
   group_by(sonaID, cell_name) %>%
   summarise(avg_consistency = mean(consistent)) %>%
@@ -238,9 +257,9 @@ cell_consistency <- function(df, cell) {
     mutate(idx = row_number())
 }
 
-short_removed_sft %>%
+long_removed_sft %>%
   cell_consistency("HH") %>%
-  bind_rows(cell_consistency(short_removed_sft, "DD"), .id = "cell") %>%
+  bind_rows(cell_consistency(long_removed_sft, "DD"), .id = "cell") %>%
   mutate(cell = ifelse(cell == 1, "HH", "DD")) %>%
   ggplot(aes(x = idx, y = avg_consistency, colour = cell)) +
   geom_point() +
@@ -254,24 +273,24 @@ short_removed_sft %>%
 
 ggsave(filename = "Consistency_HH_DD_separate.png", dpi = 200)
 
-drop_subjects <- short_removed_sft %>%
+drop_subjects <- long_removed_sft %>%
   cell_consistency("HH") %>%
   filter(avg_consistency < 0.75) %>%
   pull(sonaID)
 
-drop_subjects <- short_removed_sft %>%
+drop_subjects <- long_removed_sft %>%
   cell_consistency("DD") %>%
   filter(avg_consistency < 0.75) %>%
   pull(sonaID) %>%
   c(drop_subjects) %>%
   unique
 
-final_sft <- short_removed_sft %>%
+final_sft <- long_removed_sft %>%
   filter(!sonaID %in% drop_subjects)
 
 #Final condition split after removing inconsistent participants
 condition_split(final_sft)
-condition_split(short_removed_sft)
+condition_split(long_removed_sft)
 
 pref_data <- final_sft %>%
   select(all_of(sft_columns)) %>%
