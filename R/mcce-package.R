@@ -6,7 +6,5 @@
 ## usethis namespace: start
 #' @importFrom magrittr %>%
 ## usethis namespace: end
-NULL
-
 #' @importFrom rtdists plba_norm dlba_norm rlba_norm
 NULL

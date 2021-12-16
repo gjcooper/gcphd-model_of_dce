@@ -4,13 +4,30 @@
 \alias{single_model_ll}
 \title{Top level log-likelihood function that implements the single model sampling}
 \usage{
-single_model_ll(x, data, p_contam = 0.02)
+single_model_ll(
+  x,
+  data,
+  contaminant_prob = 0.02,
+  architecture = "IST",
+  min_rt = 0,
+  max_rt = 1
+)
 }
 \arguments{
 \item{x}{A named vector containing parameter values to test}
 
 \item{data}{The data for a single subject for which the likelihood should be
 calculated}
+
+\item{contaminant_prob}{The probability used for contaminant process in the
+modelling. A contaminant process is just a uniform random response in the
+allowable time window.}
+
+\item{architecture}{The name of the architecture model to implement}
+
+\item{min_rt}{The smallest possible response time in the data}
+
+\item{max_rt}{The largest possible response time in the data}
 }
 \value{
 The log of the likelihood for the data under parameter values x

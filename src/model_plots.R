@@ -20,7 +20,7 @@ task <- "Veridical" ## Other option, something like Preferential
 if (task == "Veridical") {
   odata <- "NumericVDCE_1878182.rcgbcm_Estimation5Model.RData"
 } else {
-  odata <- "PrefDCE_1896523.rcgbcm_Estimation5Model.RData"
+  odata <- "PrefDCE_2468368.rcgbcm_Estimation5Model.RData"
 }
 
 pmwg_samples <- get_samples(

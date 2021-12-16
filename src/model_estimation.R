@@ -4,6 +4,7 @@ library(dplyr)
 library(MCMCpack)
 library(stringi)
 library(mcce)
+library(purrr)
 
 print(sessionInfo())
 

@@ -10,6 +10,8 @@ extract_parameters(sampler, par_names, filter = "sample")
 \item{sampler}{The pmwgs sampler object}
 
 \item{par_names}{The names of the parameters to extract}
+
+\item{filter}{A filter that defines which stage to draw samples from.}
 }
 \value{
 A tibble with the parameter samples and a subjectid column

@@ -5,6 +5,7 @@
 #'
 #' @param sampler The pmwgs sampler object
 #' @param par_names The names of the parameters to extract
+#' @inheritParams pmwg::as_mcmc
 #'
 #' @return A tibble with the parameter samples and a subjectid column
 #'
@@ -35,6 +36,8 @@ extract_parameters <- function(sampler, par_names, filter = "sample") {
 #'
 #' @param pars The result of extract_parameters, tibble containing samples for
 #'   the selected parameter estimates.
+#' @param alpha A boolean representing whether to only return alpha (dirichlet)
+#'   parameter medians.
 #'
 #' @return A tibble containing the medians of the samples for each subject
 #'

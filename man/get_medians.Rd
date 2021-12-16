@@ -9,6 +9,9 @@ get_medians(pars, alpha = TRUE)
 \arguments{
 \item{pars}{The result of extract_parameters, tibble containing samples for
 the selected parameter estimates.}
+
+\item{alpha}{A boolean representing whether to only return alpha (dirichlet)
+parameter medians.}
 }
 \value{
 A tibble containing the medians of the samples for each subject

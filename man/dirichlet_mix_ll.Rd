@@ -4,13 +4,33 @@
 \alias{dirichlet_mix_ll}
 \title{Top level log-likelihood function that implements the dirichlet sampling}
 \usage{
-dirichlet_mix_ll(x, data, contaminant_prob = 0.02, alpha_indices = c(1, 2))
+dirichlet_mix_ll(
+  x,
+  data,
+  contaminant_prob = 0.02,
+  alpha_indices = c(1, 2),
+  min_rt = 0,
+  max_rt = 1
+)
 }
 \arguments{
 \item{x}{A named vector containing parameter values to test}
 
 \item{data}{The data for a single subject for which the likelihood should be
 calculated}
+
+\item{contaminant_prob}{The probability used for contaminant process in the
+modelling. A contaminant process is just a uniform random response in the
+allowable time window.}
+
+\item{alpha_indices}{A vector containing the indicies of the alpha parameters
+\itemize{
+\item that is the parameters that correspond to the dirichlet shape parameters.
+}}
+
+\item{min_rt}{The smallest possible response time in the data}
+
+\item{max_rt}{The largest possible response time in the data}
 }
 \value{
 The log of the likelihood for the data under parameter values x
@@ -29,8 +49,8 @@ A number of \eqn{\alpha}
 values
 
 \itemize{
-\item A number of \strong{\eqn{\alpha}} parameter values matching the number and
-order of the ll_funcs vector defined in this same file.
+\item A number of \strong{\eqn{\alpha}} parameter values matching the
+number and order of the ll_funcs vector defined in this same file.
 \item \strong{A} - the start point variability
 \item \strong{b^a} and \strong{b^r}, the thresholds to either accept or
 reject the item.
