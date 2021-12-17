@@ -11,15 +11,19 @@ print(sessionInfo())
 # For debugging:
 # Sys.setenv(DCE_EST_EXP="SymbolicVDCE", VDCE_DISPLAY="Absent", NCPUS=3)
 # Sys.setenv(DCE_EST_EXP="NumericVDCE", NCPUS=3, DCE_EXP_DATA="Task1_preprocessed.RDS")
-# Sys.setenv(DCE_EST_EXP="PrefDCE", NCPUS=3, DCE_EXP_DATA="Pref_preprocessed.RDS")
+Sys.setenv(DCE_EST_EXP="PrefDCE", NCPUS=3, DCE_EXP_DATA="Pref_preprocessed.RDS", DCE_MIN_RT=0.35, DCE_MAX_RT=10, DCE_CONTAM=0.02)
 # Get environment variables to normal vars
 known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG",
-                "DCE_EXP_DATA")
+                "DCE_EXP_DATA", "DCE_MIN_RT", "DCE_MAX_RT", "DCE_CONTAM")
 
 envars <- Sys.getenv(known_vars)
 print(envars)
 envars <- as.list(envars)
 experiment <- envars$DCE_EST_EXP
+# < 0.3 participants were penalised, max trial length was 4.5 seconds
+min_rt <- as.numeric(envars$DCE_MIN_RT)
+max_rt <- as.numeric(envars$DCE_MAX_RT)
+p_contam <- as.numeric(envars$DCE_CONTAM)
 displaytype <- envars$VDCE_DISPLAY
 cores <- ifelse(envars$NCPUS == "", 1, as.numeric(envars$NCPUS))
 jobid <- ifelse(
@@ -30,9 +34,7 @@ jobid <- ifelse(
 tag <- ifelse(envars$VDCE_TAG == "", "untagged", envars$VDCE_TAG)
 experimental_data <- envars$DCE_EXP_DATA
 
-
 #Tests
-
 if (! (experiment %in% c("NumericVDCE", "SymbolicVDCE", "PrefDCE"))) {
   stop("System Environment Variable DCE_EST_EXP not defined or unknown value")
 }
@@ -47,15 +49,19 @@ if (experiment == "SymbolicVDCE") {
   filename <- paste(experiment, jobid, tag, sep = "_")
 }
 
+# Numeric env variable tests
+if (is.na(min_rt) | is.na(max_rt) | is.na(p_contam)) {
+  stop("All of DCE_MIN_RT, DCE_MAX_RT, DCE_CONTAM must be provided and numeric")
+}
+if (!between(p_contam, 0, 1)) {
+  stop("DCE_CONTAM should be a value between 0 and 1")
+}
+
 # Get output filename and input data
 outfile <- here::here("data", "output", paste0(filename, ".RData"))
 model_data <- readRDS(here::here("data", "output", experimental_data))
 
 
-# < 0.3 participants were penalised, max trial length was 4.5 seconds
-min_rt <- 0
-max_rt <- 4.5
-p_contam <- 0.02
 
 acc_rej_drift <- c("v_acc_p", "v_acc_r", "v_rej_p", "v_rej_r")
 stim_levels <- c("H", "L", "D")
@@ -88,7 +94,7 @@ diag(priors$theta_mu_var)[mix_counts] <- 2
 
 # Create the Particle Metropolis within Gibbs sampler object ------------------
 
-dirichlet_func <- partial(dirichlet_mix_ll, contaminant_prob = p_contam, alpha_indices = mix_counts)
+dirichlet_func <- partial(dirichlet_mix_ll, contaminant_prob = p_contam, alpha_indices = mix_counts, min_rt = min_rt, max_rt = max_rt)
 
 sampler <- pmwgs(
   data = model_data,
