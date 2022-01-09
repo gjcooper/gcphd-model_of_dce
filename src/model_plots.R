@@ -15,12 +15,12 @@ viz_palette(frankwebb_cols, "Frank Webb palette")
 fill_palette <- get_scale_fill(get_pal(frankwebb_cols))
 col_palette <- get_scale_colour(get_pal(frankwebb_cols))
 
-task <- "Veridical" ## Other option, something like Preferential
+task <- "Preferential" ## Other option, something like Preferential
 
 if (task == "Veridical") {
   odata <- "NumericVDCE_1878182.rcgbcm_Estimation5Model.RData"
 } else {
-  odata <- "PrefDCE_2468368.rcgbcm_Estimation5Model.RData"
+  odata <- "PrefDCE_2506730.rcgbcm_Estimation5Model.RData"
 }
 
 pmwg_samples <- get_samples(
@@ -69,8 +69,15 @@ model_medians <- pmwg_samples %>%
     TRUE ~ str_pad(subjectid, 2, pad = "0")
   ))
 
+Par_order <- model_medians %>%
+  group_by(Parameter) %>%
+  summarise(median_val = median(rel_val)) %>%
+  arrange(median_val) %>%
+  pull(Parameter)
+
 subject_order <- model_medians %>%
   filter(subjectid != "Group") %>%
+  filter(Parameter == Par_order[5]) %>%
   group_by(subjectid) %>%
   summarise(maxRel = max(rel_val)) %>%
   group_by(subjectid) %>%
@@ -79,11 +86,6 @@ subject_order <- model_medians %>%
   pull(subjectid)
 
 
-Par_order <- model_medians %>%
-  group_by(Parameter) %>%
-  summarise(median_val = median(rel_val)) %>%
-  arrange(median_val) %>%
-  pull(Parameter)
 
 subject_arch <- model_medians %>%
   filter(subjectid != "Group") %>%

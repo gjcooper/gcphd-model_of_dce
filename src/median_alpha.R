@@ -57,6 +57,4 @@ run_all <- function(filename, output) {
 }
   
 run_all("NumericVDCE_1878182.rcgbcm_Estimation5Model.RData", "median_alpha_exp1.RDS")
-run_all("Task2_Absent_1069903.rcgbcm_CorrectedTry1.RData", "median_alpha_exp2_abs.RDS")
-run_all("Task2_Greyed_1069904.rcgbcm_CorrectedTry1.RData", "median_alpha_exp2_grey.RDS")
-run_all("PrefDCE_1896523.rcgbcm_Estimation5Model.RData", "median_alpha_pref.RDS")
+run_all("PrefDCE_2506730.rcgbcm_Estimation5Model.RData", "median_alpha_pref.RDS")

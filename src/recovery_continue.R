@@ -8,7 +8,7 @@ library(mcce)
 print(sessionInfo())
 
 # For debugging:
-# Sys.setenv(DCE_EST_EXP="PrefDCE", NCPUS=3, DCE_REC_MODEL="CB", DCE_ORIG_JOB_DATA="PrefDCE_1896523.rcgbcm_Estimation5Model.RData")
+# Sys.setenv(DCE_EST_EXP="PrefDCE", NCPUS=3, DCE_REC_MODEL="CB", DCE_ORIG_JOB_DATA="PrefDCE_2506730.rcgbcm_Estimation5Model.RData")
 # Get environment variables to normal vars
 known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG",
                 "DCE_REC_MODEL", "DCE_ORIG_JOB_DATA")

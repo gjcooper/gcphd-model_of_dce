@@ -13,7 +13,7 @@ fill_palette <- get_scale_fill(get_pal(frankwebb_cols))
 col_palette <- get_scale_colour(get_pal(frankwebb_cols))
 
 # Load all the samples
-pref_file <- here::here("data", "output", "PrefDCE_1896523.rcgbcm_Estimation5Model.RData")
+pref_file <- here::here("data", "output", "PrefDCE_2506730.rcgbcm_Estimation5Model.RData")
 
 pref_samples <- get_samples(pref_file)
 

@@ -4,6 +4,7 @@ library(dplyr)
 library(MCMCpack)
 library(stringi)
 library(mcce)
+library(purrr)
 
 print(sessionInfo())
 
@@ -11,15 +12,20 @@ print(sessionInfo())
 # Sys.setenv(DCE_EST_EXP="SymbolicVDCE", VDCE_DISPLAY="Absent", NCPUS=3, DCE_REC_MODEL="IEX", DCE_REC_MED="median_alpha_exp2_abs.RDS", DCE_MODEL_FILE="Task2_Absent_1069903.rcgbcm_CorrectedTry1.RData", DCE_REC_DATA="SymbolicVDCE_IEX_Absent_0P6QGThVC9il_untagged_data.RDS")
 # Sys.setenv(DCE_EST_EXP="NumericVDCE", NCPUS=3, DCE_REC_MODEL="IEX", DCE_REC_MED="median_alpha_exp1.RDS", DCE_MODEL_FILE="NumericVDCE_1878182.rcgbcm_Estimation5Model.RData")
 # Sys.setenv(DCE_EST_EXP="NumericVDCE", NCPUS=3, DCE_REC_MODEL="CB", DCE_REC_MED="median_alpha_exp1.RDS", DCE_MODEL_FILE="NumericVDCE_1878182.rcgbcm_Estimation5Model.RData", DCE_REC_DATA="5ModelRecovery/NumericVDCE_CB_1878514.rcgbcm_5ModelRecovery_data.RDS")
-# Sys.setenv(DCE_EST_EXP="PrefDCE", NCPUS=3, DCE_REC_MODEL="CB", DCE_REC_MED="median_alpha_pref.RDS", DCE_MODEL_FILE="PrefDCE_1896523.rcgbcm_Estimation5Model.RData")
+# Sys.setenv(DCE_EST_EXP="PrefDCE", NCPUS=3, DCE_REC_MODEL="CB", DCE_REC_MED="median_alpha_pref.RDS", DCE_MODEL_FILE="PrefDCE_2506730.rcgbcm_Estimation5Model.RData", DCE_MIN_RT=0.35, DCE_MAX_RT=10, DCE_CONTAM=0.02)
 # Get environment variables to normal vars
 known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG",
-                "DCE_REC_MODEL", "DCE_REC_MED", "DCE_MODEL_FILE", "DCE_REC_DATA")
+                "DCE_REC_MODEL", "DCE_REC_MED", "DCE_MODEL_FILE", "DCE_REC_DATA",
+                "DCE_MIN_RT", "DCE_MAX_RT", "DCE_CONTAM")
 
 envars <- Sys.getenv(known_vars)
 print(envars)
 envars <- as.list(envars)
 experiment <- envars$DCE_EST_EXP
+# < 0.3 participants were penalised, max trial length was 4.5 seconds
+min_rt <- as.numeric(envars$DCE_MIN_RT)
+max_rt <- as.numeric(envars$DCE_MAX_RT)
+p_contam <- as.numeric(envars$DCE_CONTAM)
 displaytype <- envars$VDCE_DISPLAY
 cores <- ifelse(envars$NCPUS == "", 1, as.numeric(envars$NCPUS))
 jobid <- ifelse(
@@ -41,6 +47,7 @@ get_estimation_data <- function(filename) {
 
 medians <- readRDS(here::here("data", "output", median_file))
 
+#Tests
 if (test_model == "") {
   stop("DCE_REC_MODEL environment variable must be set for recovery")
 }
@@ -64,6 +71,14 @@ if (experiment == "SymbolicVDCE") {
   filename <- paste(experiment, test_model, jobid, tag, sep = "_")
 }
 
+# Numeric env variable tests
+if (is.na(min_rt) | is.na(max_rt) | is.na(p_contam)) {
+  stop("All of DCE_MIN_RT, DCE_MAX_RT, DCE_CONTAM must be provided and numeric")
+}
+if (!between(p_contam, 0, 1)) {
+  stop("DCE_CONTAM should be a value between 0 and 1")
+}
+
 # Get output filename and input data
 outfile <- here::here("data", "output", paste0(filename, ".RData"))
 datafile <- here::here("data", "output", paste0(filename, "_data.RDS"))
@@ -78,7 +93,7 @@ if (recovery_data == "") {
     subject_data <- model_data %>% filter(subject == subjectid)
     pars <- medians[s_idx, ]
 
-    rmodel_wrapper(pars, subject_data, sample_func)
+    rmodel_wrapper(pars, subject_data, sample_func, contaminant_prob = p_contam, min_rt = min_rt, max_rt = max_rt)
   })
 
   test_data <- test_data %>%
@@ -89,11 +104,6 @@ if (recovery_data == "") {
   test_data <- readRDS(file = here::here("data", "output", recovery_data))
 }
 
-# Model specification - should be identical to model estimation file
-# < 0.3 participants were penalised, max trial length was 4.5 seconds
-min_rt <- 0
-max_rt <- 4.5
-p_contam <- 0.02
 
 acc_rej_drift <- c("v_acc_p", "v_acc_r", "v_rej_p", "v_rej_r")
 stim_levels <- c("H", "L", "D")
@@ -126,10 +136,12 @@ diag(priors$theta_mu_var)[mix_counts] <- 2
 
 # Create the Particle Metropolis within Gibbs sampler object ------------------
 
+dirichlet_func <- partial(dirichlet_mix_ll, contaminant_prob = p_contam, alpha_indices = mix_counts, min_rt = min_rt, max_rt = max_rt)
+
 sampler <- pmwgs(
   data = test_data,
   pars = parameters,
-  ll_func = dirichlet_mix_ll,
+  ll_func = dirichlet_func,
   prior = priors
 )
 
