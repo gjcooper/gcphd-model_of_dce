@@ -12,14 +12,17 @@ library(patchwork)
 
 frankwebb_cols <- read_lines(file = "palette.txt")
 viz_palette(frankwebb_cols, "Frank Webb palette")
+names(frankwebb_cols) <- names_ll()
+frank_colmap <- scale_fill_manual(name = "Architecture", values = frankwebb_cols)
 fill_palette <- get_scale_fill(get_pal(frankwebb_cols))
 col_palette <- get_scale_colour(get_pal(frankwebb_cols))
+frank_colmap2 <- scale_colour_manual(name = "Architecture", values = frankwebb_cols)
 
 task <- "Veridical" ## Other option, something like Preferential
 
 if (task == "Veridical") {
   # Load all the samples
-  data_location <- here::here("data", "output", "5ModelRecovery")
+  data_location <- here::here("data", "output", "VeridicalRecovery")
   recovery_files <- c(
     "NumericVDCE_CB_wvuhRfvyySjv_untagged.RData",
     "NumericVDCE_FPP_1878515.rcgbcm_5ModelRecovery.RData",
@@ -39,18 +42,18 @@ if (task == "Veridical") {
   # Load all the samples
   data_location <- here::here("data", "output", "PrefRecovery")
   recovery_files <- c(
-    "PrefDCE_CB_2367931.rcgbcm_5ModelRecovery.RData",
-    "PrefDCE_FPP_2371859.rcgbcm_5ModelRecovery.RData",
-    "PrefDCE_IEX_2371858.rcgbcm_5ModelRecovery.RData",
-    "PrefDCE_IST_2371857.rcgbcm_5ModelRecovery.RData",
-    "PrefDCE_MW_2371860.rcgbcm_5ModelRecovery.RData"
+    "PrefDCE_CB_2528868.rcgbcm_5ModelRecovery.RData",
+    "PrefDCE_FPP_2528867.rcgbcm_5ModelRecovery.RData",
+    "PrefDCE_IEX_2528865.rcgbcm_5ModelRecovery.RData",
+    "PrefDCE_IST_2528864.rcgbcm_5ModelRecovery.RData",
+    "PrefDCE_MW_2528866.rcgbcm_5ModelRecovery.RData"
   )
   recovery_data_files <- c(
-    "PrefDCE_CB_2367931.rcgbcm_5ModelRecovery_data.RDS",
-    "PrefDCE_FPP_2367930.rcgbcm_5ModelRecovery_data.RDS",
-    "PrefDCE_IEX_2367932.rcgbcm_5ModelRecovery_data.RDS",
-    "PrefDCE_IST_2367933.rcgbcm_5ModelRecovery_data.RDS",
-    "PrefDCE_MW_2367928.rcgbcm_5ModelRecovery_data.RDS"
+    "PrefDCE_CB_2528868.rcgbcm_5ModelRecovery_data.RDS",
+    "PrefDCE_FPP_2528867.rcgbcm_5ModelRecovery_data.RDS",
+    "PrefDCE_IEX_2528865.rcgbcm_5ModelRecovery_data.RDS",
+    "PrefDCE_IST_2528864.rcgbcm_5ModelRecovery_data.RDS",
+    "PrefDCE_MW_2528866.rcgbcm_5ModelRecovery_data.RDS"
   )
   odata <- "PrefDCE_2506730.rcgbcm_Estimation5Model.RData"
 }
@@ -73,15 +76,14 @@ samples[["Original"]] <- original_samples
 
 model_order <- c("CB", "FPP", "MW", "IST", "IEX", "Original")
 
-
 recovery_data <- lapply(recovery_data_files, function(x) {
   print(paste("Reading data", x))
   readRDS(here::here(data_location, x))
 })
 names(recovery_data) <- sapply(strsplit(recovery_data_files, "_"), "[[", 2)
 
-#original_data <- readRDS(here::here("data", "output", "Pref_preprocessed.RDS"))
-original_data <- readRDS(here::here("data", "output", "Task1_preprocessed.RDS"))
+original_data <- readRDS(here::here("data", "output", "Pref_preprocessed.RDS"))
+#original_data <- readRDS(here::here("data", "output", "Task1_preprocessed.RDS"))
 recovery_data[["Original"]] <- original_data
 recovery_data <- bind_rows(recovery_data, .id = "source")
 
@@ -90,9 +92,21 @@ recovery_data %>%
   mutate(simulated = ifelse(source == "Original", "No", "Yes")) %>%
   mutate(cell=paste0(price, rating)) %>%
   ggplot(aes(x = rt, colour = source, linetype=simulated)) +
-  geom_density(size=1) +
-  col_palette() +
+  geom_density(size=0.7) +
+  frank_colmap2 +
   facet_wrap(~ cell)
+
+ggsave(
+  filename = here::here(
+    "results",
+    task,
+    paste0("SimulatedRT_", Sys.Date(), ".png")
+  ),
+  dpi = 200,
+  width = 14.1,
+  height = 7.53,
+  units = "in"
+)
 
 model_medians <- sapply(samples, function(x) {
     extract_parameters(x, str_subset(x$par_names, "alpha")) %>%
@@ -120,7 +134,6 @@ subject_order <- model_medians %>%
   arrange(desc(meanMax)) %>%
   pull(subjectid)
 
-
 Par_order <- model_medians %>%
   filter(source == "Original") %>%
   group_by(Parameter) %>%
@@ -137,7 +150,7 @@ subject_recovery <- model_medians %>%
   ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
     geom_col() +
     labs(y = "Relative Evidence") +
-    fill_palette() +
+    frank_colmap +
     theme(axis.title.x = element_blank(),
           axis.text.x = element_blank(),
           axis.ticks.x = element_blank(),
@@ -155,7 +168,7 @@ group_recovery <- model_medians %>%
   mutate(source = factor(source, Par_order)) %>%
   ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
     geom_col() +
-    fill_palette() +
+    frank_colmap +
     theme(axis.title = element_blank(),
           axis.text.x = element_blank(),
           axis.ticks.x = element_blank()) +
@@ -170,6 +183,18 @@ subject_recovery + group_recovery +
     subtitle = "Each row corresponds to the generating architecture",
     caption = "The area of each stacked bar is the relative proportion of each of the five possible modelled architectures as their dirichlet process"
     )
+
+ggsave(
+  filename = here::here(
+    "results",
+    task,
+    paste0("ArchRecovery_", Sys.Date(), ".png")
+  ),
+  dpi = 200,
+  width = 14.1,
+  height = 7.53,
+  units = "in"
+)
 
 par_medians <- sapply(samples, function(x) {
   extract_parameters(x, str_subset(x$par_names, "alpha", negate = TRUE)) %>%
@@ -223,8 +248,8 @@ scatter_caption <- paste(
 for (model in model_order[-6]) {
   recovered <- combined %>% filter(recovery_model == model)
   p <- ggplot(recovered, aes(x = estimated_value, y = recovered_value)) +
-    geom_point(size = 0.5, colour = waterside_cols[3]) +
-    geom_point(data = recovered %>% filter(subjectid == "Group"), colour = waterside_cols[6], size = 0.5) +
+    geom_point(size = 0.5, colour = frankwebb_cols[3]) +
+    geom_point(data = recovered %>% filter(subjectid == "Group"), colour = frankwebb_cols[6], size = 0.5) +
     geom_abline(intercept = 0, slope = 1) +
     facet_wrap(vars(Parameter), scales = "free") +
     labs(
@@ -234,6 +259,18 @@ for (model in model_order[-6]) {
       caption = scatter_caption
     ) +
     scatter_theme +
-    col_palette()
+    frank_colmap2
     print(p)
+
+  ggsave(
+    filename = here::here(
+      "results",
+      task,
+      paste0("ParRecovery_", model, "_", Sys.Date(), ".png")
+    ),
+    dpi = 200,
+    width = 14.1,
+    height = 7.53,
+    units = "in"
+  )
 }
