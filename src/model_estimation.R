@@ -14,11 +14,12 @@ print(sessionInfo())
 # Sys.setenv(DCE_EST_EXP="PrefDCE", NCPUS=3, DCE_EXP_DATA="Pref_preprocessed.RDS", DCE_MIN_RT=0.35, DCE_MAX_RT=10, DCE_CONTAM=0.02)
 # Get environment variables to normal vars
 known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG",
-                "DCE_EXP_DATA", "DCE_MIN_RT", "DCE_MAX_RT", "DCE_CONTAM")
+                "DCE_EXP_DATA", "DCE_MIN_RT", "DCE_MAX_RT", "DCE_CONTAM",
+                "RANDOM_SEED")
 
 envars <- Sys.getenv(known_vars)
-print(envars)
 envars <- as.list(envars)
+print(envars %>% data.frame %>% t)
 experiment <- envars$DCE_EST_EXP
 # < 0.3 participants were penalised, max trial length was 4.5 seconds
 min_rt <- as.numeric(envars$DCE_MIN_RT)
@@ -33,6 +34,9 @@ jobid <- ifelse(
 )
 tag <- ifelse(envars$VDCE_TAG == "", "untagged", envars$VDCE_TAG)
 experimental_data <- envars$DCE_EXP_DATA
+if (envars$RANDOM_SEED != "") {
+  set.seed(as.numeric(envars$RANDOM_SEED))
+}
 
 #Tests
 if (! (experiment %in% c("NumericVDCE", "SymbolicVDCE", "PrefDCE"))) {

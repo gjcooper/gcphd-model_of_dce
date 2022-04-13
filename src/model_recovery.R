@@ -12,15 +12,15 @@ print(sessionInfo())
 # Sys.setenv(DCE_EST_EXP="SymbolicVDCE", VDCE_DISPLAY="Absent", NCPUS=3, DCE_REC_MODEL="IEX", DCE_REC_MED="median_alpha_exp2_abs.RDS", DCE_MODEL_FILE="Task2_Absent_1069903.rcgbcm_CorrectedTry1.RData", DCE_REC_DATA="SymbolicVDCE_IEX_Absent_0P6QGThVC9il_untagged_data.RDS")
 # Sys.setenv(DCE_EST_EXP="NumericVDCE", NCPUS=3, DCE_REC_MODEL="IEX", DCE_REC_MED="median_alpha_exp1.RDS", DCE_MODEL_FILE="NumericVDCE_1878182.rcgbcm_Estimation5Model.RData")
 # Sys.setenv(DCE_EST_EXP="NumericVDCE", NCPUS=3, DCE_REC_MODEL="CB", DCE_REC_MED="median_alpha_exp1.RDS", DCE_MODEL_FILE="NumericVDCE_1878182.rcgbcm_Estimation5Model.RData", DCE_REC_DATA="5ModelRecovery/NumericVDCE_CB_1878514.rcgbcm_5ModelRecovery_data.RDS")
-# Sys.setenv(DCE_EST_EXP="PrefDCE", NCPUS=3, DCE_REC_MODEL="CB", DCE_REC_MED="median_alpha_pref.RDS", DCE_MODEL_FILE="PrefDCE_2506730.rcgbcm_Estimation5Model.RData", DCE_MIN_RT=0.35, DCE_MAX_RT=10, DCE_CONTAM=0.02)
+Sys.setenv(DCE_EST_EXP="PrefDCE", NCPUS=3, DCE_REC_MODEL="CB", DCE_REC_MED="median_alpha_pref.RDS", DCE_MODEL_FILE="PrefDCE_2506730.rcgbcm_Estimation5Model.RData", DCE_MIN_RT=0.35, DCE_MAX_RT=10, DCE_CONTAM=0.02, RANDOM_SEED=3)
 # Get environment variables to normal vars
 known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG",
                 "DCE_REC_MODEL", "DCE_REC_MED", "DCE_MODEL_FILE", "DCE_REC_DATA",
-                "DCE_MIN_RT", "DCE_MAX_RT", "DCE_CONTAM")
+                "DCE_MIN_RT", "DCE_MAX_RT", "DCE_CONTAM", "RANDOM_SEED")
 
 envars <- Sys.getenv(known_vars)
-print(envars)
 envars <- as.list(envars)
+print(envars %>% data.frame %>% t)
 experiment <- envars$DCE_EST_EXP
 # < 0.3 participants were penalised, max trial length was 4.5 seconds
 min_rt <- as.numeric(envars$DCE_MIN_RT)
@@ -38,6 +38,10 @@ test_model <- envars$DCE_REC_MODEL
 median_file <- envars$DCE_REC_MED
 model_file <- envars$DCE_MODEL_FILE
 recovery_data <- envars$DCE_REC_DATA
+if (envars$RANDOM_SEED != "") {
+  set.seed(as.numeric(envars$RANDOM_SEED))
+}
+
 
 get_estimation_data <- function(filename) {
   load(here::here("data", "output", filename), ex <- new.env())

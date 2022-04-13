@@ -33,14 +33,15 @@ alph <- function(sampled) {
   median_alpha
 }
 
-plot_medians <- function(median_alpha, median_theta_mu) {
+plot_medians <- function(median_alpha, median_theta_mu, transform=identity) {
   median_alpha %>%
+    transform %>%
     rownames_to_column("SubjectID") %>%
     pivot_longer(!SubjectID) %>%
-    ggplot(mapping = aes(x = name, y = value, color = SubjectID)) +
-    geom_point() +
+    ggplot(mapping = aes(x = name, y = value)) +
+    geom_point(colour = "#D0781C") +
     geom_point(
-      data = pivot_longer(median_theta_mu, everything()),
+      data = pivot_longer(median_theta_mu %>% transform, everything()),
       mapping = aes(x = name, y = value),
       size = 3,
       colour = "black"
@@ -52,7 +53,9 @@ run_all <- function(filename, output) {
   load(here::here("data", "output", filename))
   theta_median <- tmu(sampled)
   alpha_median <- alph(sampled)
-  print(plot_medians(alpha_median, theta_median))
+  p <- plot_medians(alpha_median, theta_median, transform = exp) +
+    scale_y_continuous(trans = "log2")
+  print(p)
   saveRDS(alpha_median, file = here::here("data", "output", output))
 }
   

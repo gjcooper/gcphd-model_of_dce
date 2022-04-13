@@ -6,6 +6,8 @@ library(patchwork)
 library(paletti)
 library(readr)
 library(forcats)
+library(tidyr)
+library(pmwg)
 
 frankwebb_cols <- read_lines(file = "palette.txt")
 viz_palette(frankwebb_cols, "Frank Webb palette")
@@ -16,6 +18,63 @@ frank_colmap <- scale_fill_manual(name = "Architecture", values = frankwebb_cols
 pref_file <- here::here("data", "output", "PrefDCE_2506730.rcgbcm_Estimation5Model.RData")
 
 pref_samples <- get_samples(pref_file)
+
+
+pdf(file = here::here("results", "Preferential", paste0("theta_mu_trace_", Sys.Date(), ".pdf")), width = 14.1, height = 7.53)
+for (par in pref_samples$par_names) {
+  g <- pref_samples %>%
+    as_mcmc %>%
+    data.frame %>%
+    tibble %>%
+    mutate(sample_id = row_number()) %>%
+    mutate(stage = pref_samples$samples$stage) %>%
+    pivot_longer(cols = -c(sample_id, stage), names_to = "parameter") %>%
+    filter(parameter == par) %>%
+    ggplot(aes(x = sample_id, y = value, colour = stage)) +
+    geom_line() +
+    scale_colour_manual(values = unname(frankwebb_cols)) +
+    labs(title = par) +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.title.y = element_blank())
+    print(g)
+}
+dev.off()
+
+random_effects <- pref_samples %>%
+  as_mcmc(selection = "alpha") %>%
+  lapply(FUN = function(x) {
+      x %>% data.frame() %>% tibble()
+  }) %>%
+  bind_rows(.id = "subjectid") %>%
+  tibble()
+
+for (par in pref_samples$par_names) {
+  print(paste("Generating pdf for", par))
+  pdf(file = here::here("results", "Preferential", paste0(par, "_randeff_trace_", Sys.Date(), ".pdf")), width = 14.1, height = 7.53)
+  all_subjs <- unique(random_effects$subjectid)
+  for (subj_arr in split(all_subjs, ceiling(seq_along(all_subjs) / 4))) {
+    g <- random_effects %>%
+      filter(subjectid %in% subj_arr) %>%
+      group_by(subjectid) %>%
+      mutate(sample_id = row_number()) %>%
+      mutate(stage = pref_samples$samples$stage) %>%
+      ungroup() %>%
+      pivot_longer(cols = -c(subjectid, sample_id, stage), names_to = "parameter") %>%
+      filter(parameter == par) %>%
+      ggplot(aes(x = sample_id, y = value, colour = stage)) +
+      geom_line() +
+      scale_colour_manual(values = unname(frankwebb_cols)) +
+      facet_wrap(~ subjectid, nrow=2, ncol=2) +
+      theme(axis.title.x = element_blank(),
+            axis.text.x = element_blank(),
+            axis.ticks.x = element_blank(),
+            axis.title.y = element_blank())
+    print(g)
+  }
+  dev.off()
+}
 
 model_medians <- pref_samples %>%
   extract_parameters(str_subset(.$par_names, "alpha")) %>%

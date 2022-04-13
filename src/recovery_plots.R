@@ -18,45 +18,21 @@ fill_palette <- get_scale_fill(get_pal(frankwebb_cols))
 col_palette <- get_scale_colour(get_pal(frankwebb_cols))
 frank_colmap2 <- scale_colour_manual(name = "Architecture", values = frankwebb_cols)
 
-task <- "Veridical" ## Other option, something like Preferential
+task <- "Preferential" ## Other option, something like Preferential
 
 if (task == "Veridical") {
   # Load all the samples
   data_location <- here::here("data", "output", "VeridicalRecovery")
-  recovery_files <- c(
-    "NumericVDCE_CB_wvuhRfvyySjv_untagged.RData",
-    "NumericVDCE_FPP_1878515.rcgbcm_5ModelRecovery.RData",
-    "NumericVDCE_IEX_1878513.rcgbcm_5ModelRecovery.RData",
-    "NumericVDCE_IST_1878369.rcgbcm_5ModelRecovery.RData",
-    "NumericVDCE_MW_1878516.rcgbcm_5ModelRecovery.RData"
-  )
-  recovery_data_files <- c(
-    "NumericVDCE_CB_1878514.rcgbcm_5ModelRecovery_data.RDS",
-    "NumericVDCE_FPP_1878515.rcgbcm_5ModelRecovery_data.RDS",
-    "NumericVDCE_IEX_1878513.rcgbcm_5ModelRecovery_data.RDS",
-    "NumericVDCE_IST_1878369.rcgbcm_5ModelRecovery_data.RDS",
-    "NumericVDCE_MW_1878516.rcgbcm_5ModelRecovery_data.RDS"
-  )
+  #data_location <- here::here("data", "output", "VeridicalRecovery_Jun2021")
   odata <- "NumericVDCE_1878182.rcgbcm_Estimation5Model.RData"
 } else {
   # Load all the samples
   data_location <- here::here("data", "output", "PrefRecovery")
-  recovery_files <- c(
-    "PrefDCE_CB_2528868.rcgbcm_5ModelRecovery.RData",
-    "PrefDCE_FPP_2528867.rcgbcm_5ModelRecovery.RData",
-    "PrefDCE_IEX_2528865.rcgbcm_5ModelRecovery.RData",
-    "PrefDCE_IST_2528864.rcgbcm_5ModelRecovery.RData",
-    "PrefDCE_MW_2528866.rcgbcm_5ModelRecovery.RData"
-  )
-  recovery_data_files <- c(
-    "PrefDCE_CB_2528868.rcgbcm_5ModelRecovery_data.RDS",
-    "PrefDCE_FPP_2528867.rcgbcm_5ModelRecovery_data.RDS",
-    "PrefDCE_IEX_2528865.rcgbcm_5ModelRecovery_data.RDS",
-    "PrefDCE_IST_2528864.rcgbcm_5ModelRecovery_data.RDS",
-    "PrefDCE_MW_2528866.rcgbcm_5ModelRecovery_data.RDS"
-  )
+  #data_location <- here::here("data", "output", "PrefRecovery_Oct2021")
   odata <- "PrefDCE_2506730.rcgbcm_Estimation5Model.RData"
 }
+recovery_files <- list.files(data_location, pattern = ".RData")
+recovery_data_files <- list.files(data_location, pattern = ".RDS")
 
 samples <- lapply(recovery_files, function(x) {
   print(paste("Extracting", x))
@@ -82,10 +58,18 @@ recovery_data <- lapply(recovery_data_files, function(x) {
 })
 names(recovery_data) <- sapply(strsplit(recovery_data_files, "_"), "[[", 2)
 
-original_data <- readRDS(here::here("data", "output", "Pref_preprocessed.RDS"))
-#original_data <- readRDS(here::here("data", "output", "Task1_preprocessed.RDS"))
+original_data <- original_samples$data
 recovery_data[["Original"]] <- original_data
 recovery_data <- bind_rows(recovery_data, .id = "source")
+
+recovery_data %>%
+  filter(rt < 10) %>%
+  mutate(accept = factor(accept, labels = c("Reject", "Accept"))) %>%
+  ggplot(aes(x = source, y = rt, colour = generator)) +
+  geom_boxplot() +
+  facet_wrap(~ accept) +
+  scale_colour_manual(name = "Generator Model", values = unname(frankwebb_cols))
+
 
 recovery_data %>%
   filter(rt < 5) %>%
