@@ -449,7 +449,9 @@ dirichlet_mix_ll <- function(x, data, contaminant_prob = 0.02, alpha_indices = c
   trial_ll <- model_wrapper(x, data, ll_func)
   new_like <- (1 - contaminant_prob) * trial_ll +
     contaminant_prob * (stats::dunif(data$rt, min_rt, max_rt) / 2)
-  sum(log(pmax(new_like, 1e-10)))
+  loglike <- sum(log(pmax(new_like, 1e-10)))
+  attr(loglike, "extra_info") <- names_ll()[func_idx]
+  loglike
 }
 
 
