@@ -18,6 +18,13 @@ known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG",
                 "DCE_REC_MODEL", "DCE_REC_MED", "DCE_MODEL_FILE", "DCE_REC_DATA",
                 "DCE_MIN_RT", "DCE_MAX_RT", "DCE_CONTAM", "RANDOM_SEED")
 
+# Some seed posibilities:
+# 7122914, which comes from
+# "Gavin" %>% toupper %>% strsplit("") %>% `[[`(1) %>%  sapply(FUN=function(x) {match(x, LETTERS)}) %>% paste0(collapse="")
+# 11838, which comes from
+# "arch" %>% toupper %>% strsplit("") %>% `[[`(1) %>%  sapply(FUN=function(x) {match(x, LETTERS)}) %>% paste0(collapse="")
+# 69225, which comes from
+# "five" %>% toupper %>% strsplit("") %>% `[[`(1) %>%  sapply(FUN=function(x) {match(x, LETTERS)}) %>% paste0(collapse="")
 envars <- Sys.getenv(known_vars)
 envars <- as.list(envars)
 print(envars %>% data.frame %>% t)

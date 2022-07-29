@@ -10,7 +10,7 @@ print(sessionInfo())
 
 # For debugging:
 # Sys.setenv(DCE_EST_EXP="SymbolicVDCE", VDCE_DISPLAY="Absent", NCPUS=3)
-# Sys.setenv(DCE_EST_EXP="NumericVDCE", NCPUS=3, DCE_EXP_DATA="Task1_preprocessed.RDS")
+# Sys.setenv(DCE_EST_EXP="NumericVDCE", NCPUS=3, DCE_EXP_DATA="Task1_preprocessed.RDS", DCE_MIN_RT=0, DCE_MAX_RT=4.5, DCE_CONTAM=0.02)
 # Sys.setenv(DCE_EST_EXP="PrefDCE", NCPUS=3, DCE_EXP_DATA="Pref_preprocessed.RDS", DCE_MIN_RT=0.35, DCE_MAX_RT=10, DCE_CONTAM=0.02)
 # Get environment variables to normal vars
 known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG",
