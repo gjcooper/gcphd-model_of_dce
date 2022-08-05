@@ -115,10 +115,10 @@ sampler <- run_stage(sampler, stage = "burn", iter = 5000, particles = 500, n_co
 
 save.image(outfile)
 
-sampler <- run_stage(burned, stage = "adapt", iter = 10000, particles = 500, n_cores = cores, n_unique = 40)
+sampler <- run_stage(sampler, stage = "adapt", iter = 10000, particles = 500, n_cores = cores, n_unique = 40)
 
 save.image(outfile)
 
-sampler <- run_stage(adapted, stage = "sample", iter = 10000, particles = 100, n_cores = cores, pdist_update_n = NA)
+sampler <- run_stage(sampler, stage = "sample", iter = 10000, particles = 100, n_cores = cores, pdist_update_n = NA)
 
 save.image(outfile)
