@@ -17,6 +17,7 @@ frank_colmap <- scale_fill_manual(name = "Architecture", values = fw_cols, break
 
 # Load all the samples
 pref_file <- here::here("data", "output", "PrefDCE_3Yaob1kCATGm_staged_burn.RData")
+pref_file <- here::here("data", "output", "PrefDCE_ACUGlaCbumcx_reduced_continue.RData")
 
 viewstage <- "burn"
 
@@ -308,19 +309,9 @@ sigmas <- pref_samples %>%
   pivot_longer(cols=-idx, names_sep="\\.", names_to=c("X", "Y"), values_to="sigma")
 
 sigmas %>%
-  filter(X == Y) %>%
-  ggplot(aes(x = idx, y = log(sigma), colour=X)) +
-  geom_line() +
-  ylim(c(-15, 35)) +
-  theme(legend.position = c(0.5, 0.8), legend.direction="horizontal")
-
-sigmas %>%
   mutate(XY = paste0(X, Y)) %>%
   mutate(col = ifelse(X == Y, "blue", "black")) %>%
   ggplot(aes(x = idx, y = log(sigma), group=XY, colour = col)) +
   geom_line(alpha=0.25) +
   geom_line(data = sigmas %>% filter(X == Y), aes(group=X), colour="blue", alpha=0.25) +
   scale_colour_identity(labels=c("covariance", "variance"), guide = "legend")
-
-
-  as_mcmc(selection = "subj_ll", filter=viewstage)
