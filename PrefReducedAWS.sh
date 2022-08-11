@@ -9,6 +9,7 @@ export DCE_CONTAM=0.02
 if [ -z "$1" ]
 then
 	echo "No argument supplied"
+	exit 1
 fi
 export VDCE_TAG="$1"
 
