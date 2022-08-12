@@ -451,6 +451,63 @@ reduced_model_wrapper <- function(x, data, model) {
   c(accept, reject)
 }
 
+#' Reduced More Model Wrapper for individual model log likelihood function
+#'
+#' This function performs some common steps such as rearrangeing the data
+#' pulling out parameter items into variable and combining the results of
+#' applying to model to different subsets of the data (accept and reject
+#' responses). One main difference is it calculates reject drift rates using
+#' accept drift rates, intercept and beta pars, shared b0
+#'
+#' @inheritParams dirichlet_mix_ll
+#' @param model The model to be wrapped and returned
+#'
+#' @return The log of the likelihood for the data under parameter values x
+#' @export
+reduced_more_model_wrapper <- function(x, data, model) {
+  adat <- data[data$accept == 2, ]
+  rdat <- data[data$accept == 1, ]
+
+  A <- x["A"] # nolint
+  t0 <- x["t0"]
+  # Enforces b cannot be less than A, b parameter is thus threshold - A
+  b_acc <- x["b_acc"] + A
+  b_rej <- x["b_rej"] + A
+
+  # Get accept/reject drift par namess
+  v_acc_p <- apply(expand.grid("v_acc_p", stim_levels), 1, paste, collapse = "_")
+  v_rej_p <- apply(expand.grid("v_rej_p", stim_levels), 1, paste, collapse = "_")
+  v_acc_r <- apply(expand.grid("v_acc_r", stim_levels), 1, paste, collapse = "_")
+  v_rej_r <- apply(expand.grid("v_rej_r", stim_levels), 1, paste, collapse = "_")
+
+  # Calculate reject drift values
+  x[v_rej_p] <- x["beta0"] - x["beta1_p"] * x[v_acc_p]
+  x[v_rej_r] <- x["beta0"] - x["beta1_r"] * x[v_acc_r]
+
+  acc_drifts <- tibble::tibble(
+    AccPrice = x[adat$v_acc_p],
+    RejPrice = x[adat$v_rej_p],
+    AccRating = x[adat$v_acc_r],
+    RejRating = x[adat$v_rej_r]
+  )
+  rej_drifts <- tibble::tibble(
+    AccPrice = x[rdat$v_acc_p],
+    RejPrice = x[rdat$v_rej_p],
+    AccRating = x[rdat$v_acc_r],
+    RejRating = x[rdat$v_rej_r]
+  )
+
+  accept <- switch(
+    nrow(adat) != 0,
+    model(adat$rt, A, b_acc, b_rej, t0, acc_drifts, TRUE)
+  )
+  reject <- switch(
+    nrow(rdat) != 0,
+    model(rdat$rt, A, b_acc, b_rej, t0, rej_drifts, FALSE)
+  )
+  c(accept, reject)
+}
+
 
 #' Top level log-likelihood function that implements the dirichlet sampling
 #'
@@ -551,9 +608,14 @@ dirichlet_mix_ll <- function(x, data, contaminant_prob = 0.02, alpha_indices = c
 #'
 #' @return The log of the likelihood for the data under parameter values x
 #' @export
-dirichlet_reduced_mix <- function(x, data, contaminant_prob = 0.02, alpha_indices = c(1, 2), min_rt = 0, max_rt = 1) {
+dirichlet_reduced_mix <- function(x, data, contaminant_prob = 0.02, alpha_indices = c(1, 2), min_rt = 0, max_rt = 1, shared=FALSE) {
   force_pos_mask <- !startsWith(names(x), "v")
   x[force_pos_mask] <- exp(x[force_pos_mask])
+  if (shared) {
+    wrapper_func = reduced_more_model_wrapper
+  } else {
+    wrapper_func = reduced_model_wrapper
+  }
 
   # Enforce alphas to be greater than 0.01 and less than 100
   if (any(x[alpha_indices] < 0.01) || any(x[alpha_indices] > 100)) {
