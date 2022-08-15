@@ -5,8 +5,19 @@ export DCE_EXP_DATA="Pref_preprocessed.RDS"
 export DCE_MIN_RT=0.35
 export DCE_MAX_RT=10
 export DCE_CONTAM=0.02
-export VDCE_TAG="reduced_continue"
-export DCE_ORIG_JOB_DATA="PrefDCE_NXWAKl3q4JqQ_reduced.RData"
+# Provide tag on the command line
+if [ -z "$1" ]
+then
+	echo "No tag argument supplied"
+	exit 1
+fi
+export VDCE_TAG="$1"
+if [ -z "$2" ]
+then
+	echo "No continue file argument supplied"
+	exit 1
+fi
+export DCE_ORIG_JOB_DATA="$2"
 
 # Required for gsl (used by rtdists), due to our installation method.
 export LD_LIBRARY_PATH="/usr/local/gsl/2.5/x86_64/lib64"
@@ -25,9 +36,8 @@ function notify() {
 
 Rscript --no-save --no-restore src/estimation_continue.R > estimation_$DCE_EST_EXP.$VDCE_TAG.out 2> estimation_$DCE_EST_EXP.$VDCE_TAG.err
 
-cp PrefReducedAWS.sh ~/studies/egress-store-189fa174-3bd8-40c0-a722-d93c41c19ea0/.
-cp estimation* ~/studies/egress-store-189fa174-3bd8-40c0-a722-d93c41c19ea0/.
-cp data/output/PrefDCE* ~/studies/egress-store-189fa174-3bd8-40c0-a722-d93c41c19ea0/.
+cp estimation*$VDCE_TAG* ~/studies/egress-store-189fa174-3bd8-40c0-a722-d93c41c19ea0/.
+cp data/output/PrefDCE*$VDCE_TAG* ~/studies/egress-store-189fa174-3bd8-40c0-a722-d93c41c19ea0/.
 
 sleep 60
 
