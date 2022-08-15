@@ -12,7 +12,7 @@ print(sessionInfo())
 # Get environment variables to normal vars
 known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG",
                 "DCE_EXP_DATA", "DCE_MIN_RT", "DCE_MAX_RT", "DCE_CONTAM",
-                "RANDOM_SEED", "DCE_ORIG_JOB_DATA")
+                "RANDOM_SEED", "DCE_ORIG_JOB_DATA", "DCE_STAGES")
 
 envars <- Sys.getenv(known_vars)
 envars <- as.list(envars)
@@ -31,6 +31,7 @@ jobid <- ifelse(
 )
 tag <- ifelse(envars$VDCE_TAG == "", "untagged", envars$VDCE_TAG)
 early_data <- envars$DCE_ORIG_JOB_DATA
+stages_to_run <- envars$DCE_STAGES
 
 if (envars$RANDOM_SEED != "") {
   set.seed(as.numeric(envars$RANDOM_SEED))
@@ -38,6 +39,10 @@ if (envars$RANDOM_SEED != "") {
 
 if (early_data == "") {
   stop("DCE_ORIG_JOB_DATA environment variable must be set to continue")
+}
+
+if (stages_to_run == "") {
+  stop("DCE_STAGES envvar must be a comma separated list of PMwG stages (burn,adapt,sample)")
 }
 
 if (! (experiment %in% c("NumericVDCE", "SymbolicVDCE", "PrefDCE"))) {
@@ -71,19 +76,21 @@ load(file = here::here("data", "output", early_data))
 outfile <- new_outfile
 cores <- new_cores
 
-if (!("burn" %in% sampler$samples$stage)) {
+stages_to_run <- strsplit(stages_to_run, ",")[[1]]
+
+if ("burn" %in% stages_to_run) {
 	sampler <- run_stage(sampler, stage = "burn", iter = 5000, particles = 500, n_cores = cores)
 }
 
 save.image(outfile)
 
-if (!("adapt" %in% sampler$samples$stage)) {
+if ("adapt" %in% stages_to_run) {
 	sampler <- run_stage(sampler, stage = "adapt", iter = 10000, particles = 500, n_cores = cores, n_unique = 40)
 }
 
 save.image(outfile)
 
-if (!("sample" %in% sampler$samples$stage)) {
+if ("sample" %in% stages_to_run) {
 	sampler <- run_stage(sampler, stage = "sample", iter = 10000, particles = 100, n_cores = cores, pdist_update_n = NA)
 }
 
