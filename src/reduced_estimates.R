@@ -17,6 +17,7 @@ frank_colmap <- scale_fill_manual(name = "Architecture", values = fw_cols, break
 
 # Load all the samples
 pref_file <- here::here("data", "output", "PrefDCE_3Yaob1kCATGm_staged_burn.RData")
+pref_file <- here::here("data", "output", "PrefDCE_S6I7q4nycmRv_short_burn_cont.RData")
 pref_file <- here::here("data", "output", "PrefDCE_ACUGlaCbumcx_reduced_continue.RData")
 
 viewstage <- "burn"
@@ -43,6 +44,8 @@ for (par in pref_samples$par_names) {
           axis.ticks.x = element_blank(),
           axis.title.y = element_blank())
     print(g)
+
+    readline(prompt="Press [enter] to continue")
 }
 dev.off()
 
