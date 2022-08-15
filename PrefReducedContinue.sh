@@ -18,6 +18,12 @@ then
 	exit 1
 fi
 export DCE_ORIG_JOB_DATA="$2"
+if [ -z "$3" ]
+then
+	echo "No continue stages argument provided"
+	exit 1
+fi
+export DCE_STAGES="$3"
 
 # Required for gsl (used by rtdists), due to our installation method.
 export LD_LIBRARY_PATH="/usr/local/gsl/2.5/x86_64/lib64"
