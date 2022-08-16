@@ -18,13 +18,15 @@ frank_colmap <- scale_fill_manual(name = "Architecture", values = fw_cols, break
 # Load all the samples
 pref_file <- here::here("data", "output", "PrefDCE_3Yaob1kCATGm_staged_burn.RData")
 pref_file <- here::here("data", "output", "PrefDCE_S6I7q4nycmRv_short_burn_cont.RData")
+pref_file <- here::here("data", "output", "PrefDCE_S6I7q4nycmRv_short_burn_cont_2.RData")
 pref_file <- here::here("data", "output", "PrefDCE_ACUGlaCbumcx_reduced_continue.RData")
 
-viewstage <- "burn"
+viewstage <- "sample"
 
 pref_samples <- get_samples(pref_file, final_obj="sampler")
 
 
+mean_window <- 50
 pdf(file = here::here("results", "Reduced", paste0("theta_mu_trace_", Sys.Date(), ".pdf")), width = 14.1, height = 7.53)
 for (par in pref_samples$par_names) {
   g <- pref_samples %>%
@@ -35,6 +37,7 @@ for (par in pref_samples$par_names) {
     mutate(stage = pref_samples$samples$stage) %>%
     pivot_longer(cols = -c(sample_id, stage), names_to = "parameter") %>%
     filter(parameter == par) %>%
+    mutate(mean_so_far = ifelse(sample_id < mean_window, NaN, RcppRoll::roll_meanr(value, n=mean_window))) %>%
     ggplot(aes(x = sample_id, y = value, colour = stage)) +
     geom_line() +
     scale_colour_manual(values = fw_cols) +
@@ -42,7 +45,8 @@ for (par in pref_samples$par_names) {
     theme(axis.title.x = element_blank(),
           axis.text.x = element_blank(),
           axis.ticks.x = element_blank(),
-          axis.title.y = element_blank())
+          axis.title.y = element_blank()) +
+    geom_line(aes(y = mean_so_far), colour = "black")
     print(g)
 
     readline(prompt="Press [enter] to continue")
@@ -94,7 +98,7 @@ model_medians <- pref_samples %>%
   ))
 
 subject_order <- model_medians %>%
-  filter(Parameter == "IEX") %>%
+  filter(Parameter == "MW") %>%
   arrange(desc(rel_val)) %>%
   pull(subjectid)
 
@@ -105,7 +109,7 @@ Par_order <- model_medians %>%
   pull(Parameter)
 
 model_plot <- function(medians) {
-  Par_order <- c("FPP", "IST", "IEX", "CB", "MW")
+  Par_order <- c("CB", "IST", "FPP", "IEX", "MW")
   medians %>%
     filter(subjectid != "Group") %>%
     mutate(Parameter = factor(Parameter, Par_order)) %>%
@@ -170,7 +174,7 @@ par_medians %>%
   mutate(Parameter = factor(Parameter, levels = names(par_colours))) %>%
   ggplot(aes(x = Parameter, y = value, fill = colour)) +
   geom_boxplot() +
-  ylim(c(-5, 15)) +
+  #ylim(c(-5, 15)) +
   scale_fill_identity()
 
 ggsave(
