@@ -8,7 +8,7 @@ library(mcce)
 print(sessionInfo())
 
 # For debugging:
-# Sys.setenv(DCE_EST_EXP="PrefDCE", NCPUS=3, DCE_REC_MODEL="CB", DCE_ORIG_JOB_DATA="PrefDCE_2506730.rcgbcm_Estimation5Model.RData")
+# Sys.setenv(DCE_EST_EXP="PrefDCE", NCPUS=3, DCE_ORIG_JOB_DATA="PrefDCE_S6I7q4nycmRv_short_burn_cont.RData", VDCE_TAG="TestContinue", DCE_STAGES="sample")
 # Get environment variables to normal vars
 known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG",
                 "DCE_EXP_DATA", "DCE_MIN_RT", "DCE_MAX_RT", "DCE_CONTAM",
@@ -71,8 +71,14 @@ if (!between(p_contam, 0, 1)) {
 new_outfile <- here::here("data", "output", paste0(filename, ".RData"))
 
 # Pull in vars etc from earlier run
-load(file = here::here("data", "output", early_data))
+load(file = here::here("data", "output", early_data), envir = e <- new.env())
 
+for (varname in ls(e)) {
+  if (!varname %in% c("new_outfile", "new_cores", "stages_to_run")) {
+    print(paste('Assigning', varname))
+    assign(varname, e[[varname]], envir = .GlobalEnv)
+  }
+}
 outfile <- new_outfile
 cores <- new_cores
 
