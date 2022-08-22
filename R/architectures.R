@@ -1,3 +1,11 @@
+# pdf to accept Price is: dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)
+# cdf to accept Price is: plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)
+# pdf to reject Price is: dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)
+# cdf to rejept Price is: plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)
+# pdf to accept Rating is: dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)
+# cdf to accept Rating is: plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)
+# pdf to reject Rating is: dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)
+# cdf to rejept Rating is: plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)
 
 #' Independant Self Terminating
 #'
