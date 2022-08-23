@@ -10,7 +10,8 @@ dirichlet_mix_ll(
   contaminant_prob = 0.02,
   alpha_indices = c(1, 2),
   min_rt = 0,
-  max_rt = 1
+  max_rt = 1,
+  tforms = "std"
 )
 }
 \arguments{
@@ -31,6 +32,9 @@ allowable time window.}
 \item{min_rt}{The smallest possible response time in the data}
 
 \item{max_rt}{The largest possible response time in the data}
+
+\item{tforms}{A character vector selecting the transformation scheme
+scheme to be used.}
 }
 \value{
 The log of the likelihood for the data under parameter values x

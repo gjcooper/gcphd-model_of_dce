@@ -120,75 +120,12 @@ rmodel_wrapper <- function(x, data, model, contaminant_prob = 0.02, min_rt = 0, 
 #'   - that is the parameters that correspond to the dirichlet shape parameters.
 #' @param min_rt The smallest possible response time in the data
 #' @param max_rt The largest possible response time in the data
+#' @inheritParams transform_pars
 #'
 #' @return The log of the likelihood for the data under parameter values x
 #' @export
-dirichlet_mix_ll <- function(x, data, contaminant_prob = 0.02, alpha_indices = c(1, 2), min_rt = 0, max_rt = 1) {
-  x <- transform_pars(x, data)
-
-  # Enforce alphas to be greater than 0.01 and less than 100
-  if (any(x[alpha_indices] < 0.01) || any(x[alpha_indices] > 100)) {
-    return(-1e10)
-  }
-
-  # all decision rules
-  rdev <- MCMCpack::rdirichlet(1, x[alpha_indices])
-  func_idx <- sample(alpha_indices, 1, prob = rdev)
-  ll_func <- ll_funcs[[func_idx]]$likelihood
-  trial_ll <- model_wrapper(x, data, ll_func)
-  new_like <- (1 - contaminant_prob) * trial_ll +
-    contaminant_prob * (stats::dunif(data$rt, min_rt, max_rt) / 2)
-  loglike <- sum(log(pmax(new_like, 1e-10)))
-  attr(loglike, "extra_info") <- names_ll()[func_idx]
-  loglike
-}
-
-
-#' Top level log-likelihood function that implements reduced dirichlet sampling
-#'
-#' This function selects one of the possible architectures using a random
-#' dirichlet sample weighted by the α values from the parameter vector. It
-#' then delegates the likelihood for the data to an architecture specific
-#' log-likelihood function.
-#'
-#' @section The parameter vector:
-#'
-#' The vector x should contain the following elements:
-#' A number of \eqn{\alpha}
-#' values
-#'
-#' \itemize{
-#'   \item A number of \strong{\eqn{\alpha}} parameter values matching the
-#'     number and order of the ll_funcs vector defined in this same file.
-#'   \item \strong{A} - the start point variability
-#'   \item \strong{b^a} and \strong{b^r}, the thresholds to either accept or
-#'     reject the item.
-#'   \item \strong{t0} - the residual time, bounded above by the minimum
-#'     response time for the participant
-#'   \item 12 drift rates. For each attribute there are three stimulus levels.
-#'     For each of these 6 attribute levels there are two drift rates, one drift
-#'     rate to accept (\strong{v^a}) and one to reject (\strong{v^r})
-#' }
-#'
-#' @param x A named vector containing parameter values to test
-#' @param data The data for a single subject for which the likelihood should be
-#'   calculated
-#' @param contaminant_prob The probability used for contaminant process in the
-#'   modelling. A contaminant process is just a uniform random response in the
-#'   allowable time window.
-#' @param alpha_indices A vector containing the indicies of the alpha parameters
-#'   - that is the parameters that correspond to the dirichlet shape parameters.
-#' @param min_rt The smallest possible response time in the data
-#' @param max_rt The largest possible response time in the data
-#'
-#' @return The log of the likelihood for the data under parameter values x
-#' @export
-dirichlet_reduced_mix <- function(x, data, contaminant_prob = 0.02, alpha_indices = c(1, 2), min_rt = 0, max_rt = 1, shared=FALSE) {
-  if (shared) {
-    x <- transform_pars(x, data, tforms="reduced_more")
-  } else {
-    x <- transform_pars(x, data, tforms="reduced")
-  }
+dirichlet_mix_ll <- function(x, data, contaminant_prob = 0.02, alpha_indices = c(1, 2), min_rt = 0, max_rt = 1, tforms = "std") {
+  x <- transform_pars(x, data, tforms)
 
   # Enforce alphas to be greater than 0.01 and less than 100
   if (any(x[alpha_indices] < 0.01) || any(x[alpha_indices] > 100)) {
