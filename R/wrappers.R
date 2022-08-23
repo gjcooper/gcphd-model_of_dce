@@ -184,12 +184,10 @@ dirichlet_mix_ll <- function(x, data, contaminant_prob = 0.02, alpha_indices = c
 #' @return The log of the likelihood for the data under parameter values x
 #' @export
 dirichlet_reduced_mix <- function(x, data, contaminant_prob = 0.02, alpha_indices = c(1, 2), min_rt = 0, max_rt = 1, shared=FALSE) {
-  force_pos_mask <- !startsWith(names(x), "v")
-  x[force_pos_mask] <- exp(x[force_pos_mask])
   if (shared) {
-    wrapper_func = reduced_more_model_wrapper
+    x <- transform_pars(x, data, tforms="reduced_more")
   } else {
-    wrapper_func = reduced_model_wrapper
+    x <- transform_pars(x, data, tforms="reduced")
   }
 
   # Enforce alphas to be greater than 0.01 and less than 100
@@ -201,7 +199,7 @@ dirichlet_reduced_mix <- function(x, data, contaminant_prob = 0.02, alpha_indice
   rdev <- MCMCpack::rdirichlet(1, x[alpha_indices])
   func_idx <- sample(alpha_indices, 1, prob = rdev)
   ll_func <- ll_funcs[[func_idx]]$likelihood
-  trial_ll <- reduced_model_wrapper(x, data, ll_func)
+  trial_ll <- model_wrapper(x, data, ll_func)
   new_like <- (1 - contaminant_prob) * trial_ll +
     contaminant_prob * (stats::dunif(data$rt, min_rt, max_rt) / 2)
   loglike <- sum(log(pmax(new_like, 1e-10)))
@@ -300,6 +298,13 @@ simple_model_wrapper <- function(rt, A, b_acc, b_rej, t0, drifts, accept, model)
 #'   \item std - This is the default, and takes the exponent of all
 #'     parameter values, enforces \strong{b_acc} and \strong{b_rej} being
 #'     greater than \strong{A} by adding \strong{A}
+#'   \item reduced - This works similarly to std, except it does not take the
+#'     exponent of drift rates (parameters starting with v). It also calculates
+#'     drift rate parameters for reject accumulators from the accept drift rates
+#'     combined with a beta_0 and beta_1 parameters for each attribute.
+#'   \item reduced_more - This works similarly to reduced, however the beta_0
+#'     parameters is shared between attributes.
+#' }
 #'
 #' @param pars The named list of parameters to transform
 #' @param tforms A character vector selecting the transformation scheme
@@ -307,7 +312,7 @@ simple_model_wrapper <- function(rt, A, b_acc, b_rej, t0, drifts, accept, model)
 #'
 #' @return A named list of transformed parameter values
 #' @export
-transform_pars <- function(pars, data, tforms = c("std")) {
+transform_pars <- function(pars, data, tforms = "std") {
   if (tforms == "std") {
     newpars <- exp(pars)
   } else if (tforms.startsWith("reduced")) {

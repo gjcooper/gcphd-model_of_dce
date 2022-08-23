@@ -4,7 +4,7 @@
 \alias{transform_pars}
 \title{Transforms parameters for specific models/}
 \usage{
-transform_pars(pars, data, tforms = c("std"))
+transform_pars(pars, data, tforms = "std")
 }
 \arguments{
 \item{pars}{The named list of parameters to transform}
@@ -27,5 +27,12 @@ Transformations scheme currently allowed are provided below.
 \item std - This is the default, and takes the exponent of all
 parameter values, enforces \strong{b_acc} and \strong{b_rej} being
 greater than \strong{A} by adding \strong{A}
+\item reduced - This works similarly to std, except it does not take the
+exponent of drift rates (parameters starting with v). It also calculates
+drift rate parameters for reject accumulators from the accept drift rates
+combined with a beta_0 and beta_1 parameters for each attribute.
+\item reduced_more - This works similarly to reduced, however the beta_0
+parameters is shared between attributes.
+}
 }
 
