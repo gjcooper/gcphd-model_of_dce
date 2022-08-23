@@ -20,9 +20,7 @@ Sys.setenv(DCE_EST_EXP="PrefDCE",
 # Get environment variables to normal vars
 known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "VDCE_TAG",
                 "DCE_EXP_DATA", "DCE_MIN_RT", "DCE_MAX_RT", "DCE_CONTAM",
-                "RANDOM_SEED")
-
-first_test <- "PrefDCE_test.RData"
+                "RANDOM_SEED", "TEST_MODEL")
 
 envars <- Sys.getenv(known_vars)
 envars <- as.list(envars)
@@ -33,11 +31,22 @@ min_rt <- as.numeric(envars$DCE_MIN_RT)
 max_rt <- as.numeric(envars$DCE_MAX_RT)
 p_contam <- as.numeric(envars$DCE_CONTAM)
 displaytype <- envars$VDCE_DISPLAY
+test_model <- envars$TEST_MODEL
 cores <- ifelse(envars$NCPUS == "", 1, as.numeric(envars$NCPUS))
 tag <- ifelse(envars$VDCE_TAG == "", "untagged", envars$VDCE_TAG)
 experimental_data <- envars$DCE_EXP_DATA
 if (envars$RANDOM_SEED != "") {
   set.seed(as.numeric(envars$RANDOM_SEED))
+}
+
+if (test_model == "std") {
+  first_test <- "PrefDCE_test.RData"
+} else if (test_model == "reduced") {
+  first_test <- "PrefDCE_testred.RData"
+} else if (test_model == "reduced_more") {
+  first_test <- "PrefDCE_testredmore.RData"
+} else {
+  stop("TEST_MODEL environment variable not provided")
 }
 
 #Tests
@@ -70,6 +79,9 @@ model_data <- readRDS(here::here("data", "output", experimental_data))
 
 
 acc_rej_drift <- c("v_acc_p", "v_acc_r", "v_rej_p", "v_rej_r")
+if (startsWith(test_model, "reduced")) {
+  acc_rej_drift <- c("v_acc_p", "v_acc_r")
+}
 stim_levels <- c("H", "L", "D")
 
 parameters <- c(
@@ -87,6 +99,9 @@ parameters <- c(
   apply(expand.grid(acc_rej_drift, stim_levels), 1, paste, collapse = "_")
 )
 
+if (test_model == "reduced") {
+  parameters <- c(parameters, "beta0_p", "beta0_r", "beta1_p", "beta1_r")
+}
 # Mixture counts should always come first
 mix_counts <- 1:sum(startsWith(parameters, "alpha"))
 
@@ -100,7 +115,15 @@ diag(priors$theta_mu_var)[mix_counts] <- 2
 
 # Create the Particle Metropolis within Gibbs sampler object ------------------
 
-dirichlet_func <- partial(dirichlet_mix_ll, contaminant_prob = p_contam, alpha_indices = mix_counts, min_rt = min_rt, max_rt = max_rt)
+if (test_model == "std") {
+  tl_func <- dirichlet_mix_ll
+} else if (test_model == "reduced") {
+  tl_func <- dirichlet_reduced_mix
+} else {
+  tl_func <- dirichlet_reducedmore_mix
+}
+
+dirichlet_func <- partial(tl_func, contaminant_prob = p_contam, alpha_indices = mix_counts, min_rt = min_rt, max_rt = max_rt)
 
 sampler <- pmwgs(
   data = model_data,
