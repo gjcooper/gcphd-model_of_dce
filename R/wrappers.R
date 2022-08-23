@@ -28,20 +28,22 @@ model_wrapper <- function(x, data, model) {
   )
 
   accepts <- data$accept == 2
-  acc_drifts <- drifts[accepts, ]
-  acc_rt <- data[accepts,]$rt
+  acc_args <- c(
+    list(rt = data[accepts,]$rt, drifts = drifts[accepts, ], accept = TRUE),
+    as.list(x[c('A', 'b_acc', 'b_rej', 't0')]))
 
   rejects <- data$accept == 1
-  rej_drifts <- drifts[rejects, ]
-  rej_rt <- data[rejects,]$rt
+  rej_args <- c(
+    list(rt = data[rejects,]$rt, drifts = drifts[rejects, ], accept = FALSE),
+    as.list(x[c('A', 'b_acc', 'b_rej', 't0')]))
 
   accept <- switch(
     sum(accepts) != 0,
-    model(acc_rt, A, b_acc, b_rej, t0, acc_drifts, TRUE)
+    do.call(model, acc_args)
   )
   reject <- switch(
     sum(rejects) != 0,
-    model(rej_rt, A, b_acc, b_rej, t0, rej_drifts, FALSE)
+    do.call(model, rej_args)
   )
   c(accept, reject)
 }
