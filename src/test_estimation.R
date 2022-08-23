@@ -115,15 +115,7 @@ diag(priors$theta_mu_var)[mix_counts] <- 2
 
 # Create the Particle Metropolis within Gibbs sampler object ------------------
 
-if (test_model == "std") {
-  tl_func <- dirichlet_mix_ll
-} else if (test_model == "reduced") {
-  tl_func <- dirichlet_reduced_mix
-} else {
-  tl_func <- dirichlet_reducedmore_mix
-}
-
-dirichlet_func <- partial(tl_func, contaminant_prob = p_contam, alpha_indices = mix_counts, min_rt = min_rt, max_rt = max_rt)
+dirichlet_func <- partial(dirichlet_mix_ll, contaminant_prob = p_contam, alpha_indices = mix_counts, min_rt = min_rt, max_rt = max_rt, tforms = test_model)
 
 sampler <- pmwgs(
   data = model_data,
