@@ -315,7 +315,7 @@ simple_model_wrapper <- function(rt, A, b_acc, b_rej, t0, drifts, accept, model)
 transform_pars <- function(pars, data, tforms = "std") {
   if (tforms == "std") {
     newpars <- exp(pars)
-  } else if (tforms.startsWith("reduced")) {
+  } else if (startsWith(tforms, "reduced")) {
     force_pos_mask <- !startsWith(names(pars), "v")
     newpars <- pars
     newpars[force_pos_mask] <- exp(newpars[force_pos_mask])
