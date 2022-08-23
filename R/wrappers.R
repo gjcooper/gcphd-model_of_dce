@@ -1,3 +1,12 @@
+# Useful names for drift rates used internally in functions
+acc_rej_drift <- c("v_acc_p", "v_acc_r", "v_rej_p", "v_rej_r")
+stim_levels <- c("H", "L", "D")
+drift_names <- apply(expand.grid(acc_rej_drift, stim_levels), 1, paste, collapse = "_")
+v_acc_p <- drift_names[grepl("acc_p", drift_names)]
+v_rej_p <- drift_names[grepl("rej_p", drift_names)]
+v_acc_r <- drift_names[grepl("acc_r", drift_names)]
+v_rej_r <- drift_names[grepl("rej_r", drift_names)]
+
 #' Wrapper for individual model log likelihood function
 #'
 #' This function performs some common steps such as rearrangeing the data
@@ -11,34 +20,28 @@
 #' @return The log of the likelihood for the data under parameter values x
 #' @export
 model_wrapper <- function(x, data, model) {
-  adat <- data[data$accept == 2, ]
-  rdat <- data[data$accept == 1, ]
+  drifts <- tibble::tibble(
+    AccPrice = x[data$v_acc_p],
+    RejPrice = x[data$v_rej_p],
+    AccRating = x[data$v_acc_r],
+    RejRating = x[data$v_rej_r]
+  )
 
-  A <- x["A"] # nolint
-  t0 <- x["t0"]
-  # Enforces b cannot be less than A, b parameter is thus threshold - A
-  b_acc <- x["b_acc"] + A
-  b_rej <- x["b_rej"] + A
-  acc_drifts <- tibble::tibble(
-    AccPrice = x[adat$v_acc_p],
-    RejPrice = x[adat$v_rej_p],
-    AccRating = x[adat$v_acc_r],
-    RejRating = x[adat$v_rej_r]
-  )
-  rej_drifts <- tibble::tibble(
-    AccPrice = x[rdat$v_acc_p],
-    RejPrice = x[rdat$v_rej_p],
-    AccRating = x[rdat$v_acc_r],
-    RejRating = x[rdat$v_rej_r]
-  )
+  accepts <- data$accept == 2
+  acc_drifts <- drifts[accepts, ]
+  acc_rt <- data[accepts,]$rt
+
+  rejects <- data$accept == 1
+  rej_drifts <- drifts[rejects, ]
+  rej_rt <- data[rejects,]$rt
 
   accept <- switch(
-    nrow(adat) != 0,
-    model(adat$rt, A, b_acc, b_rej, t0, acc_drifts, TRUE)
+    sum(accepts) != 0,
+    model(acc_rt, A, b_acc, b_rej, t0, acc_drifts, TRUE)
   )
   reject <- switch(
-    nrow(rdat) != 0,
-    model(rdat$rt, A, b_acc, b_rej, t0, rej_drifts, FALSE)
+    sum(rejects) != 0,
+    model(rej_rt, A, b_acc, b_rej, t0, rej_drifts, FALSE)
   )
   c(accept, reject)
 }
@@ -239,7 +242,7 @@ reduced_more_model_wrapper <- function(x, data, model) {
 #' @return The log of the likelihood for the data under parameter values x
 #' @export
 dirichlet_mix_ll <- function(x, data, contaminant_prob = 0.02, alpha_indices = c(1, 2), min_rt = 0, max_rt = 1) {
-  x <- exp(x)
+  x <- transform_pars(x, data)
 
   # Enforce alphas to be greater than 0.01 and less than 100
   if (any(x[alpha_indices] < 0.01) || any(x[alpha_indices] > 100)) {
@@ -353,7 +356,7 @@ dirichlet_reduced_mix <- function(x, data, contaminant_prob = 0.02, alpha_indice
 #' @return The log of the likelihood for the data under parameter values x
 #' @export
 single_model_ll <- function(x, data, contaminant_prob = 0.02, architecture = "IST", min_rt = 0, max_rt = 1) {
-  x <- exp(x)
+  x <- transform_pars(x, data)
 
   # all decision rules
   func_idx <- match(architecture, names_ll())
@@ -363,6 +366,7 @@ single_model_ll <- function(x, data, contaminant_prob = 0.02, architecture = "IS
     contaminant_prob * (stats::dunif(data$rt, min_rt, max_rt) / 2)
   sum(log(pmax(new_like, 1e-10)))
 }
+
 
 #' Simple wrapper for integrate testing
 #'
@@ -400,4 +404,46 @@ simple_model_wrapper <- function(rt, A, b_acc, b_rej, t0, drifts, accept, model)
   drifts <- exp(drifts)
 
   model(rt, A, b_acc, b_rej, t0, drifts, accept)
+}
+
+#' Transforms parameters for specific models/
+#'
+#' This function performs common transforms for the LBA based architecture of
+#' choice modelling
+#'
+#' @section Transformation schemes:
+#'
+#' Transformations scheme currently allowed are provided below.
+#' \itemize{
+#'   \item std - This is the default, and takes the exponent of all
+#'     parameter values, enforces \strong{b_acc} and \strong{b_rej} being
+#'     greater than \strong{A} by adding \strong{A}
+#'
+#' @param pars The named list of parameters to transform
+#' @param tforms A character vector selecting the transformation scheme
+#'   scheme to be used.
+#'
+#' @return A named list of transformed parameter values
+#' @export
+transform_pars <- function(pars, data, tforms = c("std")) {
+  if (tforms == "std") {
+    newpars <- exp(pars)
+  } else if (tforms.startsWith("reduced")) {
+    force_pos_mask <- !startsWith(names(pars), "v")
+    newpars <- pars
+    newpars[force_pos_mask] <- exp(newpars[force_pos_mask])
+    if (tforms == "reduced") {
+      # Calculate reject drift values
+      newpars[v_rej_p] <- newpars["beta0_p"] - newpars["beta1_p"] * newpars[v_acc_p]
+      newpars[v_rej_r] <- newpars["beta0_r"] - newpars["beta1_r"] * newpars[v_acc_r]
+    } else if (tforms == "reduced_more") {
+      # Calculate reject drift values
+      newpars[v_rej_p] <- newpars["beta0"] - newpars["beta1_p"] * newpars[v_acc_p]
+      newpars[v_rej_r] <- newpars["beta0"] - newpars["beta1_r"] * newpars[v_acc_r]
+    }
+  }
+  # Always need to adjust for threshold > A
+  newpars["b_acc"] <- newpars["b_acc"] + newpars["A"]
+  newpars["b_rej"] <- newpars["b_rej"] + newpars["A"]
+  newpars
 }

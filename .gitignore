@@ -13,3 +13,4 @@ data/output/
 results/
 *.err
 *.out
+tags
