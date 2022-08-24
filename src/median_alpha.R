@@ -4,11 +4,11 @@ library(dplyr)
 library(tibble)
 library(ggplot2)
 
-tmu <- function(sampled) {
-  median_theta_mu <- sampled %>%
+tmu <- function(sampler) {
+  median_theta_mu <- sampler %>%
     as_mcmc(filter = "sample") %>%
     as_tibble() %>%
-    setNames(sampled$par_names) %>%
+    setNames(sampler$par_names) %>%
     summarise_all(median)
   median_theta_mu
 }
@@ -25,10 +25,10 @@ convert <- function(mcmc_list, par_names) {
   converted_list
 }
 
-alph <- function(sampled) {
-  median_alpha <- sampled %>%
+alph <- function(sampler) {
+  median_alpha <- sampler %>%
     as_mcmc(selection = "alpha", filter = "sample") %>%
-    convert(sampled$par_names) %>%
+    convert(sampler$par_names) %>%
     bind_rows()
   median_alpha
 }
@@ -51,8 +51,8 @@ plot_medians <- function(median_alpha, median_theta_mu, transform=identity) {
 
 run_all <- function(filename, output) {
   load(here::here("data", "output", filename))
-  theta_median <- tmu(sampled)
-  alpha_median <- alph(sampled)
+  theta_median <- tmu(sampler)
+  alpha_median <- alph(sampler)
   p <- plot_medians(alpha_median, theta_median, transform = exp) +
     scale_y_continuous(trans = "log2")
   print(p)

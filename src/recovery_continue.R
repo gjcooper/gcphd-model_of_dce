@@ -60,19 +60,19 @@ outfile <- new_outfile
 cores <- new_cores
 
 if (!exists("burned")) {
-	burned <- run_stage(sampler, stage = "burn", iter = 5000, particles = 500, n_cores = cores)
+	sampler <- run_stage(sampler, stage = "burn", iter = 5000, particles = 500, n_cores = cores)
 }
 
 save.image(outfile)
 
 if (!exists("adapted")) {
-	adapted <- run_stage(burned, stage = "adapt", iter = 10000, particles = 500, n_cores = cores, n_unique = 40)
+	sampler <- run_stage(sampler, stage = "adapt", iter = 10000, particles = 500, n_cores = cores, n_unique = 40)
 }
 
 save.image(outfile)
 
 if (!exists("sampled")) {
-	sampled <- run_stage(adapted, stage = "sample", iter = 10000, particles = 100, n_cores = cores, pdist_update_n = NA)
+	sampler <- run_stage(sampler, stage = "sample", iter = 10000, particles = 100, n_cores = cores, pdist_update_n = NA)
 }
 
 save.image(outfile)
