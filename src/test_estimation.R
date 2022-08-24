@@ -101,7 +101,10 @@ parameters <- c(
 
 if (test_model == "reduced") {
   parameters <- c(parameters, "beta0_p", "beta0_r", "beta1_p", "beta1_r")
+} else if (test_model == "reduced_more") {
+  parameters <- c(parameters, "beta0", "beta1_p", "beta1_r")
 }
+
 # Mixture counts should always come first
 mix_counts <- 1:sum(startsWith(parameters, "alpha"))
 
@@ -137,6 +140,7 @@ old_theta_mu <- e$sampler$samples$theta_mu
 if (identical(old_theta_mu, new_theta_mu)) {
   print("Old and new are identical")
 } else {
+  print("Old and new are not identical")
   all.equal(old_theta_mu, new_theta_mu)
   save.image(outfile)
 }
