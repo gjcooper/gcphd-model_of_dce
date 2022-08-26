@@ -15,7 +15,7 @@ print(sessionInfo())
 # Get environment variables to normal vars
 known_vars <- c("DCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID", "VDCE_TAG",
                 "DCE_EXP_DATA", "DCE_MIN_RT", "DCE_MAX_RT", "DCE_CONTAM",
-                "RANDOM_SEED")
+                "RANDOM_SEED", "DCE_MODEL")
 
 envars <- Sys.getenv(known_vars)
 envars <- as.list(envars)
@@ -37,6 +37,7 @@ experimental_data <- envars$DCE_EXP_DATA
 if (envars$RANDOM_SEED != "") {
   set.seed(as.numeric(envars$RANDOM_SEED))
 }
+model <- envars$DCE_MODEL
 
 #Tests
 if (! (experiment %in% c("NumericVDCE", "SymbolicVDCE", "PrefDCE"))) {
@@ -61,29 +62,17 @@ if (!between(p_contam, 0, 1)) {
   stop("DCE_CONTAM should be a value between 0 and 1")
 }
 
+# Model tests
+if (! (model %in% c("std", "reduced", "reduced_more"))) {
+  stop("System Environment Variable DCE_MODEL not defined or unknown value")
+}
+
 # Get output filename and input data
 outfile <- here::here("data", "output", paste0(filename, ".RData"))
 model_data <- readRDS(here::here("data", "output", experimental_data))
 
-
-
-acc_rej_drift <- c("v_acc_p", "v_acc_r", "v_rej_p", "v_rej_r")
-stim_levels <- c("H", "L", "D")
-
-parameters <- c(
-  # alpha (dirichlet mixture pars) for each likelihood function exposed in mcce
-  apply(expand.grid("alpha", names_ll()), 1, paste, collapse = "_"),
-  # A - start point variability (sampled from U(0, A) where U is uniform dist)
-  "A",
-  # b_acc - threshold to accept based on evidence accumulaton in channel
-  "b_acc",
-  # b_rej - threshold to reject based on evidence accumulation in channel
-  "b_rej",
-  # t0 - residual time, bounded above by min response time for participant k
-  "t0",
-  # Drift rates rto accept/reject for different stimulus levels/attributes
-  apply(expand.grid(acc_rej_drift, stim_levels), 1, paste, collapse = "_")
-)
+#Get the parameters from a separate file
+source(paste0(model, "_pars.R"))
 
 # Mixture counts should always come first
 mix_counts <- 1:sum(startsWith(parameters, "alpha"))
@@ -97,8 +86,7 @@ priors$theta_mu_mean[mix_counts] <- 1
 diag(priors$theta_mu_var)[mix_counts] <- 2
 
 # Create the Particle Metropolis within Gibbs sampler object ------------------
-
-dirichlet_func <- partial(dirichlet_mix_ll, contaminant_prob = p_contam, alpha_indices = mix_counts, min_rt = min_rt, max_rt = max_rt)
+dirichlet_func <- partial(dirichlet_mix_ll, contaminant_prob = p_contam, alpha_indices = mix_counts, min_rt = min_rt, max_rt = max_rt, tforms = model)
 
 sampler <- pmwgs(
   data = model_data,
