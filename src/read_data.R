@@ -4,59 +4,6 @@ library(tidyverse)
 library(patchwork)
 library(knitr)
 
-print_line <- function(data_line, line_index) {
-  if (nchar(data_line) == 0) {
-    message(paste("Line", line_index, "empty"))
-  } else if (nchar(data_line) < 60) {
-    message(paste("Line", line_index, "contents:", data_line))
-  } else {
-    message(paste(
-      "Line",
-      line_index,
-      "abbrev:",
-      substring(data_line, 1, 25),
-      "....",
-      substring(data_line, nchar(data_line) - 25 + 1)
-    ))
-  }
-}
-
-parse_data_line <- function(data_line, line_index) {
-  out <- tryCatch(
-    {
-      fromJSON(data_line)
-    },
-    error = function(cond) {
-      print_line(data_line, line_index)
-    },
-    warning = function(cond) {
-      print_line(data_line, line_index)
-    }
-  )
-  return(out)
-}
-
-
-#' # Get data from a raw JSON file
-#'
-#' Prompts the user to select a file using a tk dialog, which should be a file
-#' with each line representing a JSON object from the PrefSFT2020 code
-#'
-#' **returns** A list containing each participants data converted from JSON
-get_data <- function(datafile) {
-  connection <- file(datafile, open = "r")
-  data_lines <- readLines(connection)
-  raw_data <- c()
-  for (line_index in seq_along(data_lines)) {
-    line_data <- parse_data_line(data_lines[line_index], line_index)
-    if (!is.null(line_data)) {
-      raw_data <- append(raw_data, list(line_data))
-    }
-  }
-  close(connection)
-  raw_data
-}
-
 
 #' # Extract sampled values from raw data
 #'
@@ -140,19 +87,6 @@ check_js_samples <- function() {
   dev.off()
 }
 
-
-extract_data <- function(raw_data) {
-  part_data_list <- lapply(raw_data, FUN = function(data_line) {
-    df <- read_csv(data_line$jsPsychData, col_types = cols(.default = "c"))
-  })
-  part_data_list <- bind_rows(lapply(
-    part_data_list,
-    function(dtt) {
-      mutate_all(dtt, as.character)
-    }
-  ))
-  bind_rows(part_data_list)
-}
 
 augment_data <- function(events) {
   # numeric columns

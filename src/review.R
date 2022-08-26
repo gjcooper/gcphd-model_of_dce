@@ -1,7 +1,7 @@
 library(tidyverse)
 library(ggforce)
 # Load functions and imports from read_data.R file
-raw_data <- get_data()
+raw_data <- get_JATOS_data(here::here("data", "input", "PrefSFT", "results_20201116155132_sem2.txt"))
 messages <- lapply(raw_data, "[[", "messages")
 events <- extract_data(raw_data)
 events <- augment_data(events)
