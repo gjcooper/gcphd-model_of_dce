@@ -87,7 +87,6 @@ check_js_samples <- function() {
   dev.off()
 }
 
-
 augment_data <- function(events) {
   # numeric columns
   num_cols <- c("trial_index", "time_elapsed", "price", "rating", "rt",
@@ -173,8 +172,6 @@ get_survey <- function(all_events) {
   }))
   bind_cols(sona_ids, survey, survey_times)
 }
-
-
 
 sft_rt_plot <- function(sft) {
   # Add mean lines
