@@ -37,7 +37,7 @@ for (par in pref_samples$par_names) {
     mutate(mean_so_far = ifelse(sample_id < mean_window, NaN, RcppRoll::roll_meanr(value, n=mean_window))) %>%
     ggplot(aes(x = sample_id, y = value, colour = stage)) +
     geom_line() +
-    scale_colour_manual(values = fw_cols) +
+    scale_colour_watercolour() +
     labs(title = par) +
     theme(axis.title.x = element_blank(),
           axis.text.x = element_blank(),
@@ -73,13 +73,15 @@ for (par in pref_samples$par_names) {
       filter(parameter == par) %>%
       ggplot(aes(x = sample_id, y = value, colour = stage)) +
       geom_line() +
-      scale_colour_manual(values = fw_cols) +
+      scale_colour_watercolour() +
       facet_wrap(~ subjectid, nrow=2, ncol=2) +
       theme(axis.title.x = element_blank(),
             axis.text.x = element_blank(),
             axis.ticks.x = element_blank(),
             axis.title.y = element_blank())
     print(g)
+
+    readline(prompt="Press [enter] to continue")
   }
   dev.off()
 }
@@ -94,25 +96,28 @@ model_medians <- pref_samples %>%
     TRUE ~ str_pad(subjectid, 2, pad = "0")
   ))
 
+sorted_architectures <- model_medians %>%
+  group_by(subjectid) %>%
+  filter(rel_val == max(rel_val)) %>%
+  pull(Parameter) %>%
+  table %>%
+  sort %>%
+  names
+
+most_common_arch <- rev(sorted_architectures)[1]
+
 subject_order <- model_medians %>%
-  filter(Parameter == "MW") %>%
+  filter(Parameter == most_common_arch) %>%
   arrange(desc(rel_val)) %>%
   pull(subjectid)
 
-Par_order <- model_medians %>%
-  group_by(Parameter) %>%
-  summarise(mean_val = mean(rel_val)) %>%
-  arrange(mean_val) %>%
-  pull(Parameter)
-
 model_plot <- function(medians) {
-  Par_order <- c("CB", "IST", "FPP", "IEX", "MW")
   medians %>%
     filter(subjectid != "Group") %>%
-    mutate(Parameter = factor(Parameter, Par_order)) %>%
+    mutate(Parameter = factor(Parameter, sorted_architectures)) %>%
     ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
     geom_col() +
-    frank_colmap +
+    scale_fill_watercolour() +
     theme(axis.title.x = element_blank(),
           axis.text.x = element_blank(),
           axis.ticks.x = element_blank()) +
@@ -124,7 +129,7 @@ model_medians %>%
   mutate(subjectid = factor(subjectid, subject_order)) %>%
   mutate(subjectid = fct_relevel(subjectid, "Group", after=Inf)) %>%
   filter(subjectid != "Group") %>%
-  mutate(Parameter = factor(Parameter, Par_order)) %>%
+  mutate(Parameter = factor(Parameter, sorted_architectures)) %>%
   model_plot
 
 ggsave(
@@ -151,15 +156,8 @@ group_pars <- pref_samples %>%
   get_medians(alpha = FALSE) %>%
   mutate(value = log(value))
 
-
-fw_cols %>%
-  as_tibble %>%
-  ggplot(aes(x = seq_len(length(fw_cols)), y = 1, fill=value)) +
-  geom_col() + scale_fill_identity() +
-  labs(x = "Index", y = NULL) + theme(axis.text.y = element_blank())
-
 par_colours <- c("t0" = "grey",
-                 "A" = "grey", "b_acc" = fw_cols[3], "b_rej" = fw_cols[2],
+                 "A" = "grey", "b_acc" = "#73842E", "b_rej" = "#D0781C",
                  "v_acc_p_H" = "#3b8114", "v_acc_p_L" = "#67b13d", "v_acc_p_D" = "#95db6d",
                  "beta0_p" = "#008252", "beta1_p" = "#008252",
                  "v_acc_r_H" = "#402c8e", "v_acc_r_L" = "#6853bb", "v_acc_r_D" = "#957df2",
@@ -225,10 +223,8 @@ ll_vals <- sapply(names(nonarch_parameters), FUN = function(par) {
     par_val = alt_vals,
     ll = sapply(alt_vals, FUN = function(sub) {
       x[par] <- sub
-      force_pos_mask <- !startsWith(names(x), "v")
-      y = x
-      y[force_pos_mask] <- exp(x[force_pos_mask])
-      trial_ll <- reduced_model_wrapper(y, participant_data, ll_func)
+      y <- transform_pars(x, participant_data, tforms = "reduced")
+      trial_ll <- model_wrapper(y, participant_data, ll_func)
       sum(log(pmax(trial_ll, 1e-10)))
     })
   )
@@ -277,7 +273,8 @@ group_level <- pref_samples %>%
 
 group_level %>%
   ggplot(aes(x = name, y = value)) +
-  geom_col()
+  geom_col() +
+  theme(axis.text.x = element_text(angle=45, hjust=1))
 
 covmat <- pref_samples %>%
   as_mcmc(selection = "theta_sig", filter = viewstage) %>%
@@ -292,7 +289,6 @@ ggcorrplot(covmat)
 ggcorrplot(cov2cor(covmat))
 ggcorrplot(cov2cor(covmat), hc.order = TRUE, type = "lower", outline.col = "white", lab=TRUE)
 ggcorrplot(cov2cor(covmat), type = "lower", outline.col = "white", lab=TRUE)
-
 
 pref_samples %>%
   `[[`("samples") %>%
