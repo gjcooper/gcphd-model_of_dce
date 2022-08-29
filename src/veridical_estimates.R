@@ -3,13 +3,8 @@ library(dplyr)
 library(ggplot2)
 library(stringr)
 library(patchwork)
-library(paletti)
+library(watercolours)
 library(readr)
-
-frankwebb_cols <- read_lines(file = "palette.txt")
-viz_palette(frankwebb_cols, "Frank Webb palette")
-names(frankwebb_cols) <- names_ll()
-frank_colmap <- scale_fill_manual(name = "Architecture", values = frankwebb_cols)
 
 # Load all the samples
 accept_file <- here::here("data", "output", "NumericVDCE_1878182.rcgbcm_Estimation5Model.RData")

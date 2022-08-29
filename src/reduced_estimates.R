@@ -3,7 +3,7 @@ library(dplyr)
 library(ggplot2)
 library(stringr)
 library(patchwork)
-library(paletti)
+library(watercolours)
 library(readr)
 library(forcats)
 library(tidyr)
@@ -11,9 +11,6 @@ library(pmwg)
 library(purrr)
 library(ggcorrplot)
 
-fw_cols <- read_lines(file = "palette.txt")
-
-frank_colmap <- scale_fill_manual(name = "Architecture", values = fw_cols, breaks = names_ll())
 
 # Load all the samples
 pref_file <- here::here("data", "output", "PrefDCE_3Yaob1kCATGm_staged_burn.RData")

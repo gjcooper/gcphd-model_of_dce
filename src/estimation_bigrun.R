@@ -1,15 +1,8 @@
 library(tidyverse)
 library(mcce)
 library(patchwork)
-library(paletti)
 library(pmwg)
-
-frankwebb_cols <- read_lines(file = "palette.txt")
-names(frankwebb_cols) <- names_ll()
-frank_colmap <- scale_fill_manual(
-  name = "Architecture",
-  values = frankwebb_cols
-)
+library(watercolours)
 
 filenames <- list.files(
   here::here("data", "output", "bigrun"),

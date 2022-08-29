@@ -1,11 +1,8 @@
 library(tidyverse)
 library(pmwg)
 library(mcce)
-library(paletti)
+library(watercolours)
 
-frankwebb_cols <- read_lines(file = "palette.txt")
-names(frankwebb_cols) <- names_ll()
-frank_colmap <- scale_fill_manual(name = "Architecture", values = frankwebb_cols)
 
 pref_file <- here::here("data", "output", "PrefDCE_2506730.rcgbcm_Estimation5Model.RData")
 

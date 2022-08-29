@@ -1,5 +1,5 @@
 library(readr)
-library(paletti)
+library(watercolours)
 library(mcce)
 library(dplyr)
 library(pmwg)
@@ -10,10 +10,6 @@ library(stringr)
 library(patchwork)
 
 
-frankwebb_cols <- read_lines(file = "palette.txt")
-viz_palette(frankwebb_cols, "Frank Webb palette")
-fill_palette <- get_scale_fill(get_pal(frankwebb_cols))
-col_palette <- get_scale_colour(get_pal(frankwebb_cols))
 
 task <- "Preferential" ## Other option, something like Preferential
 

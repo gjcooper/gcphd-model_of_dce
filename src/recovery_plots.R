@@ -6,17 +6,9 @@ library(forcats)
 library(tidytext)
 library(pmwg)
 library(stringr)
-library(paletti)
+library(watercolours)
 library(readr)
 library(patchwork)
-
-frankwebb_cols <- read_lines(file = "palette.txt")
-viz_palette(frankwebb_cols, "Frank Webb palette")
-names(frankwebb_cols) <- names_ll()
-frank_colmap <- scale_fill_manual(name = "Architecture", values = frankwebb_cols)
-fill_palette <- get_scale_fill(get_pal(frankwebb_cols))
-col_palette <- get_scale_colour(get_pal(frankwebb_cols))
-frank_colmap2 <- scale_colour_manual(name = "Architecture", values = frankwebb_cols)
 
 task <- "Preferential" ## Other option, something like Preferential
 

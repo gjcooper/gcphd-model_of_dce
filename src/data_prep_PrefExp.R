@@ -3,11 +3,7 @@ library(mcce)
 library(tidyr)
 library(ggplot2)
 library(readr)
-library(paletti)
-
-frankwebb_cols <- read_lines(file = "palette.txt")
-fill_palette <- get_scale_fill(get_pal(frankwebb_cols))
-col_palette <- get_scale_colour(get_pal(frankwebb_cols))
+library(watercolours)
 
 fac_cols <- c("cell_name", "sonaID", "group", "hand")
 sft_columns <- c("rt", "group", "hand", "sonaID", "accept", "cell_name")
