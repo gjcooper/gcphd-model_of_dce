@@ -85,9 +85,9 @@ consistency_rt_plot <- function(df) {
       )
     ) %>%
     ggplot(aes(x = rt_group, y = avg_consistency)) +
-    geom_bar(stat = "identity", fill = frankwebb_cols[1]) +
+    geom_bar(stat = "identity", fill = watercolour$frankwebb[1]) +
     geom_text(aes(label = txtlabels, y = avg_consistency + 0.02)) +
-    fill_palette() +
+    scale_fill_watercolour() +
     scale_y_continuous(limits = c(0,1), breaks = seq(0, 1, .05)) +
     labs(
       title = "Consistency across different RT windows",
@@ -129,7 +129,7 @@ short_rts <- consistent_sft %>%
 # Visualise subject x percent_short
 # 350ms chosen as responses > 350ms show differences between baseline HH accept
 # rates. (That is consistency increased significantly above baseline)
-cmap <- c("Below 350ms" = frankwebb_cols[1], "Below 200ms" = frankwebb_cols[2])
+cmap <- c("Below 350ms" = watercolour$frankwebb[1], "Below 200ms" = watercolour$frankwebb[2])
 short_rts %>%
   arrange(percent_short_350) %>%
   mutate(idx = row_number(), ) %>%
@@ -142,8 +142,8 @@ short_rts %>%
     mapping = aes(x = idx, y = percent_short_200, colour = "Below 200ms"),
   ) +
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, .05)) +
-  geom_hline(yintercept = 0.2, colour = frankwebb_cols[1], linetype = 2) +
-  geom_hline(yintercept = 0.1, colour = frankwebb_cols[2], linetype = 2) +
+  geom_hline(yintercept = 0.2, colour = cmap[1], linetype = 2) +
+  geom_hline(yintercept = 0.1, colour = cmap[2], linetype = 2) +
   scale_colour_manual(name = "Cut off point", values = cmap) +
   labs(
     title = "Fast responses by participants",
@@ -209,9 +209,9 @@ long_removed_sft %>%
   arrange(avg_consistency) %>%
   mutate(idx = row_number()) %>%
   ggplot(aes(x = idx, y = avg_consistency)) +
-  geom_point(colour = frankwebb_cols[1]) +
+  geom_point(colour = watercolour$frankwebb[1]) +
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, .1)) +
-  geom_hline(yintercept = 0.6, colour = frankwebb_cols[1], linetype = 2) +
+  geom_hline(yintercept = 0.6, colour = watercolour$frankwebb[1], linetype = 2) +
   labs(
     title = "Overall consistency by participant",
     y = "Percentage of trials consistent with expected response",
@@ -232,8 +232,8 @@ long_removed_sft %>%
   arrange(idx) %>%
   ggplot(aes(x = idx, y = avg_consistency, colour = cell_name)) +
   geom_point() +
-  geom_line(aes(y = sort_col), colour = frankwebb_cols[3]) +
-  get_scale_colour(get_pal(frankwebb_cols[1:2]))() +
+  geom_line(aes(y = sort_col), colour = watercolour$frankwebb[3]) +
+  scale_colour_watercolour() +
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, .1)) +
   labs(
     title = "Consistency by cell by participant",
@@ -259,7 +259,7 @@ long_removed_sft %>%
   mutate(cell = ifelse(cell == 1, "HH", "DD")) %>%
   ggplot(aes(x = idx, y = avg_consistency, colour = cell)) +
   geom_point() +
-  get_scale_colour(get_pal(frankwebb_cols[1:2]))() +
+  scale_colour_watercolour() +
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, .1)) +
   labs(
     title = "Consistency by cell by participant",
