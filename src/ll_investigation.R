@@ -1,8 +1,6 @@
 library(tidyverse)
 library(pmwg)
 library(mcce)
-library(watercolours)
-
 
 pref_file <- here::here("data", "output", "PrefDCE_2506730.rcgbcm_Estimation5Model.RData")
 
@@ -46,7 +44,7 @@ ll_vals <- sapply(names(nonarch_parameters), FUN = function(par) {
     par_val = alt_vals,
     ll = sapply(alt_vals, FUN = function(sub) {
       x[par] <- sub
-      y = exp(x)
+      y = transform_pars(x)
       trial_ll <- model_wrapper(y, participant_data, ll_func)
       sum(log(pmax(trial_ll, 1e-10)))
     })
