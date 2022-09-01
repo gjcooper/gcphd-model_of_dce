@@ -52,7 +52,7 @@ while ((menu_choice <- do.call(menu, menu_args)) != 22) {
   g <- par_samples %>%
     ggplot(aes(x = sample_id, y = value, colour = run, linetype = factor(stage))) +
     geom_line() +
-    scale_colour_manual(values = unname(frankwebb_cols), na.value = "black") +
+    scale_colour_watercolour() +
     labs(title = paste("Parameter:", par_name)) +
     theme(axis.title.x = element_blank(),
           axis.text.x = element_blank(),
@@ -95,7 +95,7 @@ cor_df %>%
   facet_wrap(~ run) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   coord_equal() +
-  scale_fill_gradient2(low = frankwebb_cols["CB"], mid = "white", high = frankwebb_cols["IEX"])
+  scale_fill_watercolour(discrete=FALSE)
 
 ## Differences
 cor_df %>%
@@ -108,7 +108,7 @@ cor_df %>%
   facet_wrap(~ run) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   coord_equal() +
-  scale_fill_gradient(low = "white", high = frankwebb_cols["CB"]) +
+  scale_fill_watercolour(type = "continuous") +
   ggtitle("Differences between each runs correlation to mean of all runs correlation")
 
 arch_samples <- sapply(names(samplers), FUN = function(x) {
@@ -142,4 +142,4 @@ pairwise_df %>%
   facet_wrap(~ comparison) +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
   coord_equal() +
-  scale_fill_gradient2(low = frankwebb_cols["CB"], mid = "white", high = frankwebb_cols["IEX"])
+  scale_fill_watercolour(type = "diverging")

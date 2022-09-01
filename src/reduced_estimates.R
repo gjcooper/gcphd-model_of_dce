@@ -286,7 +286,7 @@ covmat <- pref_samples %>%
   xtabs(value ~ X + Y, .)
 
 ggcorrplot(covmat)
-ggcorrplot(cov2cor(covmat))
+ggcorrplot(cov2cor(covmat)) + scale_fill_watercolour(type = "diverging")
 ggcorrplot(cov2cor(covmat), hc.order = TRUE, type = "lower", outline.col = "white", lab=TRUE)
 ggcorrplot(cov2cor(covmat), type = "lower", outline.col = "white", lab=TRUE)
 
