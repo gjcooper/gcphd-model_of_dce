@@ -9,11 +9,6 @@ library(forcats)
 library(tidyr)
 library(pmwg)
 
-frankwebb_cols <- read_lines(file = "palette.txt")
-viz_palette(frankwebb_cols, "Frank Webb palette")
-names(frankwebb_cols) <- names_ll()
-frank_colmap <- scale_fill_manual(name = "Architecture", values = frankwebb_cols)
-
 # Load all the samples
 pref_file <- here::here("data", "output", "PrefDCE_2506730.rcgbcm_Estimation5Model.RData")
 
@@ -32,7 +27,7 @@ for (par in pref_samples$par_names) {
     filter(parameter == par) %>%
     ggplot(aes(x = sample_id, y = value, colour = stage)) +
     geom_line() +
-    scale_colour_manual(values = unname(frankwebb_cols)) +
+    scale_colour_watercolour() +
     labs(title = par) +
     theme(axis.title.x = element_blank(),
           axis.text.x = element_blank(),
@@ -65,7 +60,7 @@ for (par in pref_samples$par_names) {
       filter(parameter == par) %>%
       ggplot(aes(x = sample_id, y = value, colour = stage)) +
       geom_line() +
-      scale_colour_manual(values = unname(frankwebb_cols)) +
+      scale_colour_watercolour() +
       facet_wrap(~ subjectid, nrow=2, ncol=2) +
       theme(axis.title.x = element_blank(),
             axis.text.x = element_blank(),
@@ -104,7 +99,7 @@ model_plot <- function(medians) {
     mutate(Parameter = factor(Parameter, Par_order)) %>%
     ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
     geom_col() +
-    frank_colmap +
+    scale_fill_watercolour() +
     theme(axis.title.x = element_blank(),
           axis.text.x = element_blank(),
           axis.ticks.x = element_blank()) +
@@ -144,10 +139,15 @@ group_pars <- pref_samples %>%
   mutate(value = log(value))
 
 
-par_colours <- c("grey", frankwebb_cols[3], frankwebb_cols[2], "grey", frankwebb_cols[3], frankwebb_cols[3], frankwebb_cols[2], frankwebb_cols[2], frankwebb_cols[3], frankwebb_cols[3], frankwebb_cols[2], frankwebb_cols[2], frankwebb_cols[3], frankwebb_cols[3], frankwebb_cols[2], frankwebb_cols[2]) 
+par_colours <- c("t0" = "grey",
+                 "A" = "grey", "b_acc" = "#73842E", "b_rej" = "#D0781C",
+                 "v_acc_p_H" = "#569F72", "v_acc_p_L" = "#407755", "v_acc_p_D" = "#2B5039",
+                 "v_rej_p_H" = "#F29F40", "v_rej_p_L" = "#EF8C1A", "v_rej_p_D" = "#BF6C0D",
+                 "v_acc_r_H" = "#85C0FF", "v_acc_r_L" = "#47A0FF", "v_acc_r_D" = "#0A81FF",
+                 "v_rej_r_H" = "#BBA9A0", "v_rej_r_L" = "#A2887C", "v_rej_r_D" = "#83685D")
 
 par_medians %>%
-  mutate(colour = rep(par_colours, n_distinct(.$subjectid))) %>%
+  mutate(colour = par_colours[Parameter]) %>%
   ggplot(aes(x = Parameter, y = exp(value), fill = colour)) +
   geom_boxplot() +
   ylim(c(0, 7.5)) +
