@@ -69,6 +69,7 @@ consistent_sft <- no_na_sft %>%
 
 # Look at consistency by duration
 consistency_rt_plot <- function(df) {
+  bar_col = watercolour$zorn$discrete['chair']
   df %>%
     mutate(
       rt_group = cut(rt, c(seq(0, 700, 50), Inf), include.lowest = TRUE)
@@ -85,9 +86,8 @@ consistency_rt_plot <- function(df) {
       )
     ) %>%
     ggplot(aes(x = rt_group, y = avg_consistency)) +
-    geom_bar(stat = "identity", fill = watercolour$frankwebb[1]) +
+    geom_bar(stat = "identity", fill = bar_col) +
     geom_text(aes(label = txtlabels, y = avg_consistency + 0.02)) +
-    scale_fill_watercolour() +
     scale_y_continuous(limits = c(0,1), breaks = seq(0, 1, .05)) +
     labs(
       title = "Consistency across different RT windows",
@@ -129,7 +129,8 @@ short_rts <- consistent_sft %>%
 # Visualise subject x percent_short
 # 350ms chosen as responses > 350ms show differences between baseline HH accept
 # rates. (That is consistency increased significantly above baseline)
-cmap <- c("Below 350ms" = watercolour$frankwebb[1], "Below 200ms" = watercolour$frankwebb[2])
+cmap <- c("Below 350ms" = watercolour$zorn$discrete['chair'],
+          "Below 200ms" = watercolour$zorn$discrete['boat'])
 short_rts %>%
   arrange(percent_short_350) %>%
   mutate(idx = row_number(), ) %>%
@@ -202,6 +203,7 @@ long_removed_sft %>%
   ggplot(aes(x = cell_name, y = num_consistent)) +
   geom_bar(stat = "identity")
 
+pt_col <- watercolour$zorn$discrete['chair']
 # Overall consistency (collapsed across cell types)
 long_removed_sft %>%
   group_by(sonaID) %>%
@@ -209,9 +211,9 @@ long_removed_sft %>%
   arrange(avg_consistency) %>%
   mutate(idx = row_number()) %>%
   ggplot(aes(x = idx, y = avg_consistency)) +
-  geom_point(colour = watercolour$frankwebb[1]) +
+  geom_point(colour = pt_col) +
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, .1)) +
-  geom_hline(yintercept = 0.6, colour = watercolour$frankwebb[1], linetype = 2) +
+  geom_hline(yintercept = 0.6, colour = pt_col, linetype = 2) +
   labs(
     title = "Overall consistency by participant",
     y = "Percentage of trials consistent with expected response",
@@ -232,7 +234,7 @@ long_removed_sft %>%
   arrange(idx) %>%
   ggplot(aes(x = idx, y = avg_consistency, colour = cell_name)) +
   geom_point() +
-  geom_line(aes(y = sort_col), colour = watercolour$frankwebb[3]) +
+  geom_line(aes(y = sort_col), colour = pt_col) +
   scale_colour_watercolour() +
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, .1)) +
   labs(
