@@ -50,7 +50,7 @@ recovery_data <- lapply(recovery_data_files, function(x) {
 })
 names(recovery_data) <- sapply(strsplit(recovery_data_files, "_"), "[[", 2)
 
-original_data <- original_samples$data
+original_data <- original_samples$data %>% mutate(generator = "participant")
 recovery_data[["Original"]] <- original_data
 recovery_data <- bind_rows(recovery_data, .id = "source")
 
@@ -60,7 +60,7 @@ recovery_data %>%
   ggplot(aes(x = source, y = rt, colour = generator)) +
   geom_boxplot() +
   facet_wrap(~ accept) +
-  scale_colour_manual(name = "Generator Model", values = unname(frankwebb_cols))
+  scale_colour_watercolour()
 
 
 recovery_data %>%
@@ -69,7 +69,7 @@ recovery_data %>%
   mutate(cell=paste0(price, rating)) %>%
   ggplot(aes(x = rt, colour = source, linetype=simulated)) +
   geom_density(size=0.7) +
-  frank_colmap2 +
+  scale_colour_watercolour()
   facet_wrap(~ cell)
 
 ggsave(
@@ -126,7 +126,7 @@ subject_recovery <- model_medians %>%
   ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
     geom_col() +
     labs(y = "Relative Evidence") +
-    frank_colmap +
+    scale_fill_watercolour() +
     theme(axis.title.x = element_blank(),
           axis.text.x = element_blank(),
           axis.ticks.x = element_blank(),
@@ -144,7 +144,7 @@ group_recovery <- model_medians %>%
   mutate(source = factor(source, Par_order)) %>%
   ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
     geom_col() +
-    frank_colmap +
+    scale_fill_watercolour() +
     theme(axis.title = element_blank(),
           axis.text.x = element_blank(),
           axis.ticks.x = element_blank()) +
@@ -204,6 +204,7 @@ scatter_theme <- theme(
   plot.caption = element_text(hjust = 0),
   axis.text.x = element_text(size = 7),
   axis.text.y = element_text(size = 7),
+  panel.background = element_rect(fill = "white")
 )
 scatter_caption <- str_wrap(paste(
   "The data generating values are the medians of the posterior for the full",
@@ -221,11 +222,13 @@ scatter_caption <- paste(
     ), 100)
 )
 
+pt_col <- watercolour$zorn$discrete["chair"]
 for (model in model_order[-6]) {
   recovered <- combined %>% filter(recovery_model == model)
+
   p <- ggplot(recovered, aes(x = estimated_value, y = recovered_value)) +
-    geom_point(size = 0.5, colour = frankwebb_cols[3]) +
-    geom_point(data = recovered %>% filter(subjectid == "Group"), colour = frankwebb_cols[6], size = 0.5) +
+    geom_point(size = 0.5, colour = pt_col) +
+    geom_point(data = recovered %>% filter(subjectid == "Group"), colour = "black", size = 0.5) +
     geom_abline(intercept = 0, slope = 1) +
     facet_wrap(vars(Parameter), scales = "free") +
     labs(
@@ -235,7 +238,7 @@ for (model in model_order[-6]) {
       caption = scatter_caption
     ) +
     scatter_theme +
-    frank_colmap2
+    scale_colour_watercolour()
     print(p)
 
   ggsave(
