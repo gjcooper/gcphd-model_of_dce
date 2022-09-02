@@ -52,7 +52,8 @@ sample_df %>%
   ) %>%
   ggplot(mapping = aes(x = salience, y = drift)) +
   geom_boxplot(aes(fill = salience)) +
-  facet_grid(vars(response), vars(attribute))
+  facet_grid(vars(response), vars(attribute)) +
+  scale_fill_watercolour()
 
 model_medians <- pmwg_samples %>%
   extract_parameters(str_subset(.$par_names, "alpha")) %>%
@@ -90,7 +91,7 @@ subject_arch <- model_medians %>%
   ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
     geom_col() +
     labs(y = "Relative Evidence") +
-    fill_palette() +
+    scale_fill_watercolour() +
     theme(axis.title.x = element_blank(),
           axis.text.x = element_blank(),
           axis.ticks.x = element_blank(),
@@ -105,7 +106,7 @@ group_arch <- model_medians %>%
   mutate(Parameter = factor(Parameter, Par_order)) %>%
   ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
     geom_col() +
-    fill_palette() +
+    scale_fill_watercolour() +
     theme(axis.title = element_blank(),
           axis.text.x = element_blank(),
           axis.ticks.x = element_blank()) +
