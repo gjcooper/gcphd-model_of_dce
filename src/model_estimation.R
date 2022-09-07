@@ -65,7 +65,7 @@ if (experiment == "SymbolicVDCE") {
 }
 
 # Numeric env variable tests
-if (is.na(min_rt) | is.na(max_rt) | is.na(p_contam)) {
+if (is.na(min_rt) || is.na(max_rt) || is.na(p_contam)) {
   stop("All of MCCE_MIN_RT, MCCE_MAX_RT, MCCE_CONTAM must be provided and numeric")
 }
 if (!between(p_contam, 0, 1)) {
