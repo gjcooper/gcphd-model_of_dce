@@ -24,6 +24,7 @@ Imports:
     dplyr,
     tidyr,
     readr,
-    magrittr
+    magrittr,
+    ggplot2
 Depends: 
     R (>= 3.5.0)
