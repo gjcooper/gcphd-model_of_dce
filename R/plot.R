@@ -3,9 +3,9 @@
 #' This function takes subject level and group level summary statistics
 #' from an mcce sampling run and creates a plot showing the results.
 #'
-#' @param alpha_summ A data.frame containing subject level summary stats of
-#'   each parameter
-#' @param tmu_summ A data.frame containing group level summary stats
+#' @param summ A data.frame containing subject and group level summary stats
+#'   for each parameter. The data.frame should have a subjectid column with
+#'   theta_mu representing the group level estimates.
 #' @param transform An optional function to transform the summary stats.
 #'
 #' @return A ggplot object
@@ -14,17 +14,20 @@
 #' @import ggplot2
 #' @import tidyr
 #' @export
-plot_summary <- function(alpha_summ, tmu_summ, transform=identity) {
-  alpha_summ %>%
-    mutate(across(-SubjectID, transform)) %>%
-    pivot_longer(!SubjectID) %>%
+plot_summary <- function(summ, transform=identity) {
+  tsumm <- summ %>%
+    mutate(across(-subjectid, transform)) %>%
+    pivot_longer(!subjectid)
+
+  tsumm %>%
+    filter(subjectid != "theta_mu") %>%
     ggplot(mapping = aes(x = name, y = value)) +
     geom_point(colour = "#D0781C") +
     geom_point(
-      data = pivot_longer(tmu_summ %>% transform, everything()),
+      data = tsumm %>% filter(subjectid == "theta_mu"),
       mapping = aes(x = name, y = value),
       size = 3,
       colour = "black"
     ) +
-    theme(axis.text.x = element_text(angle = -90, hjust = 0))
+    theme(axis.text.x = element_text(angle = -45, hjust = 0))
 }
