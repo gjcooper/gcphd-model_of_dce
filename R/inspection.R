@@ -1,33 +1,32 @@
 #' Extract parameters from the samples
 #'
 #' This function taks a pmwgs sampler object and extracts both the group level
-#' and the individual subject level samples for the specified parameter estimates.
+#' and the individual subject level samples for the specified parameter
+#' estimates.
 #'
 #' @param sampler The pmwgs sampler object
-#' @param par_names The names of the parameters to extract
+#' @param par_names The names of the parameters to extract - defaults to all
+#'   parameters estimated.
 #' @inheritParams pmwg::as_mcmc
 #'
 #' @return A tibble with the parameter samples and a subjectid column
 #'
 #' @import dplyr
 #' @export
-extract_parameters <- function(sampler, par_names, filter = "sample") {
+extract_parameters <- function(sampler, par_names = sampler$par_names, filter = "sample") {
   tmu <- sampler %>%
     pmwg::as_mcmc(filter = filter) %>%
-    data.frame() %>%
-    tibble() %>%
+    as_tibble() %>%
     select(all_of(par_names)) %>%
     mutate(subjectid = "theta_mu")
 
   pmwg::as_mcmc(sampler, selection = "alpha", filter = filter) %>%
     lapply(FUN = function(x) {
       x %>%
-        data.frame() %>%
-        tibble() %>%
+        as_tibble() %>%
         select(all_of(par_names))
     }) %>%
     bind_rows(.id = "subjectid") %>%
-    tibble() %>%
     bind_rows(tmu)
 }
 
