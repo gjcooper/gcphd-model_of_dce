@@ -15,13 +15,13 @@
 #' @import tidyr
 #' @export
 plot_summary <- function(alpha_summ, tmu_summ, transform=identity) {
-  median_alpha %>%
+  alpha_summ %>%
     mutate(across(-SubjectID, transform)) %>%
     pivot_longer(!SubjectID) %>%
     ggplot(mapping = aes(x = name, y = value)) +
     geom_point(colour = "#D0781C") +
     geom_point(
-      data = pivot_longer(median_theta_mu %>% transform, everything()),
+      data = pivot_longer(tmu_summ %>% transform, everything()),
       mapping = aes(x = name, y = value),
       size = 3,
       colour = "black"

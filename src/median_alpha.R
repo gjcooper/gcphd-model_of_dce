@@ -5,7 +5,7 @@ run_all <- function(filename, output) {
   load(here::here("data", "output", filename))
   theta_median <- tmu(sampled)
   alpha_median <- alph(sampled)
-  p <- plot_medians(alpha_median, theta_median, transform = exp) +
+  p <- plot_summary(alpha_median, theta_median, transform = exp) +
     scale_y_continuous(trans = "log2")
   print(p)
   saveRDS(alpha_median, file = here::here("data", "output", output))
