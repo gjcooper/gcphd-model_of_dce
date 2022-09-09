@@ -143,6 +143,7 @@ extract_data <- function(raw_data) {
   dplyr::bind_rows(part_data_list)
 }
 
+
 #' Load an RData file with pmwg samples for further analysis
 #'
 #' @param pmwg_file The environment from a run of pmwg as RData
