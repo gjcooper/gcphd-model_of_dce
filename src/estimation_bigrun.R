@@ -24,8 +24,7 @@ while ((menu_choice <- do.call(menu, menu_args)) != 22) {
   par_samples <- sapply(names(samplers), FUN = function(x) {
     samplers[[x]] %>%
     as_mcmc %>%
-    data.frame %>%
-    tibble %>%
+    as_tibble %>%
     mutate(sample_id = row_number()) %>%
     mutate(stage = samplers[[x]]$samples$stage) %>%
     pivot_longer(cols = -c(sample_id, stage), names_to = "parameter") %>%
@@ -65,13 +64,10 @@ while ((menu_choice <- do.call(menu, menu_args)) != 22) {
 
 cov_matrices <- sapply(names(samplers), FUN = function(x) {
   samplers[[x]] %>%
-  as_mcmc(selection = "theta_sig", filter = "sample") %>%
-  data.frame %>%
-  tibble %>%
-  summarise(across(everything(), mean)) %>%
-  pivot_longer(everything(), names_to = c("X", "Y"), names_sep = "\\.") %>%
-  mutate(across(c(X, Y), factor)) %>%
-  xtabs(value ~ X + Y, .)
+    extract_cov(filter = "sample") %>%
+    group_by(X, Y) %>%
+    summarise(value = mean(value)) %>%
+    xtabs(value ~ X + Y, .)
 }, simplify = FALSE)
 
 cor_matrices <- sapply(names(cov_matrices), FUN = function(x) {

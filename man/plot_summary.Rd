@@ -4,13 +4,12 @@
 \alias{plot_summary}
 \title{Plot subject and group level summaries of estimates}
 \usage{
-plot_summary(alpha_summ, tmu_summ, transform = identity)
+plot_summary(summ, transform = identity)
 }
 \arguments{
-\item{alpha_summ}{A data.frame containing subject level summary stats of
-each parameter}
-
-\item{tmu_summ}{A data.frame containing group level summary stats}
+\item{summ}{A data.frame containing subject and group level summary stats
+for each parameter. The data.frame should have a subjectid column with
+theta_mu representing the group level estimates.}
 
 \item{transform}{An optional function to transform the summary stats.}
 }

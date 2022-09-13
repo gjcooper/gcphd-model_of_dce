@@ -4,12 +4,17 @@
 \alias{extract_parameters}
 \title{Extract parameters from the samples}
 \usage{
-extract_parameters(sampler, par_names, filter = "sample")
+extract_parameters(
+  sampler,
+  par_names = sampler$par_names,
+  filter = unique(sampler$samples$stage)
+)
 }
 \arguments{
 \item{sampler}{The pmwgs sampler object}
 
-\item{par_names}{The names of the parameters to extract}
+\item{par_names}{The names of the parameters to extract - defaults to all
+parameters estimated.}
 
 \item{filter}{A filter that defines which stage to draw samples from.}
 }
@@ -18,5 +23,6 @@ A tibble with the parameter samples and a subjectid column
 }
 \description{
 This function taks a pmwgs sampler object and extracts both the group level
-and the individual subject level samples for the specified parameter estimates.
+and the individual subject level samples for the specified parameter
+estimates.
 }
