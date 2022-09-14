@@ -4,7 +4,7 @@
 \alias{transform_pars}
 \title{Transforms parameters for specific models/}
 \usage{
-transform_pars(pars, data, tforms = "std")
+transform_pars(pars, tforms = "std")
 }
 \arguments{
 \item{pars}{The named list of parameters to transform}

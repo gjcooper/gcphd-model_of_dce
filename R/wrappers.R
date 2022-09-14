@@ -249,7 +249,7 @@ simple_model_wrapper <- function(rt, A, b_acc, b_rej, t0, drifts, accept, model)
 #'
 #' @return A named list of transformed parameter values
 #' @export
-transform_pars <- function(pars, data, tforms = "std") {
+transform_pars <- function(pars, tforms = "std") {
   if (tforms == "std") {
     newpars <- exp(pars)
   } else if (startsWith(tforms, "reduced")) {
