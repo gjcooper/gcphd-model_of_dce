@@ -57,6 +57,7 @@ extract_alpha <- function(sampler,
 #' @return A tibble with the parameter samples and a sampleid column
 #'
 #' @import dplyr
+#' @importFrom rlang .data
 #' @export
 extract_cov <- function(sampler,
                         par_names = sampler$par_names,
@@ -66,9 +67,9 @@ extract_cov <- function(sampler,
     data.frame %>%
     tibble %>%
     mutate(sampleid = row_number()) %>%
-    pivot_longer(-sampleid, names_to = c("X", "Y"), names_sep = "\\.") %>%
-    filter(X %in% par_names & Y %in% par_names) %>%
-    mutate(across(c(X, Y), factor))
+    pivot_longer(-.data$sampleid, names_to = c("X", "Y"), names_sep = "\\.") %>%
+    filter(.data$X %in% par_names & .data$Y %in% par_names) %>%
+    mutate(across(c(.data$X, .data$Y), factor))
 }
 
 #' Extract parameters from the samples
@@ -106,25 +107,26 @@ extract_parameters <- function(sampler,
 #' @return A tibble containing the medians of the samples for each subject
 #'
 #' @import dplyr
+#' @importFrom rlang .data
 #' @export
 get_medians <- function(pars, alpha = TRUE) {
   if (alpha) {
     pars %>%
-      select(c(subjectid, starts_with("alpha"))) %>%
-      group_by(subjectid) %>%
+      select(c(.data$subjectid, starts_with("alpha"))) %>%
+      group_by(.data$subjectid) %>%
       summarise(across(.fns = stats::median)) %>%
-      tidyr::pivot_longer(-subjectid,
+      tidyr::pivot_longer(-.data$subjectid,
                           names_to = c("drop", "Parameter"),
                           names_sep = "_",
                           names_transform = list(Parameter = as.factor)) %>%
-      mutate(value = exp(value)) %>%
-      select(-drop)
+      mutate(value = exp(.data$value)) %>%
+      select(-.data$drop)
   } else {
     pars %>%
-      select(-sampleid) %>%
-      group_by(subjectid) %>%
+      select(-.data$sampleid) %>%
+      group_by(.data$subjectid) %>%
       summarise(across(.fns = stats::median)) %>%
-      tidyr::pivot_longer(-subjectid, names_to = "Parameter") %>%
-      mutate(value = exp(value))
+      tidyr::pivot_longer(-.data$subjectid, names_to = "Parameter") %>%
+      mutate(value = exp(.data$value))
   }
 }
