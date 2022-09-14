@@ -8,7 +8,7 @@
 #'   parameters estimated.
 #' @param filter The sampling stages to extract - defaults to all stages run.
 #'
-#' @return A tibble with the parameter samples and a sampleid + subjectid column
+#' @return A tibble with the parameter samples and a sampleid column
 #'
 #' @import dplyr
 #' @export
@@ -19,7 +19,6 @@ extract_tmu <- function(sampler,
     pmwg::as_mcmc(filter = filter) %>%
     as_tibble() %>%
     select(all_of(par_names)) %>%
-    mutate(subjectid = "theta_mu") %>%
     mutate(sampleid = row_number())
 }
 
@@ -90,7 +89,8 @@ extract_cov <- function(sampler,
 extract_parameters <- function(sampler,
                                par_names = sampler$par_names,
                                filter = unique(sampler$samples$stage)) {
-  tmu <- extract_tmu(sampler, par_names, filter)
+  tmu <- extract_tmu(sampler, par_names, filter) %>%
+    mutate(subjectid = "theta_mu")
 
   extract_alpha(sampler, par_names, filter) %>%
     bind_rows(tmu)

@@ -19,7 +19,7 @@ parameters estimated.}
 \item{filter}{The sampling stages to extract - defaults to all stages run.}
 }
 \value{
-A tibble with the parameter samples and a sampleid + subjectid column
+A tibble with the parameter samples and a sampleid column
 }
 \description{
 This function taks a pmwgs sampler object and extracts the group level
