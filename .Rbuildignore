@@ -10,3 +10,7 @@
 ^hpc_jobs/
 ^src/
 ^results/
+^job_scripts/
+^job_output/
+^tags$
+^NOTES.md$
