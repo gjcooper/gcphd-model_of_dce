@@ -13,9 +13,7 @@ participant_data <- pref_samples$data %>% filter(subject == participant)
 participant_random_effects <- pref_samples %>%
   as_mcmc(selection = "alpha", filter = "sample") %>%
   pluck(participant) %>%
-  data.frame() %>%
-  tibble() %>%
-  print
+  as_tibble
 
 means <- participant_random_effects %>%
   summarise(across(everything(), mean))
@@ -44,7 +42,7 @@ ll_vals <- sapply(names(nonarch_parameters), FUN = function(par) {
     par_val = alt_vals,
     ll = sapply(alt_vals, FUN = function(sub) {
       x[par] <- sub
-      y = transform_pars(x)
+      y <- transform_pars(x)
       trial_ll <- model_wrapper(y, participant_data, ll_func)
       sum(log(pmax(trial_ll, 1e-10)))
     })
@@ -63,10 +61,8 @@ ll_vals %>%
 
 group_level <- pref_samples %>%
   as_mcmc(selection = "theta_mu", filter = "sample") %>%
-  data.frame() %>%
-  tibble() %>%
+  as_tibble %>%
   summarise(across(everything(), mean)) %>%
   select(-starts_with("alpha")) %>%
   pivot_longer(cols=everything()) %>%
   print
-

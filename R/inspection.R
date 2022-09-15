@@ -54,7 +54,7 @@ extract_alpha <- function(sampler,
 #'
 #' @inheritParams extract_tmu
 #'
-#' @return A 3D array with [M,M,N] where M is parameters and N is samples
+#' @return A 3D array with (M, M, N) where M is parameters and N is samples
 #'
 #' @import checkmate
 #' @export
