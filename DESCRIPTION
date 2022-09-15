@@ -18,6 +18,7 @@ Imports:
     rlang,
     pmwg,
     MCMCpack,
+    checkmate,
     rtdists,
     tibble,
     rjson,
