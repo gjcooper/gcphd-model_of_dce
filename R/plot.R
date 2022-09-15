@@ -31,3 +31,25 @@ plot_summary <- function(summ, transform=identity) {
     ) +
     theme(axis.text.x = element_text(angle = -45, hjust = 0))
 }
+
+#' Plot matrix_to_df object using ggplot
+#'
+#' This function takes a matrix in data.frame form, usually output from
+#' matrix_to_df and displays it using ggplot.
+#' The resulting figure can be adjusted further.
+#'
+#' @param x A data.frame containing an X and Y column for parameter labels
+#'   and a value column containing the data to plot.
+#'
+#' @return A ggplot object
+#'
+#' @import ggplot2
+#' @export
+matdf_plot <- function(x) {
+  ggplot(x, aes(X, Y, fill = value, label = round(value, 2))) +
+    geom_tile() +
+    coord_equal() +
+    geom_text(size = 2) +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+          axis.title = element_blank())
+}

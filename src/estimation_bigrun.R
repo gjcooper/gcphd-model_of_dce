@@ -18,38 +18,37 @@ menu_args <- list(
 )
 
 # Traceplots of individual theta_mu parameters across the 3 runs
+tmus <- sapply(names(samplers), function(x) {
+                 y <- samplers[[x]]
+                 y %>%
+                   extract_tmu %>%
+                   mutate(stage = y$samples$stage) %>%
+                   pivot_longer(cols = -c(sampleid, stage),
+                                names_to = "par") %>%
+                   rename_with(.cols = c(stage, value),
+                               .fn = function(z) {
+                                 paste0(z, ".", x)
+                                })},
+               simplify = FALSE) %>%
+  purrr::reduce(left_join, by = c("sampleid", "par")) %>%
+  pivot_longer(contains("run"),
+               names_to = c(".value", "run"),
+               names_pattern = "(.*).run(.*)") %>%
+  mutate(run = factor(run),
+         stage = factor(stage, levels = c("sample", "burn", "init", "adapt")))
+
 while ((menu_choice <- do.call(menu, menu_args)) != 22) {
   par_name <- samplers[[1]]$par_names[menu_choice]
 
-  par_samples <- sapply(names(samplers), FUN = function(x) {
-    samplers[[x]] %>%
-    as_mcmc %>%
-    as_tibble %>%
-    mutate(sample_id = row_number()) %>%
-    mutate(stage = samplers[[x]]$samples$stage) %>%
-    pivot_longer(cols = -c(sample_id, stage), names_to = "parameter") %>%
-    filter(parameter == par_name) %>%
-    rename_with(.cols = c(stage, value), .fn = function(y) {paste0(y, ".", x)})
-  }, simplify = FALSE)
+  par_samples <- tmus %>%
+    filter(par == par_name)
 
-  par_samples <- purrr::reduce(
-    par_samples,
-    left_join,
-    by = c("sample_id", "parameter")
-  ) %>%
-  pivot_longer(
-    contains("run"),
-    names_to = c(".value", "run"),
-    names_pattern = "(.*).run(.*)"
-  ) %>%
-  mutate(run = factor(run)) %>%
-  mutate(stage = factor(stage, levels = c("sample", "burn", "init", "adapt")))
-
-  transitions <- par_samples[par_samples$stage != lag(par_samples$stage), "sample_id"]
-  transitions <- transitions[complete.cases(transitions),]
+  transitions <- par_samples %>%
+    filter(stage != lag(stage)) %>%
+    select(sampleid)
 
   g <- par_samples %>%
-    ggplot(aes(x = sample_id, y = value, colour = run, linetype = factor(stage))) +
+    ggplot(aes(x = sampleid, y = value, colour = run, linetype = stage)) +
     geom_line() +
     scale_colour_watercolour() +
     labs(title = paste("Parameter:", par_name)) +
@@ -57,65 +56,46 @@ while ((menu_choice <- do.call(menu, menu_args)) != 22) {
           axis.text.x = element_blank(),
           axis.ticks.x = element_blank(),
           axis.title.y = element_blank()) +
-    geom_vline(data = transitions, mapping = aes(xintercept = sample_id), lty = "dotted")
+    geom_vline(data = transitions, mapping = aes(xintercept = sampleid),
+               lty = "dotted")
     print(g)
 }
 
-
-cov_matrices <- sapply(names(samplers), FUN = function(x) {
-  samplers[[x]] %>%
-    extract_cov(filter = "sample") %>%
-    group_by(X, Y) %>%
-    summarise(value = mean(value)) %>%
-    xtabs(value ~ X + Y, .)
-}, simplify = FALSE)
-
-cor_matrices <- sapply(names(cov_matrices), FUN = function(x) {
-  cov_matrices[[x]] %>%
-  cov2cor()
+cor_matrices <- sapply(samplers, FUN = function(x) {
+  extract_cov(x, filter = "sample") %>%
+    apply(c(1,2), mean) %>%
+    cov2cor
 }, simplify = FALSE)
 
 cor_df <- sapply(names(cor_matrices), FUN = function(x) {
   cor_matrices[[x]] %>%
-    data.frame %>%
-    tibble %>%
-    rename(!!x := Freq)
+    matrix_to_df %>%
+    mutate(run = x)
 }, simplify = FALSE) %>%
-  purrr::reduce(left_join, by = c("X", "Y")) %>%
-  pivot_longer(c(run1, run2, run3), names_to = "run", values_to = "correlation")
+  bind_rows()
+
 
 cor_df %>%
-  ggplot(aes(X, Y, fill = correlation, label=round(correlation,2))) +
-  geom_tile() +
-  geom_text(size=2) +
+  matdf_plot() +
   facet_wrap(~ run) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  coord_equal() +
-  scale_fill_watercolour(discrete=FALSE)
+  scale_fill_watercolour(type = "diverging")
 
 ## Differences
 cor_df %>%
   group_by(X, Y) %>%
-  mutate(mean_corr = mean(correlation)) %>%
+  mutate(mean_corr = mean(value)) %>%
   ungroup %>%
-  mutate(corr_diff = abs(correlation - mean_corr)) %>%
-  ggplot(aes(X, Y, fill = corr_diff)) +
-  geom_tile() +
+  mutate(value = abs(value - mean_corr)) %>%
+  matdf_plot() +
   facet_wrap(~ run) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  coord_equal() +
   scale_fill_watercolour(type = "continuous") +
   ggtitle("Differences between each runs correlation to mean of all runs correlation")
 
-arch_samples <- sapply(names(samplers), FUN = function(x) {
-  samplers[[x]] %>%
-    as_mcmc(filter = "sample") %>%
-    data.frame %>%
-    tibble %>%
-    select(starts_with("alpha")) %>%
-    summarise(across(everything(), median))
-}, simplify=FALSE) %>% print
-
+tmus %>%
+  filter(str_detect(par, "^alpha"), stage == "sample") %>%
+  group_by(par, run) %>%
+  summarise(median_val = median(value)) %>%
+  pivot_wider(names_from=par, values_from=median_val)
 
 pairwise <- list()
 pairwise[["run1 - run2"]] <- cor_matrices[[1]] - cor_matrices[[2]]
@@ -124,18 +104,12 @@ pairwise[["run1 - run3"]] <- cor_matrices[[1]] - cor_matrices[[3]]
 
 pairwise_df <- sapply(names(pairwise), FUN = function(x) {
   pairwise[[x]] %>%
-    data.frame %>%
-    tibble %>%
-    rename(!!x := Freq)
+    matrix_to_df %>%
+    mutate(comparison = x)
 }, simplify = FALSE) %>%
-  purrr::reduce(left_join, by = c("X", "Y")) %>%
-  pivot_longer(c(`run1 - run2`, `run2 - run3`, `run1 - run3`), names_to = "comparison", values_to = "difference")
+  bind_rows()
 
 pairwise_df %>%
-  ggplot(aes(X, Y, fill = difference, label=round(difference,2))) +
-  geom_tile() +
-  geom_text(size=2) +
+  matdf_plot() +
   facet_wrap(~ comparison) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
-  coord_equal() +
   scale_fill_watercolour(type = "diverging")

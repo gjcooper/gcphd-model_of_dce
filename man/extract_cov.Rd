@@ -16,10 +16,11 @@ extract_cov(
 \item{par_names}{The names of the parameters to extract - defaults to all
 parameters estimated.}
 
-\item{filter}{The sampling stages to extract - defaults to all stages run.}
+\item{filter}{The sampling stages to extract - defaults to all stages run.
+Can also be a vector of sample indices.}
 }
 \value{
-A tibble with the parameter samples and a sampleid column
+A 3D array with \link{M,M,N} where M is parameters and N is samples
 }
 \description{
 This function taks a pmwgs sampler object and extracts the group level
