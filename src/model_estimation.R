@@ -13,7 +13,7 @@ print(sessionInfo())
 # Sys.setenv(MCCE_EST_EXP="NumericVDCE", NCPUS=3, MCCE_EXP_DATA="Task1_preprocessed.RDS", MCCE_MIN_RT=0, MCCE_MAX_RT=4.5, MCCE_CONTAM=0.02)
 # Sys.setenv(MCCE_EST_EXP="PrefDCE", NCPUS=3, MCCE_EXP_DATA="Pref_preprocessed.RDS", MCCE_MIN_RT=0.35, MCCE_MAX_RT=10, MCCE_CONTAM=0.02)
 # For testing
-# Sys.setenv(MCCE_EST_EXP="PrefDCE", NCPUS=1, MCCE_EXP_DATA="Pref_preprocessed.RDS", MCCE_MIN_RT=0.35, MCCE_MAX_RT=10, MCCE_CONTAM=0.02, MCCE_TAG="test_new", RANDOM_SEED=101)
+Sys.setenv(MCCE_EST_EXP="PrefDCE", NCPUS=1, MCCE_EXP_DATA="Pref_preprocessed.RDS", MCCE_MIN_RT=0.35, MCCE_MAX_RT=10, MCCE_CONTAM=0.02, MCCE_TAG="test_new", RANDOM_SEED=101, MCCE_MODEL="reduced", MCCE_METHOD="model")
 # For continuation
 # Sys.setenv(MCCE_EST_EXP="PrefDCE", NCPUS=3, MCCE_ORIG_JOB_DATA="PrefDCE_S6I7q4nycmRv_short_burn_cont.RData", MCCE_TAG="TestContinue", MCCE_STAGES="sample")
 # Get environment variables to normal vars
@@ -25,16 +25,6 @@ if (vars$experiment == "SymbolicVDCE") {
   filename <- paste(vars$experiment, vars$displaytype, vars$jobid, vars$tag, sep = "_")
 } else {
   filename <- paste(vars$experiment, vars$jobid, vars$tag, sep = "_")
-}
-
-# Model tests
-if (! (vars$model %in% c("std", "reduced", "reduced_more"))) {
-  stop("System Environment Variable MCCE_MODEL not defined or unknown value")
-}
-
-# Method tests
-if (! (vars$method %in% c("test", "model", "continue", "recovery"))) {
-  stop("System Environment Variable MCCE_METHOD not defined or unknown value")
 }
 
 # Get output filename and input data
