@@ -125,7 +125,7 @@ rmodel_wrapper <- function(x, data, model, contaminant_prob = 0.02, min_rt = 0, 
 #' @return The log of the likelihood for the data under parameter values x
 #' @export
 dirichlet_mix_ll <- function(x, data, contaminant_prob = 0.02, alpha_indices = c(1, 2), min_rt = 0, max_rt = 1, tforms = "std") {
-  x <- transform_pars(x, data, tforms)
+  x <- transform_pars(x, tforms)
 
   # Enforce alphas to be greater than 0.01 and less than 100
   if (any(x[alpha_indices] < 0.01) || any(x[alpha_indices] > 100)) {
@@ -173,7 +173,7 @@ dirichlet_mix_ll <- function(x, data, contaminant_prob = 0.02, alpha_indices = c
 #' @return The log of the likelihood for the data under parameter values x
 #' @export
 single_model_ll <- function(x, data, contaminant_prob = 0.02, architecture = "IST", min_rt = 0, max_rt = 1) {
-  x <- transform_pars(x, data)
+  x <- transform_pars(x)
 
   # all decision rules
   func_idx <- match(architecture, names_ll())
