@@ -19,44 +19,19 @@ if (task == "Veridical") {
   odata <- "PrefDCE_2506730.rcgbcm_Estimation5Model.RData"
 }
 
-pmwg_samples <- get_samples(
-  here::here(
-    "data",
-    "output",
-    odata
-  )
-)
-
-sample_df <- pmwg_samples %>%
-  as_mcmc(filter = "sample") %>%
-  as_tibble()
+sample_df <- get_samples(here::here("data", "output", odata)) %>%
+  extract_parameters(filter = "sample")
 
 #Plot drift rates at group level for attribute x choice (2 x 2) for each salience level.
 sample_df %>%
-  select(starts_with("v_")) %>%
-  pivot_longer(
-    everything(),
-    names_to = c("drift", "response", "attribute", "salience"),
-    names_transform = list(
-      response = ~ readr::parse_factor(.x, levels = c("acc", "rej")),
-      attribute = ~ readr::parse_factor(.x, levels = c("p", "r")),
-      salience = ~ readr::parse_factor(.x, levels = c("H", "L", "D"))
-    ),
-    names_sep = "_"
-  ) %>%
-  select(-drift) %>%
-  rename(drift = value) %>%
-  mutate(
-    response = fct_recode(response, Accept = "acc", Reject = "rej"),
-    attribute = fct_recode(attribute, Price = "p", Rating = "r")
-  ) %>%
+  filter(subjectid == "theta_mu") %>%
+  get_drifts %>%
   ggplot(mapping = aes(x = salience, y = drift)) +
   geom_boxplot(aes(fill = salience)) +
   facet_grid(vars(response), vars(attribute)) +
   scale_fill_watercolour()
 
-model_medians <- pmwg_samples %>%
-  extract_parameters(str_subset(.$par_names, "alpha")) %>%
+model_medians <- sample_df %>%
   get_medians() %>%
   group_by(subjectid) %>%
   mutate(rel_val = value / sum(value)) %>%
@@ -121,12 +96,13 @@ subject_arch + group_arch +
     caption = "The area of each stacked bar is the relative proportion of each of the five possible modelled architectures as their dirichlet process"
     )
 
-par_medians <- pmwg_samples %>%
-  extract_parameters(., str_subset(.$par_names, "alpha", negate = TRUE)) %>%
+par_medians <- sample_df %>%
+  select(-starts_with("alpha")) %>%
   get_medians(alpha = FALSE) %>%
   mutate(value = log(value))
 
 par_medians %>%
   ggplot(aes(y = value, x = Parameter)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_point(alpha = 0.3)
+  geom_boxplot(outlier.shape = NA, alpha = 0.6) +
+  geom_point(alpha = 0.2) +
+  geom_point(data = par_medians %>% filter(subjectid == "theta_mu"), size=5, shape=4)

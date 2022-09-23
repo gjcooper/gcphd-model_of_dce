@@ -134,3 +134,34 @@ get_medians <- function(pars, alpha = TRUE) {
       mutate(value = exp(.data$value))
   }
 }
+
+#' Takes a sample tibble and rearranges it to a long df with just drift rates.
+#'
+#' @param sample_df A dataframe with columns for each parameter and sampleid
+#'
+#' @return A long tibble containing the drift rate type and values
+#'
+#' @import dplyr
+#' @importFrom readr parse_factor
+#' @importFrom rlang .data
+#' @export
+get_drifts <- function(sample_df) {
+  sample_df %>%
+  select(c(.data$sampleid, starts_with("v_"))) %>%
+  pivot_longer(
+    -.data$sampleid,
+    names_to = c("drift", "response", "attribute", "salience"),
+    names_transform = list(
+      response = ~ parse_factor(.x, levels = c("acc", "rej")),
+      attribute = ~ parse_factor(.x, levels = c("p", "r")),
+      salience = ~ parse_factor(.x, levels = c("H", "L", "D"))
+    ),
+    names_sep = "_"
+  ) %>%
+  select(-.data$drift) %>%
+  rename(drift = .data$value) %>%
+  mutate(
+    response = fct_recode(.data$response, Accept = "acc", Reject = "rej"),
+    attribute = fct_recode(.data$attribute, Price = "p", Rating = "r")
+  )
+}
