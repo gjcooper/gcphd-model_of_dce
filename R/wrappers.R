@@ -72,7 +72,7 @@ rmodel_wrapper <- function(x, data, model, contaminant_prob = 0.02, min_rt = 0, 
     RejRating = x[data$v_rej_r]
   )
   # Return newly generated data
-  gen_df <- model(data, A, b_acc, b_rej, t0, drifts)
+  gen_df <- model(data, x$A, x$b_acc, x$b_rej, x$t0, drifts)
   gen_df$generator <- "model"
   # Generate contaminant responses
   for (row_idx in sample(nrow(gen_df), contaminant_prob * nrow(gen_df))) {

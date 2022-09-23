@@ -2,16 +2,22 @@ library(dplyr)
 library(tidyr)
 pkg <- asNamespace("mcce")
 library(mcce)
+devtools::load_all()
 library(rtdists)
 library(ggplot2)
 library(patchwork)
 library(parallel)
+library(cubature)
 
 cells <- c("HH", "HL", "LH", "LL", "HD", "LD", "DH", "DL", "DD")
 
 get_plausible_vals <- function() {
   medians <- readRDS(here::here("data", "output", "median_alpha_exp1.RDS"))
-  medians %>% summarise_all(mean) %>% round(1) %>% mutate(t0 = -Inf)
+  medians %>%
+    select(-subjectid) %>%
+    summarise_all(mean) %>%
+    round(1) %>%
+    mutate(t0 = -Inf)
 }
 
 get_modded_vals <- function() {
@@ -85,10 +91,11 @@ run_integrate <- function(drifts, pars, func) {
       lower = 0,
       upper = 100,
       accept = TRUE,
-      model = func
+      model = func,
+      relTol = 1e-15
       )
-    int_res <- do.call(integrate, integrate_args)
-    int_res$value
+    int_res <- do.call(cubintegrate, integrate_args)
+    int_res$integral
   })
   reject_int <- sapply(drifts, function(drifts_tbl) {
     integrate_args <- c(
@@ -98,10 +105,11 @@ run_integrate <- function(drifts, pars, func) {
       lower = 0,
       upper = 100,
       accept = FALSE,
-      model = func
+      model = func,
+      relTol = 1e-15
       )
-    int_res <- do.call(integrate, integrate_args)
-    int_res$value
+    int_res <- do.call(cubintegrate, integrate_args)
+    int_res$integral
   })
   bind_cols(accept = accept_int, reject = reject_int, cell = names(accept_int))
 }
@@ -270,9 +278,9 @@ function_list <- list(
 # Start the clock!
 # 2 cores, 10k samples, 31 minutes
 ptm <- proc.time()
-all_runs <- mclapply(function_list, function(func_pair) {
+all_runs <- lapply(function_list, function(func_pair) {
   pars <- get_modded_vals() %>% get_rearranged_vals()
-  pred <- get_predicted_data(1e4, pars$all, func_pair$rsample)
+  pred <- get_predicted_data(1e2, pars$all, func_pair$rsample)
   intf <- run_integrate(pars$drifts, pars$fixed, func_pair$ll)
   res <- get_proportions(pred, intf)
   res
