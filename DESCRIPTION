@@ -1,6 +1,6 @@
 Package: mcce
 Title: Models of Consumer Choice Experiments
-Version: 0.0.7
+Version: 0.0.8
 Authors@R: 
     person(given = "Gavin",
            family = "Cooper",
@@ -25,6 +25,7 @@ Imports:
     tidyr,
     readr,
     magrittr,
-    ggplot2
+    ggplot2,
+    checkmate
 Depends: 
     R (>= 3.5.0)

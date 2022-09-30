@@ -20,7 +20,7 @@ parameters estimated.}
 Can also be a vector of sample indices.}
 }
 \value{
-A 3D array with \link{M,M,N} where M is parameters and N is samples
+A 3D array with (M, M, N) where M is parameters and N is samples
 }
 \description{
 This function taks a pmwgs sampler object and extracts the group level
