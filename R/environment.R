@@ -38,6 +38,15 @@ test_range <- function(var, name, lower, upper) {
   }
 }
 
+method_tests <- function(vars) {
+  if (vars$method == "recovery") {
+    test_cond("MCCE_REC_MODEL", vars$test_model %in% names_ll())
+  } else if (vars$method == "continue") {
+    test_cond("MCCE_ORIG_JOB_DATA", vars$early_data != "")
+    test_cond("MCCE_STAGES", vars$stages_to_run != "")
+  }
+}
+
 
 #' Check the system environment variables and extract the relevant pieces for
 #' modelling
@@ -53,6 +62,9 @@ check_env <- function() {
   vars <- c(vars, job_env(envars))
   vars <- c(vars, data_env(envars))
   vars <- c(vars, model_env(envars))
+
+  method_tests(vars)
+  vars
 }
 
 print_env <- function(envars) {

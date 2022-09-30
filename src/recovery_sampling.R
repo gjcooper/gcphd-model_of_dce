@@ -1,5 +1,5 @@
 sampler <- pmwgs(
-  data = model_data,
+  data = test_data,
   pars = parameters,
   ll_func = dirichlet_func,
   prior = priors

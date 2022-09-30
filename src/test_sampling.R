@@ -5,7 +5,9 @@ sampler <- pmwgs(
   prior = priors
 )
 
-sampler <- init(sampler, particles=10)
+cores <- vars$cores
+
+sampler <- init(sampler, particles = 10)
 
 sampler <- run_stage(sampler, stage = "burn", iter = 5, particles = 10, n_cores = cores)
 
