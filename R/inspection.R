@@ -1,3 +1,14 @@
+consolidate_filter <- function(sampler, filter) {
+  samples <- sampler$samples
+
+  if (test_character(filter)) {
+    assert_subset(filter, c("init", "burn", "adapt", "sample"))
+    filter <- which(samples$stage %in% filter)
+  } else {
+    assert_subset(filter, 1:samples$idx)
+  }
+  filter
+}
 #' Extract group level parameters from the samples
 #'
 #' This function taks a pmwgs sampler object and extracts the group level
@@ -16,11 +27,15 @@
 extract_tmu <- function(sampler,
                         par_names = sampler$par_names,
                         filter = unique(sampler$samples$stage)) {
+  filter <- consolidate_filter(sampler, filter)
+  stages <- sampler$samples$stage[filter]
+
   sampler %>%
     pmwg::as_mcmc(filter = filter) %>%
     as_tibble() %>%
     select(all_of(par_names)) %>%
-    mutate(sampleid = row_number())
+    mutate(sampleid = row_number()) %>%
+    mutate(stageid = stages)
 }
 
 #' Extract subject level parameters from the samples
@@ -37,12 +52,16 @@ extract_tmu <- function(sampler,
 extract_alpha <- function(sampler,
                           par_names = sampler$par_names,
                           filter = unique(sampler$samples$stage)) {
+  filter <- consolidate_filter(sampler, filter)
+  stages <- sampler$samples$stage[filter]
+
   pmwg::as_mcmc(sampler, selection = "alpha", filter = filter) %>%
     lapply(FUN = function(x) {
       x %>%
         as_tibble() %>%
         select(all_of(par_names)) %>%
-        mutate(sampleid = row_number())
+        mutate(sampleid = row_number()) %>%
+        mutate(stageid = stages)
     }) %>%
     bind_rows(.id = "subjectid")
 }
@@ -62,13 +81,8 @@ extract_cov <- function(sampler,
                         par_names = sampler$par_names,
                         filter = unique(sampler$samples$stage)) {
   samples <- sampler$samples
+  filter <- consolidate_filter(sampler, filter)
 
-  if (test_character(filter)) {
-    assert_subset(filter, c("init", "burn", "adapt", "sample"))
-    filter <- which(samples$stage %in% filter)
-  } else {
-    assert_subset(filter, 1:samples$idx)
-  }
   assert_subset(par_names, sampler$par_names)
 
   samples$theta_sig[par_names, par_names, filter]
