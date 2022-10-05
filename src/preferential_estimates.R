@@ -12,107 +12,65 @@ library(pmwg)
 # Load all the samples
 pref_file <- here::here("data", "output", "PrefDCE_2506730.rcgbcm_Estimation5Model.RData")
 
-pref_samples <- get_samples(pref_file)
-
+pref_sampler <- get_samples(pref_file)
+parameters <- pref_sampler$par_names
+archs <- parameters[startsWith(parameters, "alpha")]
+subjects <- pref_sampler$subjects
+pref_samples <- extract_parameters(pref_sampler)
 
 pdf(file = here::here("results", "Preferential", paste0("theta_mu_trace_", Sys.Date(), ".pdf")), width = 14.1, height = 7.53)
-for (par in pref_samples$par_names) {
+for (par in parameters) {
   g <- pref_samples %>%
-    as_mcmc %>%
-    data.frame %>%
-    tibble %>%
-    mutate(sample_id = row_number()) %>%
-    mutate(stage = pref_samples$samples$stage) %>%
-    pivot_longer(cols = -c(sample_id, stage), names_to = "parameter") %>%
-    filter(parameter == par) %>%
-    ggplot(aes(x = sample_id, y = value, colour = stage)) +
-    geom_line() +
-    scale_colour_watercolour() +
-    labs(title = par) +
-    theme(axis.title.x = element_blank(),
-          axis.text.x = element_blank(),
-          axis.ticks.x = element_blank(),
-          axis.title.y = element_blank())
-    print(g)
+    filter(subjectid == "theta_mu") %>%
+    trace_plot(par) +
+    scale_colour_watercolour()
+  print(g)
 }
 dev.off()
 
-random_effects <- pref_samples %>%
-  as_mcmc(selection = "alpha") %>%
-  lapply(FUN = function(x) {
-      x %>% data.frame() %>% tibble()
-  }) %>%
-  bind_rows(.id = "subjectid") %>%
-  tibble()
-
-for (par in pref_samples$par_names) {
+for (par in parameters) {
   print(paste("Generating pdf for", par))
   pdf(file = here::here("results", "Preferential", paste0(par, "_randeff_trace_", Sys.Date(), ".pdf")), width = 14.1, height = 7.53)
-  all_subjs <- unique(random_effects$subjectid)
-  for (subj_arr in split(all_subjs, ceiling(seq_along(all_subjs) / 4))) {
-    g <- random_effects %>%
+  for (subj_arr in split(subjects, ceiling(seq_along(subjects) / 4))) {
+    g <- pref_samples %>%
       filter(subjectid %in% subj_arr) %>%
-      group_by(subjectid) %>%
-      mutate(sample_id = row_number()) %>%
-      mutate(stage = pref_samples$samples$stage) %>%
-      ungroup() %>%
-      pivot_longer(cols = -c(subjectid, sample_id, stage), names_to = "parameter") %>%
-      filter(parameter == par) %>%
-      ggplot(aes(x = sample_id, y = value, colour = stage)) +
-      geom_line() +
+      trace_plot(par) +
       scale_colour_watercolour() +
-      facet_wrap(~ subjectid, nrow=2, ncol=2) +
-      theme(axis.title.x = element_blank(),
-            axis.text.x = element_blank(),
-            axis.ticks.x = element_blank(),
-            axis.title.y = element_blank())
+      facet_wrap(~ subjectid, nrow=2, ncol=2)
     print(g)
   }
   dev.off()
 }
 
 model_medians <- pref_samples %>%
-  extract_parameters(str_subset(.$par_names, "alpha")) %>%
-  get_medians() %>%
+  filter(stageid == "sample", parameter %in% archs) %>%
+  get_medians(tform = exp) %>%
   group_by(subjectid) %>%
   mutate(rel_val = value / sum(value)) %>%
+  mutate(parameter = str_remove(parameter, "alpha_")) %>%
   mutate(subjectid = case_when(
     subjectid == "theta_mu" ~ "Group",
     TRUE ~ str_pad(subjectid, 2, pad = "0")
   ))
 
 subject_order <- model_medians %>%
-  filter(Parameter == "MW") %>%
+  filter(parameter == "MW") %>%
   arrange(desc(rel_val)) %>%
   pull(subjectid)
 
 Par_order <- model_medians %>%
-  group_by(Parameter) %>%
+  group_by(parameter) %>%
   summarise(mean_val = mean(rel_val)) %>%
   arrange(mean_val) %>%
-  pull(Parameter)
-
-model_plot <- function(medians) {
-  Par_order <- c("FPP", "IST", "IEX", "CB", "MW")
-  medians %>%
-    filter(subjectid != "Group") %>%
-    mutate(Parameter = factor(Parameter, Par_order)) %>%
-    ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
-    geom_col() +
-    scale_fill_watercolour() +
-    theme(axis.title.x = element_blank(),
-          axis.text.x = element_blank(),
-          axis.ticks.x = element_blank()) +
-    labs(y = "Relative Evidence") +
-    scale_y_continuous(labels = NULL, breaks = NULL)
-}
+  pull(parameter)
 
 model_medians %>%
   mutate(subjectid = factor(subjectid, subject_order)) %>%
   mutate(subjectid = fct_relevel(subjectid, "Group", after=Inf)) %>%
   filter(subjectid != "Group") %>%
-  mutate(Parameter = factor(Parameter, Par_order)) %>%
-  model_plot
+  mutate(parameter = factor(parameter, Par_order)) %>%
+  arch_plot +
+  scale_fill_watercolour()
 
 ggsave(
   filename = here::here(
@@ -126,18 +84,20 @@ ggsave(
   units = "in"
 )
 
+model_medians <- pref_samples %>%
+  filter(stageid == "sample", parameter %in% archs) %>%
+  get_medians(tform = exp) %>%
+  group_by(subjectid) %>%
+  mutate(rel_val = value / sum(value)) %>%
+  mutate(parameter = str_remove(parameter, "alpha_")) %>%
+  mutate(subjectid = case_when(
+    subjectid == "theta_mu" ~ "Group",
+    TRUE ~ str_pad(subjectid, 2, pad = "0")
+  ))
+
 par_medians <- pref_samples %>%
-  extract_parameters(str_subset(.$par_names, "alpha", negate = TRUE)) %>%
-  filter(subjectid != 'theta_mu') %>%
-  get_medians(alpha = FALSE) %>%
-  mutate(value = log(value))
-
-group_pars <- pref_samples %>%
-  extract_parameters(str_subset(.$par_names, "alpha", negate = TRUE)) %>%
-  filter(subjectid == 'theta_mu') %>%
-  get_medians(alpha = FALSE) %>%
-  mutate(value = log(value))
-
+  filter(stageid == "sample", !(parameter %in% archs)) %>%
+  get_medians()
 
 par_colours <- c("t0" = "grey",
                  "A" = "grey", "b_acc" = "#73842E", "b_rej" = "#D0781C",
@@ -147,8 +107,9 @@ par_colours <- c("t0" = "grey",
                  "v_rej_r_H" = "#BBA9A0", "v_rej_r_L" = "#A2887C", "v_rej_r_D" = "#83685D")
 
 par_medians %>%
-  mutate(colour = par_colours[Parameter]) %>%
-  ggplot(aes(x = Parameter, y = exp(value), fill = colour)) +
+  filter(subjectid != "theta_mu") %>%
+  mutate(colour = par_colours[parameter]) %>%
+  ggplot(aes(x = parameter, y = exp(value), fill = colour)) +
   geom_boxplot() +
   ylim(c(0, 7.5)) +
   scale_fill_identity()
@@ -165,9 +126,10 @@ ggsave(
   units = "in"
 )
 
-group_pars %>%
-  mutate(colour = rep(par_colours, n_distinct(.$subjectid))) %>%
-  ggplot(aes(x = Parameter, y = exp(value), fill=colour)) +
+par_medians %>%
+  filter(subjectid == "theta_mu") %>%
+  mutate(colour = par_colours[parameter]) %>%
+  ggplot(aes(x = parameter, y = exp(value), fill=colour)) +
   geom_col() +
   scale_fill_identity()
 

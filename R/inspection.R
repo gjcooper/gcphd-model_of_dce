@@ -93,7 +93,7 @@ extract_cov <- function(sampler,
 #'
 #' This function taks a pmwgs sampler object and extracts both the group level
 #' and the individual subject level samples for the specified parameter
-#' estimates.
+#' estimates. The resulting tibble will bein long format
 #'
 #' @param sampler The pmwgs sampler object
 #' @param par_names The names of the parameters to extract - defaults to all
@@ -111,7 +111,9 @@ extract_parameters <- function(sampler,
     mutate(subjectid = "theta_mu")
 
   extract_alpha(sampler, par_names, filter) %>%
-    bind_rows(tmu)
+    bind_rows(tmu) %>%
+    tidyr::pivot_longer(cols = -c(subjectid, sampleid, stageid),
+                        names_to = "parameter")
 }
 
 
@@ -119,34 +121,17 @@ extract_parameters <- function(sampler,
 #'
 #' @param pars The result of extract_parameters, tibble containing samples for
 #'   the selected parameter estimates.
-#' @param alpha A boolean representing whether to only return alpha (dirichlet)
-#'   parameter medians.
 #'
 #' @return A tibble containing the medians of the samples for each subject
 #'
 #' @import dplyr
 #' @importFrom rlang .data
 #' @export
-get_medians <- function(pars, alpha = TRUE) {
-  if (alpha) {
-    pars %>%
-      select(c(.data$subjectid, starts_with("alpha"))) %>%
-      group_by(.data$subjectid) %>%
-      summarise(across(.fns = stats::median)) %>%
-      tidyr::pivot_longer(-.data$subjectid,
-                          names_to = c("drop", "Parameter"),
-                          names_sep = "_",
-                          names_transform = list(Parameter = as.factor)) %>%
-      mutate(value = exp(.data$value)) %>%
-      select(-.data$drop)
-  } else {
-    pars %>%
-      select(-.data$sampleid) %>%
-      group_by(.data$subjectid) %>%
-      summarise(across(.fns = stats::median)) %>%
-      tidyr::pivot_longer(-.data$subjectid, names_to = "Parameter") %>%
-      mutate(value = exp(.data$value))
-  }
+get_medians <- function(pars, tform = base::identity) {
+  pars %>%
+    mutate(value = tform(.data$value)) %>%
+    group_by(.data$subjectid, .data$parameter) %>%
+    summarise(value = stats::median(value))
 }
 
 #' Takes a sample tibble and rearranges it to a long df with just drift rates.

@@ -53,3 +53,50 @@ matdf_plot <- function(x) {
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
           axis.title = element_blank())
 }
+
+#' Plot a trace for a subject/parameter combination
+#'
+#' For a particular sample tibble (from extract_parameters) take one
+#' parameter and plot the trace of the parameter value. The tibble should
+#' be filtered to reduce the subjects, or faceted to separate the subjects.
+#'
+#' @param sample_df The tibble with samples.
+#' @param par The parameter to plot a trace of
+#'
+#' @return A ggplot object
+#'
+#'
+#' @import ggplot2
+#' @export
+trace_plot <- function(sample_df, par) {
+  sample_df %>%
+    filter(parameter == par) %>%
+    ggplot(aes(x = sampleid, y = value, colour = stageid)) +
+    geom_line() +
+    labs(title = paste("Parameter:", par),
+         colour = "Sampling Stage",
+         x = "Sample",
+         y = "Parameter Value")
+}
+
+#' Plot an architecture comparison barplot
+#'
+#' ...
+#'
+#' @param medians The medians for each architecture/person
+#'
+#' @return A ggplot object
+#'
+#' @import ggplot2
+#' @export
+arch_plot <- function(medians) {
+  medians %>%
+    filter(subjectid != "Group") %>%
+    ggplot(aes(x = subjectid, y = rel_val, fill = parameter)) +
+    geom_col() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank()) +
+    labs(y = "Relative Evidence") +
+    scale_y_continuous(labels = NULL, breaks = NULL)
+}
