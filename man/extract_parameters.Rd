@@ -24,5 +24,5 @@ A tibble with the parameter samples and a subjectid column
 \description{
 This function taks a pmwgs sampler object and extracts both the group level
 and the individual subject level samples for the specified parameter
-estimates.
+estimates. The resulting tibble will bein long format
 }

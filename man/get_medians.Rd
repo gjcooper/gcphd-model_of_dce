@@ -4,14 +4,11 @@
 \alias{get_medians}
 \title{Return median values for  parameters (from extract_parameters)}
 \usage{
-get_medians(pars, alpha = TRUE)
+get_medians(pars, tform = base::identity)
 }
 \arguments{
 \item{pars}{The result of extract_parameters, tibble containing samples for
 the selected parameter estimates.}
-
-\item{alpha}{A boolean representing whether to only return alpha (dirichlet)
-parameter medians.}
 }
 \value{
 A tibble containing the medians of the samples for each subject
