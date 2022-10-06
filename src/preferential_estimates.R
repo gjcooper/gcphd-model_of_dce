@@ -45,13 +45,7 @@ for (par in parameters) {
 model_medians <- pref_samples %>%
   filter(stageid == "sample", parameter %in% archs) %>%
   get_medians(tform = exp) %>%
-  group_by(subjectid) %>%
-  mutate(rel_val = value / sum(value)) %>%
-  mutate(parameter = str_remove(parameter, "alpha_")) %>%
-  mutate(subjectid = case_when(
-    subjectid == "theta_mu" ~ "Group",
-    TRUE ~ str_pad(subjectid, 2, pad = "0")
-  ))
+  arch_medians()
 
 subject_order <- model_medians %>%
   filter(parameter == "MW") %>%

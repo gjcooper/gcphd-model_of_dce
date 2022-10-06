@@ -134,6 +134,24 @@ get_medians <- function(pars, tform = base::identity) {
     summarise(value = stats::median(value))
 }
 
+#' Reshape median architecture estimates for plotting
+#'
+#' @param medians
+#'
+#' @return A tibble augmented ready for plotting
+#' @export
+arch_medians <- function(medians) {
+  medians %>%
+    group_by(subjectid) %>%
+    mutate(rel_val = value / sum(value)) %>%
+    mutate(parameter = str_remove(parameter, "alpha_")) %>%
+    mutate(subjectid = case_when(
+      subjectid == "theta_mu" ~ "Group",
+      TRUE ~ str_pad(subjectid, 2, pad = "0")
+    ))
+}
+
+
 #' Takes a sample tibble and rearranges it to a long df with just drift rates.
 #'
 #' @param sample_df A dataframe with columns for each parameter and sampleid

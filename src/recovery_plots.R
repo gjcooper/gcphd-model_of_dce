@@ -69,7 +69,7 @@ recovery_data %>%
   mutate(cell=paste0(price, rating)) %>%
   ggplot(aes(x = rt, colour = source, linetype=simulated)) +
   geom_density(size=0.7) +
-  scale_colour_watercolour()
+  scale_colour_watercolour() +
   facet_wrap(~ cell)
 
 ggsave(
@@ -86,20 +86,14 @@ ggsave(
 
 model_medians <- sapply(samples, function(x) {
     extract_parameters(x, str_subset(x$par_names, "alpha")) %>%
-      get_medians() %>%
-      group_by(subjectid) %>%
-      mutate(rel_val = value / sum(value))
+      get_medians(tform = exp) %>%
+      arch_medians()
     },
     USE.NAMES = TRUE,
     simplify = FALSE
   ) %>%
   bind_rows(.id = "source") %>%
-  mutate(source = factor(source, levels = model_order)) %>%
-  mutate(Parameter = as.character(Parameter)) %>%
-  mutate(subjectid = case_when(
-    subjectid == "theta_mu" ~ "Group",
-    TRUE ~ str_pad(subjectid, 2, pad = "0")
-  ))
+  mutate(source = factor(source, levels = model_order))
 
 subject_order <- model_medians %>%
   filter(subjectid != "Group") %>%

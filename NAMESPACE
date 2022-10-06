@@ -2,6 +2,7 @@
 
 export("%>%")
 export(alph)
+export(arch_medians)
 export(arch_plot)
 export(check_env)
 export(dirichlet_mix_ll)
