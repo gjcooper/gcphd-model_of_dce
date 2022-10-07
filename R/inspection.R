@@ -121,17 +121,19 @@ extract_parameters <- function(sampler,
 #'
 #' @param pars The result of extract_parameters, tibble containing samples for
 #'   the selected parameter estimates.
+#' @param tform Any transformation necessary to the data prior to summarising
+#' @param sfunc A summary function (one value), default is median
 #'
 #' @return A tibble containing the medians of the samples for each subject
 #'
 #' @import dplyr
 #' @importFrom rlang .data
 #' @export
-get_medians <- function(pars, tform = base::identity) {
+get_summary <- function(pars, tform = base::identity, sfunc = stats::median) {
   pars %>%
     mutate(value = tform(.data$value)) %>%
     group_by(.data$subjectid, .data$parameter) %>%
-    summarise(value = stats::median(value))
+    summarise(value = sfunc(value))
 }
 
 #' Reshape median architecture estimates for plotting

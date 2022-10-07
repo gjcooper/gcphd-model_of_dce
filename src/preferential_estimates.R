@@ -25,6 +25,9 @@ for (par in parameters) {
     trace_plot(par) +
     scale_colour_watercolour()
   print(g)
+  if (interactive()) {
+    readline(prompt="Press [enter] to continue")
+  }
 }
 dev.off()
 
@@ -44,25 +47,27 @@ for (par in parameters) {
 
 model_medians <- pref_samples %>%
   filter(stageid == "sample", parameter %in% archs) %>%
-  get_medians(tform = exp) %>%
+  get_summary(tform = exp) %>%
   arch_medians()
 
-subject_order <- model_medians %>%
-  filter(parameter == "MW") %>%
-  arrange(desc(rel_val)) %>%
-  pull(subjectid)
-
-Par_order <- model_medians %>%
+arch_order <- model_medians %>%
   group_by(parameter) %>%
   summarise(mean_val = mean(rel_val)) %>%
   arrange(mean_val) %>%
   pull(parameter)
 
+most_common_arch <- arch_order[length(arch_order)]
+
+subject_order <- model_medians %>%
+  filter(parameter == most_common_arch) %>%
+  arrange(desc(rel_val)) %>%
+  pull(subjectid)
+
 model_medians %>%
   mutate(subjectid = factor(subjectid, subject_order)) %>%
   mutate(subjectid = fct_relevel(subjectid, "Group", after=Inf)) %>%
   filter(subjectid != "Group") %>%
-  mutate(parameter = factor(parameter, Par_order)) %>%
+  mutate(parameter = factor(parameter, arch_order)) %>%
   arch_plot +
   scale_fill_watercolour()
 
@@ -78,20 +83,9 @@ ggsave(
   units = "in"
 )
 
-model_medians <- pref_samples %>%
-  filter(stageid == "sample", parameter %in% archs) %>%
-  get_medians(tform = exp) %>%
-  group_by(subjectid) %>%
-  mutate(rel_val = value / sum(value)) %>%
-  mutate(parameter = str_remove(parameter, "alpha_")) %>%
-  mutate(subjectid = case_when(
-    subjectid == "theta_mu" ~ "Group",
-    TRUE ~ str_pad(subjectid, 2, pad = "0")
-  ))
-
 par_medians <- pref_samples %>%
   filter(stageid == "sample", !(parameter %in% archs)) %>%
-  get_medians()
+  get_summary()
 
 par_colours <- c("t0" = "grey",
                  "A" = "grey", "b_acc" = "#73842E", "b_rej" = "#D0781C",

@@ -20,117 +20,73 @@ pref_file <- here::here("data", "output", "PrefDCE_ACUGlaCbumcx_reduced_continue
 
 viewstage <- "sample"
 
-pref_samples <- get_samples(pref_file, final_obj="sampler")
+pref_sampler <- get_samples(pref_file, final_obj="sampler")
+parameters <- pref_sampler$par_names
+archs <- parameters[startsWith(parameters, "alpha")]
+subjects <- pref_sampler$subjects
+pref_samples <- extract_parameters(pref_sampler)
 
 
-mean_window <- 50
+mean_window <- 150
 pdf(file = here::here("results", "Reduced", paste0("theta_mu_trace_", Sys.Date(), ".pdf")), width = 14.1, height = 7.53)
-for (par in pref_samples$par_names) {
+for (par in parameters) {
   g <- pref_samples %>%
-    as_mcmc %>%
-    data.frame %>%
-    tibble %>%
-    mutate(sample_id = row_number()) %>%
-    mutate(stage = pref_samples$samples$stage) %>%
-    pivot_longer(cols = -c(sample_id, stage), names_to = "parameter") %>%
-    filter(parameter == par) %>%
-    mutate(mean_so_far = ifelse(sample_id < mean_window, NaN, RcppRoll::roll_meanr(value, n=mean_window))) %>%
-    ggplot(aes(x = sample_id, y = value, colour = stage)) +
-    geom_line() +
-    scale_colour_watercolour() +
-    labs(title = par) +
-    theme(axis.title.x = element_blank(),
-          axis.text.x = element_blank(),
-          axis.ticks.x = element_blank(),
-          axis.title.y = element_blank()) +
-    geom_line(aes(y = mean_so_far), colour = "black")
-    print(g)
+    filter(subjectid == "theta_mu", parameter == par) %>%
+    mutate(mean_so_far = ifelse(sampleid < mean_window, NaN, RcppRoll::roll_meanr(value, n=mean_window))) %>%
+    trace_plot(par) +
+    geom_line(aes(y = mean_so_far), colour = "black") +
+    scale_colour_watercolour()
+  print(g)
 
+  if (interactive()) {
     readline(prompt="Press [enter] to continue")
+  }
 }
 dev.off()
 
-random_effects <- pref_samples %>%
-  as_mcmc(selection = "alpha") %>%
-  lapply(FUN = function(x) {
-      x %>% data.frame() %>% tibble()
-  }) %>%
-  bind_rows(.id = "subjectid") %>%
-  tibble()
-
-for (par in pref_samples$par_names) {
+for (par in parameters) {
   print(paste("Generating pdf for", par))
   pdf(file = here::here("results", "Reduced", paste0(par, "_randeff_trace_", Sys.Date(), ".pdf")), width = 14.1, height = 7.53)
-  all_subjs <- unique(random_effects$subjectid)
-  for (subj_arr in split(all_subjs, ceiling(seq_along(all_subjs) / 4))) {
-    g <- random_effects %>%
+  for (subj_arr in split(subjects, ceiling(seq_along(subjects) / 4))) {
+    g <- pref_samples %>%
       filter(subjectid %in% subj_arr) %>%
-      group_by(subjectid) %>%
-      mutate(sample_id = row_number()) %>%
-      mutate(stage = pref_samples$samples$stage) %>%
-      ungroup() %>%
-      pivot_longer(cols = -c(subjectid, sample_id, stage), names_to = "parameter") %>%
-      filter(parameter == par) %>%
-      ggplot(aes(x = sample_id, y = value, colour = stage)) +
-      geom_line() +
+      trace_plot(par) +
       scale_colour_watercolour() +
-      facet_wrap(~ subjectid, nrow=2, ncol=2) +
-      theme(axis.title.x = element_blank(),
-            axis.text.x = element_blank(),
-            axis.ticks.x = element_blank(),
-            axis.title.y = element_blank())
+      facet_wrap(~ subjectid, nrow=2, ncol=2)
     print(g)
 
-    readline(prompt="Press [enter] to continue")
+    if (interactive()) {
+      readline(prompt="Press [enter] to continue")
+    }
   }
   dev.off()
 }
 
 model_medians <- pref_samples %>%
-  extract_parameters(str_subset(.$par_names, "alpha"), filter = viewstage) %>%
-  get_medians() %>%
-  group_by(subjectid) %>%
-  mutate(rel_val = value / sum(value)) %>%
-  mutate(subjectid = case_when(
-    subjectid == "theta_mu" ~ "Group",
-    TRUE ~ str_pad(subjectid, 2, pad = "0")
-  ))
+  filter(stageid == viewstage, parameter %in% archs) %>%
+  get_summary(tform = exp) %>%
+  arch_medians()
 
-sorted_architectures <- model_medians %>%
-  group_by(subjectid) %>%
-  filter(rel_val == max(rel_val)) %>%
-  pull(Parameter) %>%
-  table %>%
-  sort %>%
-  names
+arch_order <- model_medians %>%
+  group_by(parameter) %>%
+  summarise(mean_val = mean(rel_val)) %>%
+  arrange(mean_val) %>%
+  pull(parameter)
 
-most_common_arch <- rev(sorted_architectures)[1]
+most_common_arch <- arch_order[length(arch_order)]
 
 subject_order <- model_medians %>%
-  filter(Parameter == most_common_arch) %>%
+  filter(parameter == most_common_arch) %>%
   arrange(desc(rel_val)) %>%
   pull(subjectid)
-
-model_plot <- function(medians) {
-  medians %>%
-    filter(subjectid != "Group") %>%
-    mutate(Parameter = factor(Parameter, sorted_architectures)) %>%
-    ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
-    geom_col() +
-    scale_fill_watercolour() +
-    theme(axis.title.x = element_blank(),
-          axis.text.x = element_blank(),
-          axis.ticks.x = element_blank()) +
-    labs(y = "Relative Evidence") +
-    scale_y_continuous(labels = NULL, breaks = NULL)
-}
 
 model_medians %>%
   mutate(subjectid = factor(subjectid, subject_order)) %>%
   mutate(subjectid = fct_relevel(subjectid, "Group", after=Inf)) %>%
   filter(subjectid != "Group") %>%
-  mutate(Parameter = factor(Parameter, sorted_architectures)) %>%
-  model_plot
+  mutate(parameter = factor(parameter, arch_order)) %>%
+  arch_plot() +
+  scale_fill_watercolour()
 
 ggsave(
   filename = here::here(
@@ -145,16 +101,8 @@ ggsave(
 )
 
 par_medians <- pref_samples %>%
-  extract_parameters(str_subset(.$par_names, "alpha", negate = TRUE), filter=viewstage) %>%
-  filter(subjectid != 'theta_mu') %>%
-  get_medians(alpha = FALSE) %>%
-  mutate(value = log(value))
-
-group_pars <- pref_samples %>%
-  extract_parameters(str_subset(.$par_names, "alpha", negate = TRUE), filter=viewstage) %>%
-  filter(subjectid == 'theta_mu') %>%
-  get_medians(alpha = FALSE) %>%
-  mutate(value = log(value))
+  filter(stageid == viewstage, !(parameter %in% archs)) %>%
+  get_summary()
 
 par_colours <- c("t0" = "grey",
                  "A" = "grey", "b_acc" = "#73842E", "b_rej" = "#D0781C",
@@ -164,12 +112,12 @@ par_colours <- c("t0" = "grey",
                  "beta0_r" = "#57057e", "beta1_r" = "#57057e")
 
 par_medians %>%
-  mutate(colour = par_colours[Parameter]) %>%
-  mutate(value = ifelse(startsWith(Parameter, "v"), value, exp(value))) %>%
-  mutate(Parameter = factor(Parameter, levels = names(par_colours))) %>%
-  ggplot(aes(x = Parameter, y = value, fill = colour)) +
+  filter(subjectid != "theta_mu") %>%
+  mutate(colour = par_colours[parameter]) %>%
+  mutate(value = ifelse(startsWith(parameter, "v"), value, exp(value))) %>%
+  mutate(parameter = factor(parameter, levels = names(par_colours))) %>%
+  ggplot(aes(x = parameter, y = value, fill = colour)) +
   geom_boxplot() +
-  #ylim(c(-5, 15)) +
   scale_fill_identity()
 
 ggsave(
@@ -186,31 +134,24 @@ ggsave(
 
 set.seed(2468)
 
-participant <- sample(pref_samples$subjects, 1)
-participant_data <- pref_samples$data %>% filter(subject == participant)
+participant <- sample(subjects, 1)
+participant_data <- pref_sampler$data %>% filter(subject == participant)
 participant_random_effects <- pref_samples %>%
-  as_mcmc(selection = "alpha", filter = viewstage) %>%
-  pluck(participant) %>%
-  data.frame() %>%
-  tibble() %>%
+  filter(stageid == viewstage, subjectid == participant) %>%
   print
+participant_arch <- model_medians %>% filter(subjectid == participant)
 
-means <- participant_random_effects %>%
-  summarise(across(everything(), mean))
+winning_arch <- participant_arch %>%
+  arrange(desc(value)) %>%
+  pull(parameter) %>%
+  head(1)
 
-winning_arch <- means %>%
-  select(starts_with('alpha')) %>%
-  rowwise() %>%
-  mutate(max_alpha = names(.)[which.max(across(everything()))]) %>%
-  pull(max_alpha) %>%
-  str_split("_") %>%
-  unlist %>%
-  `[`(2)
-
-nonarch_parameters <- means %>%
-  select(!starts_with("alpha")) %>%
-  unlist
-
+nonarch_parameters <- par_medians %>%
+  filter(subjectid == participant) %>%
+  ungroup() %>%
+  select(-subjectid) %>%
+  pivot_wider(names_from=parameter, values_from=value) %>%
+  unlist()
 
 ll_func <- select_ll(winning_arch)
 stim_levels <- c("H", "L", "D")
@@ -223,7 +164,7 @@ ll_vals <- sapply(names(nonarch_parameters), FUN = function(par) {
     par_val = alt_vals,
     ll = sapply(alt_vals, FUN = function(sub) {
       x[par] <- sub
-      y <- transform_pars(x, participant_data, tforms = "reduced")
+      y <- transform_pars(x, tforms = "reduced")
       trial_ll <- model_wrapper(y, participant_data, ll_func)
       sum(log(pmax(trial_ll, 1e-10)))
     })
@@ -253,12 +194,11 @@ ggsave(
 )
 
 
-group_level <- pref_samples %>%
-  as_mcmc(selection = "theta_mu", filter = viewstage) %>%
-  data.frame() %>%
-  tibble() %>%
-  summarise(across(everything(), mean)) %>%
-  select(-starts_with("alpha")) %>%
+group_level <- par_medians %>%
+  filter(subjectid == "theta_mu") %>%
+  ungroup() %>%
+  select(-subjectid) %>%
+  pivot_wider(names_from=parameter, values_from=value) %>%
   mutate(
     v_rej_p_H_derived = exp(beta0_p) - exp(beta1_p)*v_acc_p_H,
     v_rej_p_L_derived = exp(beta0_p) - exp(beta1_p)*v_acc_p_L,
@@ -276,21 +216,17 @@ group_level %>%
   geom_col() +
   theme(axis.text.x = element_text(angle=45, hjust=1))
 
-covmat <- pref_samples %>%
-  as_mcmc(selection = "theta_sig", filter = viewstage) %>%
-  data.frame() %>%
-  tibble %>%
-  summarise(across(everything(), mean)) %>%
-  pivot_longer(everything(), names_to = c("X", "Y"), names_sep = "\\.") %>%
-  mutate(across(c(X, Y), factor)) %>%
-  xtabs(value ~ X + Y, .)
+cor_df <- pref_sampler %>%
+  extract_cov(filter = viewstage) %>%
+  apply(c(1,2), mean) %>%
+  cov2cor %>%
+  matrix_to_df
 
-ggcorrplot(covmat)
-ggcorrplot(cov2cor(covmat)) + scale_fill_watercolour(type = "diverging")
-ggcorrplot(cov2cor(covmat), hc.order = TRUE, type = "lower", outline.col = "white", lab=TRUE)
-ggcorrplot(cov2cor(covmat), type = "lower", outline.col = "white", lab=TRUE)
+cor_df %>%
+  matdf_plot() +
+  scale_fill_watercolour(type = "diverging")
 
-pref_samples %>%
+pref_sampler %>%
   `[[`("samples") %>%
   `[[`("subj_ll") %>%
   t %>%
@@ -301,7 +237,7 @@ pref_samples %>%
   ggplot(aes(x = idx, y = ll, group=subject)) +
   geom_line(colour = "black", alpha=0.15)
 
-sigmas <- pref_samples %>%
+sigmas <- pref_sampler %>%
   as_mcmc(selection = "theta_sig") %>%
   data.frame %>%
   tibble %>%
