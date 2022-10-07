@@ -32,7 +32,7 @@ sample_df %>%
   scale_fill_watercolour()
 
 model_medians <- sample_df %>%
-  get_medians() %>%
+  get_summary() %>%
   group_by(subjectid) %>%
   mutate(rel_val = value / sum(value)) %>%
   mutate(Parameter = as.character(Parameter)) %>%
@@ -98,7 +98,7 @@ subject_arch + group_arch +
 
 par_medians <- sample_df %>%
   select(-starts_with("alpha")) %>%
-  get_medians(alpha = FALSE) %>%
+  get_summary() %>%
   mutate(value = log(value))
 
 par_medians %>%

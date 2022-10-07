@@ -17,7 +17,7 @@ samples <- list(accept = accept_samples, reject = reject_samples)
 
 model_medians <- sapply(samples, function(x) {
   extract_parameters(x, str_subset(x$par_names, "alpha")) %>%
-    get_medians() %>%
+    get_summary() %>%
     group_by(subjectid) %>%
     mutate(rel_val = value / sum(value))
   },
@@ -71,7 +71,7 @@ ggsave(
 par_medians <- sapply(samples, function(x) {
   extract_parameters(x, str_subset(x$par_names, "alpha", negate = TRUE)) %>%
     filter(subjectid != "theta_mu") %>%
-    get_medians(alpha = FALSE)
+    get_summary()
   },
   USE.NAMES = TRUE,
   simplify = FALSE

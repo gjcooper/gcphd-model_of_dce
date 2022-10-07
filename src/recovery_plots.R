@@ -81,7 +81,7 @@ ggsave(
 
 model_medians <- sapply(samples, function(x) {
     extract_parameters(x, str_subset(x$par_names, "alpha")) %>%
-      get_medians(tform = exp) %>%
+      get_summary(tform = exp) %>%
       arch_medians()
     },
     USE.NAMES = TRUE,
@@ -163,7 +163,7 @@ ggsave(
 
 par_medians <- sapply(samples, function(x) {
   extract_parameters(x, str_subset(x$par_names, "alpha", negate = TRUE)) %>%
-    get_medians()
+    get_summary()
   },
   USE.NAMES = TRUE,
   simplify = FALSE

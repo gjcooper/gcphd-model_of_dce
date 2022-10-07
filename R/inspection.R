@@ -117,7 +117,7 @@ extract_parameters <- function(sampler,
 }
 
 
-#' Return median values for  parameters (from extract_parameters)
+#' Return summary values for parameters (from extract_parameters)
 #'
 #' @param pars The result of extract_parameters, tibble containing samples for
 #'   the selected parameter estimates.
@@ -135,6 +135,7 @@ get_summary <- function(pars, tform = base::identity, sfunc = stats::median) {
     group_by(.data$subjectid, .data$parameter) %>%
     summarise(value = sfunc(value))
 }
+
 
 #' Reshape median architecture estimates for plotting
 #'
