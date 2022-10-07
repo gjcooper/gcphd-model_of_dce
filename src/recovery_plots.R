@@ -1,13 +1,8 @@
 library(mcce)
 library(dplyr)
 library(ggplot2)
-library(tidyr)
-library(forcats)
-library(tidytext)
-library(pmwg)
 library(stringr)
 library(watercolours)
-library(readr)
 library(patchwork)
 
 task <- "Preferential" ## Other option, something like Preferential
@@ -106,18 +101,18 @@ subject_order <- model_medians %>%
 
 Par_order <- model_medians %>%
   filter(source == "Original") %>%
-  group_by(Parameter) %>%
+  group_by(parameter) %>%
   summarise(median_val = median(rel_val)) %>%
   arrange(median_val) %>%
-  pull(Parameter)
+  pull(parameter)
 
 subject_recovery <- model_medians %>%
   filter(source != "Original") %>%
   filter(subjectid != "Group") %>%
   mutate(subjectid = factor(subjectid, subject_order)) %>%
-  mutate(Parameter = factor(Parameter, Par_order)) %>%
+  mutate(parameter = factor(parameter, Par_order)) %>%
   mutate(source = factor(source, Par_order)) %>%
-  ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
+  ggplot(aes(x = subjectid, y = rel_val, fill = parameter)) +
     geom_col() +
     labs(y = "Relative Evidence") +
     scale_fill_watercolour() +
@@ -134,9 +129,9 @@ group_recovery <- model_medians %>%
   filter(source != "Original") %>%
   filter(subjectid == "Group") %>%
   mutate(subjectid = factor(subjectid, subject_order)) %>%
-  mutate(Parameter = factor(Parameter, Par_order)) %>%
+  mutate(parameter = factor(parameter, Par_order)) %>%
   mutate(source = factor(source, Par_order)) %>%
-  ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
+  ggplot(aes(x = subjectid, y = rel_val, fill = parameter)) +
     geom_col() +
     scale_fill_watercolour() +
     theme(axis.title = element_blank(),
@@ -168,19 +163,19 @@ ggsave(
 
 par_medians <- sapply(samples, function(x) {
   extract_parameters(x, str_subset(x$par_names, "alpha", negate = TRUE)) %>%
-    get_medians(alpha = FALSE)
+    get_medians()
   },
   USE.NAMES = TRUE,
   simplify = FALSE
 )
 
-par_medians <- bind_rows(par_medians, .id = "source") %>% mutate(value = log(value))
+par_medians <- bind_rows(par_medians, .id = "source")
 
 recovery <- par_medians %>% filter(source != "Original")
 original <- par_medians %>% filter(source == "Original")
 
 combined <- recovery %>%
-  left_join(original, by = c("Parameter", "subjectid")) %>%
+  left_join(original, by = c("parameter", "subjectid")) %>%
   select(-source.y) %>%
   rename(
     recovered_value = value.x,
@@ -224,7 +219,7 @@ for (model in model_order[-6]) {
     geom_point(size = 0.5, colour = pt_col) +
     geom_point(data = recovered %>% filter(subjectid == "Group"), colour = "black", size = 0.5) +
     geom_abline(intercept = 0, slope = 1) +
-    facet_wrap(vars(Parameter), scales = "free") +
+    facet_wrap(vars(parameter), scales = "free") +
     labs(
       x = "Generating Value",
       y = "Recovered Value",
