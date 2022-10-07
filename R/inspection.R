@@ -9,6 +9,8 @@ consolidate_filter <- function(sampler, filter) {
   }
   filter
 }
+
+
 #' Extract group level parameters from the samples
 #'
 #' This function taks a pmwgs sampler object and extracts the group level
