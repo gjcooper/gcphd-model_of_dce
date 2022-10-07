@@ -1,15 +1,17 @@
 library(mcce)
+library(dplyr)
 library(ggplot2)
 
 run_all <- function(filename, output) {
   medians <- get_samples(here::here("data", "output", filename)) %>%
     extract_parameters() %>%
-    group_by(subjectid) %>%
-    summarise(across(everything(), median))
+    group_by(subjectid, parameter) %>%
+    summarise(value = median(value))
 
   p <- plot_summary(medians, transform = exp) +
     scale_y_continuous(trans = "log2")
   print(p)
+
   saveRDS(medians %>% filter(subjectid != "theta_mu"),
           file = here::here("data", "output", output))
 }

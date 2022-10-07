@@ -6,12 +6,6 @@ library(dplyr)
 median_file <- "median_alpha_pref.RDS"
 model_file <- "PrefDCE_2506730.rcgbcm_Estimation5Model.RData"
 
-get_estimation_data <- function(filename) {
-  load(here::here("data", "output", filename), ex <- new.env())
-  ex$sampler$data %>%
-    tibble()
-}
-
 medians <- readRDS(here::here("data", "output", median_file))
 model_data <- get_estimation_data(model_file)
 subjects <- unique(model_data$subject)

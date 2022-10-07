@@ -16,16 +16,15 @@
 #' @export
 plot_summary <- function(summ, transform=identity) {
   tsumm <- summ %>%
-    mutate(across(-subjectid, transform)) %>%
-    pivot_longer(!subjectid)
+    mutate(value = transform(value))
 
   tsumm %>%
     filter(subjectid != "theta_mu") %>%
-    ggplot(mapping = aes(x = name, y = value)) +
+    ggplot(mapping = aes(x = parameter, y = value)) +
     geom_point(colour = "#D0781C") +
     geom_point(
       data = tsumm %>% filter(subjectid == "theta_mu"),
-      mapping = aes(x = name, y = value),
+      mapping = aes(x = parameter, y = value),
       size = 3,
       colour = "black"
     ) +
