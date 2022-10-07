@@ -15,6 +15,7 @@ run_all <- function(filename, output) {
   medians %>%
     filter(subjectid != "theta_mu") %>%
     pivot_wider(names_from=parameter, values_from=value) %>%
+    ungroup() %>%
   saveRDS(file = here::here("data", "output", output))
 }
 

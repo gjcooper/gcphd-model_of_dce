@@ -13,10 +13,10 @@ subjects <- unique(model_data$subject)
 all_data <- sapply(names_ll(), simplify=FALSE, USE.NAMES=TRUE, FUN=function(arch) {
   print(paste("Simulating from", arch))
   sample_func <- select_ll(arch, sample=TRUE)
-  test_data <- sapply(subjects, USE.NAMES=TRUE, simplify=FALSE, FUN = function(subjectid) {
-    s_idx <- match(subjectid, subjects)
-    subject_data <- model_data %>% filter(subject == subjectid)
-    pars <- medians[s_idx, ]
+  test_data <- sapply(subjects, USE.NAMES=TRUE, simplify=FALSE, FUN = function(s_id) {
+    s_idx <- match(s_id, subjects)
+    subject_data <- model_data %>% filter(subject == s_id)
+    pars <- medians %>% filter(subjectid == s_id) %>% select(-subjectid)
     t0 <- exp(pars$t0)
     minrt <- min(subject_data$rt)
     rmodel_wrapper(pars, subject_data, sample_func)
