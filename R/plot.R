@@ -31,6 +31,7 @@ plot_summary <- function(summ, transform=identity) {
     theme(axis.text.x = element_text(angle = -45, hjust = 0))
 }
 
+
 #' Plot matrix_to_df object using ggplot
 #'
 #' This function takes a matrix in data.frame form, usually output from
@@ -52,6 +53,7 @@ matdf_plot <- function(x) {
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
           axis.title = element_blank())
 }
+
 
 #' Plot a trace for a subject/parameter combination
 #'
@@ -77,6 +79,7 @@ trace_plot <- function(sample_df, par) {
          x = "Sample",
          y = "Parameter Value")
 }
+
 
 #' Plot an architecture comparison barplot
 #'

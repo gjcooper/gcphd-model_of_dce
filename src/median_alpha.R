@@ -12,8 +12,10 @@ run_all <- function(filename, output) {
     scale_y_continuous(trans = "log2")
   print(p)
 
-  saveRDS(medians %>% filter(subjectid != "theta_mu"),
-          file = here::here("data", "output", output))
+  medians %>%
+    filter(subjectid != "theta_mu") %>%
+    pivot_wider(names_from=parameter, values_from=value) %>%
+  saveRDS(file = here::here("data", "output", output))
 }
 
 run_all("NumericVDCE_1878182.rcgbcm_Estimation5Model.RData", "median_alpha_exp1.RDS")
