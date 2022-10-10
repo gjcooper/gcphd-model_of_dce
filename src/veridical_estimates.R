@@ -17,27 +17,22 @@ samples <- list(accept = accept_samples, reject = reject_samples)
 
 model_medians <- sapply(samples, function(x) {
   extract_parameters(x, str_subset(x$par_names, "alpha")) %>%
-    get_summary() %>%
-    group_by(subjectid) %>%
-    mutate(rel_val = value / sum(value))
+    get_summary(tform = exp) %>%
+    arch_medians()
   },
   USE.NAMES = TRUE,
   simplify = FALSE
 )
 
 model_medians <- bind_rows(model_medians, .id = "source") %>%
-  mutate(source = factor(source, levels = c("accept", "reject"))) %>%
-  mutate(subjectid = case_when(
-    subjectid == "theta_mu" ~ "Group",
-    TRUE ~ str_pad(subjectid, 2, pad = "0")
-  ))
+  mutate(source = factor(source, levels = c("accept", "reject")))
 
 model_plot <- function(medians) {
   Par_order <- c("IST", "CB", "FPP", "MW", "IEX")
   medians %>%
     filter(subjectid != "Group") %>%
-    mutate(Parameter = factor(Parameter, Par_order)) %>%
-    ggplot(aes(x = subjectid, y = rel_val, fill = Parameter)) +
+    mutate(parameter = factor(parameter, Par_order)) %>%
+    ggplot(aes(x = subjectid, y = rel_val, fill = parameter)) +
     geom_col() +
     scale_fill_watercolour() +
     theme(axis.title.x = element_blank(),
@@ -47,13 +42,7 @@ model_plot <- function(medians) {
     scale_y_continuous(labels = NULL, breaks = NULL)
 }
 
-design <- "
-  11111
-  22333
-"
-accept_plot <- model_medians %>% filter(source == "accept")  %>% model_plot
-reject_plot <- model_medians %>% filter(source == "reject")  %>% model_plot
-accept_plot + reject_plot + guide_area() + plot_layout(design = design, guides = "collect")
+model_medians %>% mutate(parameter = factor(parameter, Par_order)) %>% arch_plot + scale_fill_watercolour() + facet_grid(rows = vars(source), scales="free", space = "free", shrink=TRUE, drop=TRUE) + coord_flip() + theme(axis.title.x = element_text())
 
 ggsave(
   filename = here::here(
@@ -77,7 +66,7 @@ par_medians <- sapply(samples, function(x) {
   simplify = FALSE
 )
 
-par_medians <- bind_rows(par_medians, .id = "source") %>% mutate(value = log(value))
+par_medians <- bind_rows(par_medians, .id = "source")
 
 par_colours <- c("t0" = "grey",
                  "A" = "grey", "b_acc" = "#73842E", "b_rej" = "#D0781C",
@@ -88,8 +77,8 @@ par_colours <- c("t0" = "grey",
 
 par_medians %>%
   mutate(source = recode(source, accept = "IEX", reject = "IST")) %>%
-  mutate(colour = par_colours[Parameter]) %>%
-  ggplot(aes(x = Parameter, y = exp(value), fill = colour, color = source)) +
+  mutate(colour = par_colours[parameter]) %>%
+  ggplot(aes(x = parameter, y = exp(value), fill = colour, color = source)) +
   scale_colour_watercolour() +
   scale_fill_identity() +
   geom_boxplot()

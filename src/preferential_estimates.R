@@ -50,24 +50,8 @@ model_medians <- pref_samples %>%
   get_summary(tform = exp) %>%
   arch_medians()
 
-arch_order <- model_medians %>%
-  group_by(parameter) %>%
-  summarise(mean_val = mean(rel_val)) %>%
-  arrange(mean_val) %>%
-  pull(parameter)
-
-most_common_arch <- arch_order[length(arch_order)]
-
-subject_order <- model_medians %>%
-  filter(parameter == most_common_arch) %>%
-  arrange(desc(rel_val)) %>%
-  pull(subjectid)
-
 model_medians %>%
-  mutate(subjectid = factor(subjectid, subject_order)) %>%
-  mutate(subjectid = fct_relevel(subjectid, "Group", after=Inf)) %>%
-  filter(subjectid != "Group") %>%
-  mutate(parameter = factor(parameter, arch_order)) %>%
+  order_arch_medians() %>%
   arch_plot +
   scale_fill_watercolour()
 
