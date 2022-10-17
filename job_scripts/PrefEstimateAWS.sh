@@ -9,18 +9,25 @@ export MCCE_METHOD="model"
 # Provide tag on the command line
 if [ -z "$1" ]
 then
-	echo "No tag argument supplied"
-  echo "./PrefEstimateAWS.sh <tag> <model>"
-	exit 1
+    echo "No tag argument supplied"
+    echo "job_scripts/PrefEstimateAWS.sh <tag> <model>"
+    exit 1
 fi
 export MCCE_TAG="$1"
 if [ -z "$2" ]
 then
-	echo "No model argument supplied"
-  echo "./PrefEstimateAWS.sh <tag> <model>"
-	exit 1
+    echo "No model argument supplied"
+    echo "job_scripts/PrefEstimateAWS.sh <tag> <model>"
+    exit 1
 fi
 export MCCE_MODEL="$2"
+
+if [ ! -f "src/model_estimation.R" ]
+then
+    echo "Command should be run from project root directory"
+    echo "job_scripts/PrefEstimateAWS.sh <tag> <model>"
+    exit 1
+fi
 
 # Required for gsl (used by rtdists), due to our installation method.
 export LD_LIBRARY_PATH="/usr/local/gsl/2.5/x86_64/lib64"
@@ -35,4 +42,3 @@ cp data/output/PrefDCE*$MCCE_TAG* $outdir
 sleep 60
 
 sudo shutdown -h now
-
