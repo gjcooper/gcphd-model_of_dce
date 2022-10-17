@@ -77,7 +77,7 @@ if (vars$method %in% c("test", "model")) {
 }
 
 #Get the parameters from a separate file
-source(paste0(vars$model, "_pars.R"))
+source(here::here("src", paste0(vars$model, "_pars.R")))
 
 # Mixture counts should always come first
 mix_counts <- 1:sum(startsWith(parameters, "alpha"))
@@ -98,4 +98,4 @@ dirichlet_func <- partial(dirichlet_mix_ll,
                           max_rt = vars$max_rt,
                           tforms = vars$model)
 
-source(paste0(vars$method, "_sampling.R"))
+source(here::here("src", paste0(vars$method, "_sampling.R")))
