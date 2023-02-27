@@ -38,3 +38,7 @@ Look at code, make sure not simulating from 98% instead of 2%
 Watching out for statistical facilitation for coactive models??
 
 * Visual inspection of posteriors random effects, to see whether they are stationary
+
+# Note from Rield (2008) reading
+
+The coactive decision process here is really just a reflection of the EQW (equal weights strategy) where each attribute contributes equally to a decision. Perhaps an MAU (multiattr utility) - not equal weights, not sure about discoverability though
