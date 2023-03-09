@@ -17,3 +17,14 @@ parameters <- c(
   # Shared b0
   "beta0", "beta1_p", "beta1_r"
 )
+
+# Mixture counts should always come first
+mix_counts <- 1:sum(startsWith(parameters, "alpha"))
+
+priors <- list(
+  theta_mu_mean = rep(0, length(parameters)),
+  theta_mu_var = diag(rep(1, length(parameters)))
+)
+# Set alpha values to be mu 1, sigma 2
+priors$theta_mu_mean[mix_counts] <- 1
+diag(priors$theta_mu_var)[mix_counts] <- 2

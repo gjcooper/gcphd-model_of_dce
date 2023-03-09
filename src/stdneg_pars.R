@@ -1,4 +1,4 @@
-acc_rej_drift <- c("v_acc_p", "v_acc_r")
+acc_rej_drift <- c("v_acc_p", "v_acc_r", "v_rej_p", "v_rej_r")
 stim_levels <- c("H", "L", "D")
 
 parameters <- c(
@@ -13,8 +13,7 @@ parameters <- c(
   # t0 - residual time, bounded above by min response time for participant k
   "t0",
   # Drift rates rto accept/reject for different stimulus levels/attributes
-  apply(expand.grid(acc_rej_drift, stim_levels), 1, paste, collapse = "_"),
-  "beta0_p", "beta0_r", "beta1_p", "beta1_r"
+  apply(expand.grid(acc_rej_drift, stim_levels), 1, paste, collapse = "_")
 )
 
 # Mixture counts should always come first
@@ -27,3 +26,6 @@ priors <- list(
 # Set alpha values to be mu 1, sigma 2
 priors$theta_mu_mean[mix_counts] <- 1
 diag(priors$theta_mu_var)[mix_counts] <- 2
+
+start_points <- rnorm(length(parameters), mean = priors$theta_mu_mean, sd = diag(priors$theta_mu_var))
+start_points[startsWith(parameters, "v")] <- 1

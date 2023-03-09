@@ -76,19 +76,9 @@ if (vars$method %in% c("test", "model")) {
   }
 }
 
-#Get the parameters from a separate file
+# Get the parameters from a separate file, also sets priors object, start points
+# mix_counts, ...
 source(here::here("src", paste0(vars$model, "_pars.R")))
-
-# Mixture counts should always come first
-mix_counts <- 1:sum(startsWith(parameters, "alpha"))
-
-priors <- list(
-  theta_mu_mean = rep(0, length(parameters)),
-  theta_mu_var = diag(rep(1, length(parameters)))
-)
-# Set alpha values to be mu 1, sigma 2
-priors$theta_mu_mean[mix_counts] <- 1
-diag(priors$theta_mu_var)[mix_counts] <- 2
 
 # Create the Particle Metropolis within Gibbs sampler object ------------------
 dirichlet_func <- partial(dirichlet_mix_ll,

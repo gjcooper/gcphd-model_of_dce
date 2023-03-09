@@ -15,3 +15,14 @@ parameters <- c(
   # Drift rates rto accept/reject for different stimulus levels/attributes
   apply(expand.grid(acc_rej_drift, stim_levels), 1, paste, collapse = "_")
 )
+
+# Mixture counts should always come first
+mix_counts <- 1:sum(startsWith(parameters, "alpha"))
+
+priors <- list(
+  theta_mu_mean = rep(0, length(parameters)),
+  theta_mu_var = diag(rep(1, length(parameters)))
+)
+# Set alpha values to be mu 1, sigma 2
+priors$theta_mu_mean[mix_counts] <- 1
+diag(priors$theta_mu_var)[mix_counts] <- 2
