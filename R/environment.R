@@ -11,7 +11,7 @@ known_vars <- c("MCCE_EST_EXP", "VDCE_DISPLAY", "NCPUS", "PBS_JOBID",
                 "MCCE_REC_DATA")
 
 known_experiments <- c("NumericVDCE", "SymbolicVDCE", "PrefDCE")
-known_models <- c("std", "reduced", "reduced_more")
+known_models <- c("std", "stdneg", "reduced", "reduced_more")
 known_methods <- c("test", "model", "continue", "recovery")
 
 msg_parts <- c("System Environment Variable",

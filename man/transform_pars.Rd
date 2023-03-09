@@ -27,6 +27,8 @@ Transformations scheme currently allowed are provided below.
 \item std - This is the default, and takes the exponent of all
 parameter values, enforces \strong{b_acc} and \strong{b_rej} being
 greater than \strong{A} by adding \strong{A}
+\item stdneg - This is the full parametrisation version, similar to std
+however it allows the drift rates to be negative.
 \item reduced - This works similarly to std, except it does not take the
 exponent of drift rates (parameters starting with v). It also calculates
 drift rate parameters for reject accumulators from the accept drift rates
