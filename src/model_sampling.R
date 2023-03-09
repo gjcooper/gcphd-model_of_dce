@@ -7,7 +7,7 @@ sampler <- pmwgs(
 
 cores <- vars$cores
 
-if (!exists(start_points)) {
+if (!exists("start_points")) {
   start_points <- NULL
 }
 sampler <- init(sampler, start_mu = start_points)
