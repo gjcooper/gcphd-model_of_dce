@@ -7,7 +7,10 @@ sampler <- pmwgs(
 
 cores <- vars$cores
 
-sampler <- init(sampler)
+if (!exists(start_points)) {
+  start_points <- NULL
+}
+sampler <- init(sampler, start_mu = start_points)
 
 sampler <- run_stage(sampler, stage = "burn", iter = 2000, particles = 500, n_cores = cores)
 

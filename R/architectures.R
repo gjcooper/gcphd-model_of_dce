@@ -23,19 +23,19 @@
 #'   the provided parameter values
 ll_IST <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
   if (accept) {
-    ll <- (dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
-            (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
-            dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
-            (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1))) *
-          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
-            plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
+    ll <- (dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1, posdrift = FALSE) *
+            (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1, posdrift = FALSE)) +
+            dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1, posdrift = FALSE) *
+            (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1, posdrift = FALSE))) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1, posdrift = FALSE) *
+            plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1, posdrift = FALSE))
   } else {
-    ll <- (dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
-            plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) +
-            dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
-            plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
-          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
-          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
+    ll <- (dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1, posdrift = FALSE) *
+            plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1, posdrift = FALSE) +
+            dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1, posdrift = FALSE) *
+            plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1, posdrift = FALSE)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1, posdrift = FALSE)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1, posdrift = FALSE))
   }
   ll
 }
@@ -49,10 +49,10 @@ ll_IST <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
 #'   responses and RT's.
 rll_IST <- function(data, A, b_acc, b_rej, t0, drifts) {
   for (row in seq_len(nrow(data))) {
-    acc_price <- rlba_norm(1, A, b_acc, t0, drifts$AccPrice[[row]], 1)
-    acc_rating <- rlba_norm(1, A, b_acc, t0, drifts$AccRating[[row]], 1)
-    rej_price <- rlba_norm(1, A, b_rej, t0, drifts$RejPrice[[row]], 1)
-    rej_rating <- rlba_norm(1, A, b_rej, t0, drifts$RejRating[[row]], 1)
+    acc_price <- rlba_norm(1, A, b_acc, t0, drifts$AccPrice[[row]], 1, posdrift = FALSE)
+    acc_rating <- rlba_norm(1, A, b_acc, t0, drifts$AccRating[[row]], 1, posdrift = FALSE)
+    rej_price <- rlba_norm(1, A, b_rej, t0, drifts$RejPrice[[row]], 1, posdrift = FALSE)
+    rej_rating <- rlba_norm(1, A, b_rej, t0, drifts$RejRating[[row]], 1, posdrift = FALSE)
     minacc <- min(acc_price[, "rt"], acc_rating[, "rt"])
     maxrej <- max(rej_price[, "rt"], rej_rating[, "rt"])
     if (minacc < maxrej) {
@@ -75,19 +75,19 @@ rll_IST <- function(data, A, b_acc, b_rej, t0, drifts) {
 #'   the provided parameter values
 ll_IEX <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
   if (accept) {
-    ll <- (dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
-          plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
-          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
-          plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
-          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
-          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
+    ll <- (dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1, posdrift = FALSE) *
+          plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1, posdrift = FALSE) +
+          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1, posdrift = FALSE) *
+          plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1, posdrift = FALSE)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1, posdrift = FALSE)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1, posdrift = FALSE))
   } else {
-    ll <- (dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
-          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
-          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
-          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1))) *
-          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
-        plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
+    ll <- (dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1, posdrift = FALSE) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1, posdrift = FALSE)) +
+          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1, posdrift = FALSE) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1, posdrift = FALSE))) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1, posdrift = FALSE) *
+        plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1, posdrift = FALSE))
   }
   ll
 }
@@ -100,10 +100,10 @@ ll_IEX <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
 #'   responses and RT's.
 rll_IEX <- function(data, A, b_acc, b_rej, t0, drifts) {
   for (row in seq_len(nrow(data))) {
-    acc_price <- rlba_norm(1, A, b_acc, t0, drifts$AccPrice[[row]], 1)
-    acc_rating <- rlba_norm(1, A, b_acc, t0, drifts$AccRating[[row]], 1)
-    rej_price <- rlba_norm(1, A, b_rej, t0, drifts$RejPrice[[row]], 1)
-    rej_rating <- rlba_norm(1, A, b_rej, t0, drifts$RejRating[[row]], 1)
+    acc_price <- rlba_norm(1, A, b_acc, t0, drifts$AccPrice[[row]], 1, posdrift = FALSE)
+    acc_rating <- rlba_norm(1, A, b_acc, t0, drifts$AccRating[[row]], 1, posdrift = FALSE)
+    rej_price <- rlba_norm(1, A, b_rej, t0, drifts$RejPrice[[row]], 1, posdrift = FALSE)
+    rej_rating <- rlba_norm(1, A, b_rej, t0, drifts$RejRating[[row]], 1, posdrift = FALSE)
     maxacc <- max(acc_price[, "rt"], acc_rating[, "rt"])
     minrej <- min(rej_price[, "rt"], rej_rating[, "rt"])
     if (maxacc < minrej) {
@@ -126,23 +126,23 @@ rll_IEX <- function(data, A, b_acc, b_rej, t0, drifts) {
 #'   the provided parameter values
 ll_FPP <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
   if (accept) {
-    ll <- dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
-          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) *
-          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
-          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) +
-          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
-          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
-          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
-          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
+    ll <- dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1, posdrift = FALSE) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1, posdrift = FALSE)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1, posdrift = FALSE)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1, posdrift = FALSE)) +
+          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1, posdrift = FALSE) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1, posdrift = FALSE)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1, posdrift = FALSE)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1, posdrift = FALSE))
   } else {
-    ll <- dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
-          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1)) *
-          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
-          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1)) +
-          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
-          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
-          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
-          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
+    ll <- dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1, posdrift = FALSE) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1, posdrift = FALSE)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1, posdrift = FALSE)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1, posdrift = FALSE)) +
+          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1, posdrift = FALSE) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1, posdrift = FALSE)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1, posdrift = FALSE)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1, posdrift = FALSE))
   }
   ll
 }
@@ -155,10 +155,10 @@ ll_FPP <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
 #'   responses and RT's.
 rll_FPP <- function(data, A, b_acc, b_rej, t0, drifts) {
   for (row in seq_len(nrow(data))) {
-    acc_price <- rlba_norm(1, A, b_acc, t0, drifts$AccPrice[[row]], 1)
-    acc_rating <- rlba_norm(1, A, b_acc, t0, drifts$AccRating[[row]], 1)
-    rej_price <- rlba_norm(1, A, b_rej, t0, drifts$RejPrice[[row]], 1)
-    rej_rating <- rlba_norm(1, A, b_rej, t0, drifts$RejRating[[row]], 1)
+    acc_price <- rlba_norm(1, A, b_acc, t0, drifts$AccPrice[[row]], 1, posdrift = FALSE)
+    acc_rating <- rlba_norm(1, A, b_acc, t0, drifts$AccRating[[row]], 1, posdrift = FALSE)
+    rej_price <- rlba_norm(1, A, b_rej, t0, drifts$RejPrice[[row]], 1, posdrift = FALSE)
+    rej_rating <- rlba_norm(1, A, b_rej, t0, drifts$RejRating[[row]], 1, posdrift = FALSE)
     minacc <- min(acc_price[, "rt"], acc_rating[, "rt"])
     minrej <- min(rej_price[, "rt"], rej_rating[, "rt"])
     if (minacc < minrej) {
@@ -184,19 +184,19 @@ rll_FPP <- function(data, A, b_acc, b_rej, t0, drifts) {
 #'   the provided parameter values
 ll_MW <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
   if (accept) {
-    ll <- (dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
-          plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) +
-          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1) *
-          plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1)) *
-          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
-          plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1))
+    ll <- (dlba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1, posdrift = FALSE) *
+          plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1, posdrift = FALSE) +
+          dlba_norm(rt, A, b_acc, t0, drifts$AccRating, 1, posdrift = FALSE) *
+          plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1, posdrift = FALSE)) *
+          (1 - plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1, posdrift = FALSE) *
+          plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1, posdrift = FALSE))
   } else {
-    ll <- (dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1) *
-          plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) +
-          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1) *
-          plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1)) *
-          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1) *
-          plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1))
+    ll <- (dlba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1, posdrift = FALSE) *
+          plba_norm(rt, A, b_rej, t0, drifts$RejRating, 1, posdrift = FALSE) +
+          dlba_norm(rt, A, b_rej, t0, drifts$RejRating, 1, posdrift = FALSE) *
+          plba_norm(rt, A, b_rej, t0, drifts$RejPrice, 1, posdrift = FALSE)) *
+          (1 - plba_norm(rt, A, b_acc, t0, drifts$AccPrice, 1, posdrift = FALSE) *
+          plba_norm(rt, A, b_acc, t0, drifts$AccRating, 1, posdrift = FALSE))
   }
   ll
 }
@@ -209,10 +209,10 @@ ll_MW <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
 #'   responses and RT's.
 rll_MW <- function(data, A, b_acc, b_rej, t0, drifts) {
   for (row in seq_len(nrow(data))) {
-    acc_price <- rlba_norm(1, A, b_acc, t0, drifts$AccPrice[[row]], 1)
-    acc_rating <- rlba_norm(1, A, b_acc, t0, drifts$AccRating[[row]], 1)
-    rej_price <- rlba_norm(1, A, b_rej, t0, drifts$RejPrice[[row]], 1)
-    rej_rating <- rlba_norm(1, A, b_rej, t0, drifts$RejRating[[row]], 1)
+    acc_price <- rlba_norm(1, A, b_acc, t0, drifts$AccPrice[[row]], 1, posdrift = FALSE)
+    acc_rating <- rlba_norm(1, A, b_acc, t0, drifts$AccRating[[row]], 1, posdrift = FALSE)
+    rej_price <- rlba_norm(1, A, b_rej, t0, drifts$RejPrice[[row]], 1, posdrift = FALSE)
+    rej_rating <- rlba_norm(1, A, b_rej, t0, drifts$RejRating[[row]], 1, posdrift = FALSE)
     maxacc <- max(acc_price[, "rt"], acc_rating[, "rt"])
     maxrej <- max(rej_price[, "rt"], rej_rating[, "rt"])
     if (maxacc < maxrej) {
@@ -237,11 +237,11 @@ ll_CB <- function(rt, A, b_acc, b_rej, t0, drifts, accept) { # nolint
   acc_co_drifts <- drifts$AccPrice + drifts$AccRating
   rej_co_drifts <- drifts$RejPrice + drifts$RejRating
   if (accept) {
-    ll <- dlba_norm(rt, 2 * A, 2 * b_acc, t0, acc_co_drifts, sqrt(2)) * # nolint
-      (1 - plba_norm(rt, 2 * A, 2 * b_rej, t0, rej_co_drifts, sqrt(2))) # nolint
+    ll <- dlba_norm(rt, 2 * A, 2 * b_acc, t0, acc_co_drifts, sqrt(2), posdrift = FALSE) * # nolint
+      (1 - plba_norm(rt, 2 * A, 2 * b_rej, t0, rej_co_drifts, sqrt(2), posdrift = FALSE)) # nolint
   } else {
-    ll <- dlba_norm(rt, 2 * A, 2 * b_rej, t0, rej_co_drifts, sqrt(2)) * # nolint
-      (1 - plba_norm(rt, 2 * A, 2 * b_acc, t0, acc_co_drifts, sqrt(2))) # nolint
+    ll <- dlba_norm(rt, 2 * A, 2 * b_rej, t0, rej_co_drifts, sqrt(2), posdrift = FALSE) * # nolint
+      (1 - plba_norm(rt, 2 * A, 2 * b_acc, t0, acc_co_drifts, sqrt(2), posdrift = FALSE)) # nolint
   }
   ll
 }
@@ -256,8 +256,8 @@ rll_CB <- function(data, A, b_acc, b_rej, t0, drifts) {
   acc_co_drifts <- drifts$AccPrice + drifts$AccRating
   rej_co_drifts <- drifts$RejPrice + drifts$RejRating
   for (row in seq_len(nrow(data))) {
-    acc_coactive <- rlba_norm(1, 2*A, 2*b_acc, t0, acc_co_drifts[[row]], sqrt(2))
-    rej_coactive <- rlba_norm(1, 2*A, 2*b_rej, t0, rej_co_drifts[[row]], sqrt(2))
+    acc_coactive <- rlba_norm(1, 2*A, 2*b_acc, t0, acc_co_drifts[[row]], sqrt(2), posdrift = FALSE)
+    rej_coactive <- rlba_norm(1, 2*A, 2*b_rej, t0, rej_co_drifts[[row]], sqrt(2), posdrift = FALSE)
     acc_coactive_time <- acc_coactive[,"rt"]
     rej_coactive_time <- rej_coactive[,"rt"]
     if (acc_coactive_time < rej_coactive_time) {

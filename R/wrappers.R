@@ -235,6 +235,8 @@ simple_model_wrapper <- function(rt, A, b_acc, b_rej, t0, drifts, accept, model)
 #'   \item std - This is the default, and takes the exponent of all
 #'     parameter values, enforces \strong{b_acc} and \strong{b_rej} being
 #'     greater than \strong{A} by adding \strong{A}
+#'   \item stdneg - This is the full parametrisation version, similar to std
+#'     however it allows the drift rates to be negative.
 #'   \item reduced - This works similarly to std, except it does not take the
 #'     exponent of drift rates (parameters starting with v). It also calculates
 #'     drift rate parameters for reject accumulators from the accept drift rates
@@ -252,6 +254,10 @@ simple_model_wrapper <- function(rt, A, b_acc, b_rej, t0, drifts, accept, model)
 transform_pars <- function(pars, tforms = "std") {
   if (tforms == "std") {
     newpars <- exp(pars)
+  } else if (tforms == "stdneg") {
+    force_pos_mask <- !startsWith(names(pars), "v")
+    newpars <- pars
+    newpars[force_pos_mask] <- exp(newpars[force_pos_mask])
   } else if (startsWith(tforms, "reduced")) {
     force_pos_mask <- !startsWith(names(pars), "v")
     newpars <- pars
