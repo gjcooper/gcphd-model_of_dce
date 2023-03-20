@@ -308,4 +308,21 @@ pref_data <- final_sft %>%
     v_rej_r = paste0("v_rej_r_", rating)
   )
 
+# Note: Of the final participants, 8 ran out of time before the task finished
+
+# For Guy's categorisation modelling?
+
+final_sft %>%
+  mutate(rt = as.numeric(rt) / 1000,
+         subject = as.factor(sonaID),
+         accept = as.logical(accept),
+         price = round(as.numeric(price), 2),
+         rating = round(as.numeric(rating), 2)) %>%
+  separate(cell_name, into = c("price_lvl", "rating_lvl"), sep = 1) %>%
+  relocate(subject, rt, accept, price, rating) %>%
+  mutate(price_lvl = factor(price_lvl, levels = c("H", "L", "D")),
+         rating_lvl = factor(rating_lvl, levels = c("H", "L", "D"))) %>%
+  select(-c(sonaID, error, price_threshold, rating_threshold, key_press)) %>%
+  saveRDS(file = here::here("data", "output", "Gavins_PrefData_for_Guy.RDS"))
+
 saveRDS(pref_data, file = here::here("data", "output", "Pref_preprocessed.RDS"))
