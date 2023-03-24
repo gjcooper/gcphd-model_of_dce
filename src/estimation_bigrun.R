@@ -4,6 +4,7 @@ library(patchwork)
 library(pmwg)
 library(watercolours)
 
+# original bigrun
 filenames <- list.files(
   here::here("data", "output", "bigrun"),
   pattern = ".RData",
@@ -22,10 +23,9 @@ tmus <- sapply(names(samplers), function(x) {
                  y <- samplers[[x]]
                  y %>%
                    extract_tmu %>%
-                   mutate(stage = y$samples$stage) %>%
-                   pivot_longer(cols = -c(sampleid, stage),
+                   pivot_longer(cols = -c(sampleid, stageid),
                                 names_to = "par") %>%
-                   rename_with(.cols = c(stage, value),
+                   rename_with(.cols = c(stageid, value),
                                .fn = function(z) {
                                  paste0(z, ".", x)
                                 })},
@@ -35,7 +35,7 @@ tmus <- sapply(names(samplers), function(x) {
                names_to = c(".value", "run"),
                names_pattern = "(.*).run(.*)") %>%
   mutate(run = factor(run),
-         stage = factor(stage, levels = c("sample", "burn", "init", "adapt")))
+         stageid = factor(stageid, levels = c("sample", "burn", "init", "adapt")))
 
 while ((menu_choice <- do.call(menu, menu_args)) != 22) {
   par_name <- samplers[[1]]$par_names[menu_choice]
@@ -44,11 +44,11 @@ while ((menu_choice <- do.call(menu, menu_args)) != 22) {
     filter(par == par_name)
 
   transitions <- par_samples %>%
-    filter(stage != lag(stage)) %>%
+    filter(stageid != lag(stageid)) %>%
     select(sampleid)
 
   g <- par_samples %>%
-    ggplot(aes(x = sampleid, y = value, colour = run, linetype = stage)) +
+    ggplot(aes(x = sampleid, y = value, colour = run, linetype = stageid)) +
     geom_line() +
     scale_colour_watercolour() +
     labs(title = paste("Parameter:", par_name)) +
@@ -92,7 +92,7 @@ cor_df %>%
   ggtitle("Differences between each runs correlation to mean of all runs correlation")
 
 tmus %>%
-  filter(str_detect(par, "^alpha"), stage == "sample") %>%
+  filter(str_detect(par, "^alpha"), stageid == "sample") %>%
   group_by(par, run) %>%
   summarise(median_val = median(value)) %>%
   pivot_wider(names_from=par, values_from=median_val)
