@@ -12,7 +12,7 @@ library(pmwg)
 args <- commandArgs(trailingOnly=TRUE)
 # test if there is at least one argument: if not, return an error
 if (length(args) != 1) {
-    stop("The model estimated data must be selected by name (old, std, reduced, reduced_more) as a passed argument", call.=FALSE)
+    stop("The model estimated data must be selected by name (old, std, reduced, reduced_more, perf1) as a passed argument", call.=FALSE)
 }
 model_run <- args[1]
 
@@ -31,6 +31,9 @@ if (model_run == "std") {
   # Older
   pref_file <- here::here("data", "output", "PrefDCE_2506730.rcgbcm_Estimation5Model.RData")
   obj_name <- "sampled"
+} else if (model_run == "perf1") {
+  # Standard
+  pref_file <- here::here("data", "output", "EstimationPerformanceMarch", "PrefDCE_dvcljcisdh61vumc_TuffPerformance.RData")
 } else {
   stop("Unknown estimated model selected")
 }
