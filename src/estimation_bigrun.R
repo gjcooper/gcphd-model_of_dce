@@ -3,6 +3,7 @@ library(mcce)
 library(patchwork)
 library(pmwg)
 library(watercolours)
+library(tools)
 
 # original bigrun
 filenames <- list.files(
@@ -10,8 +11,23 @@ filenames <- list.files(
   pattern = ".RData",
   full.names = TRUE
 )
-samplers <- sapply(filenames, get_samples, simplify = FALSE)
-names(samplers) <- substring(names(samplers), 114, 117)
+final_obj <- "sampled"
+
+# 2nd stage performance comparisons
+filenames <- list.files(
+  here::here("data", "output", "EstimationPerformanceMarch"),
+  pattern = ".RData",
+  full.names = TRUE
+)
+final_obj <- "sampler"
+
+
+samplers <- sapply(filenames, get_samples, final_obj = final_obj, simplify = FALSE)
+names(samplers) <- names(samplers) %>%
+  basename %>%
+  file_path_sans_ext %>%
+  strsplit("_") %>%
+  vapply(tail, "", n = 1)
 
 menu_args <- list(
   choices = c(samplers[[1]]$par_names, "Quit"),
@@ -24,16 +40,9 @@ tmus <- sapply(names(samplers), function(x) {
                  y %>%
                    extract_tmu %>%
                    pivot_longer(cols = -c(sampleid, stageid),
-                                names_to = "par") %>%
-                   rename_with(.cols = c(stageid, value),
-                               .fn = function(z) {
-                                 paste0(z, ".", x)
-                                })},
+                                names_to = "par")},
                simplify = FALSE) %>%
-  purrr::reduce(left_join, by = c("sampleid", "par")) %>%
-  pivot_longer(contains("run"),
-               names_to = c(".value", "run"),
-               names_pattern = "(.*).run(.*)") %>%
+  bind_rows(.id = "run") %>%
   mutate(run = factor(run),
          stageid = factor(stageid, levels = c("sample", "burn", "init", "adapt")))
 
@@ -97,10 +106,25 @@ tmus %>%
   summarise(median_val = median(value)) %>%
   pivot_wider(names_from=par, values_from=median_val)
 
+# Dirichlet
+tmus %>%
+  filter(str_detect(par, "^alpha"), stageid == "sample") %>%
+  ggplot(aes(x = par, y = exp(value), colour = run)) +
+  geom_boxplot()
+
+# EvAcc
+tmus %>%
+  filter(!str_detect(par, "^alpha"), stageid == "sample") %>%
+  ggplot(aes(x = par, y = exp(value), colour = run)) +
+  geom_boxplot(outlier.shape = NA) +
+  scale_colour_watercolour(palette="durer") +
+  coord_cartesian(ylim=c(0, 6.1))
+
 pairwise <- list()
-pairwise[["run1 - run2"]] <- cor_matrices[[1]] - cor_matrices[[2]]
-pairwise[["run2 - run3"]] <- cor_matrices[[2]] - cor_matrices[[3]]
-pairwise[["run1 - run3"]] <- cor_matrices[[1]] - cor_matrices[[3]]
+cm_nms <- names(cor_matrices)
+pairwise[[paste(cm_nms[1], "-", cm_nms[2])]] <- cor_matrices[[1]] - cor_matrices[[2]]
+pairwise[[paste(cm_nms[2], "-", cm_nms[3])]] <- cor_matrices[[2]] - cor_matrices[[3]]
+pairwise[[paste(cm_nms[1], "-", cm_nms[3])]] <- cor_matrices[[1]] - cor_matrices[[3]]
 
 pairwise_df <- sapply(names(pairwise), FUN = function(x) {
   pairwise[[x]] %>%
