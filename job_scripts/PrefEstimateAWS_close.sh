@@ -47,3 +47,5 @@ cp estimation*$MCCE_TAG* $outdir
 cp data/output/PrefDCE*$MCCE_TAG* $outdir
 
 sleep 60
+
+sudo shutdown -h now
