@@ -144,7 +144,7 @@ expl_summ <- explicit %>%
   summarise(diff = max(response) - min(response))
 
 drop_subjects <- expl_summ %>%
-  filter(diff > 0.1) %>%
+  filter(diff > 0.05) %>%
   pull(sonaID)
 
 explicit_ok <- long_removed_sft %>%
@@ -164,7 +164,7 @@ impl_summ <- implicit %>%
   summarise(mean = mean(staircase_point), sd = sd(staircase_point))
 
 drop_subjects <- impl_summ %>%
-  filter(sd > 0.025) %>%
+  filter(sd > 0.0125) %>%
     pull(sonaID)
 
 final_sft <- explicit_ok %>%
