@@ -29,6 +29,13 @@ filenames <- list.files(
 )
 final_obj <- "sampler"
 
+filenames <- list.files(
+  here::here("data", "output", "EstimationThresholdMarch2"),
+  pattern = ".RData",
+  full.names = TRUE
+)
+final_obj <- "sampler"
+
 samplers <- sapply(filenames, get_samples, final_obj = final_obj, simplify = FALSE)
 names(samplers) <- names(samplers) %>%
   basename %>%
