@@ -290,6 +290,17 @@ final_sft <- long_removed_sft %>%
 condition_split(final_sft)
 condition_split(long_removed_sft)
 
+n_subj <- final_sft %>% pull(sonaID) %>% unique %>% length
+final_sft %>%
+  mutate(sonaID = factor(sonaID), accept = factor(accept, levels=c("true", "false"), labels=c("accept", "reject"))) %>%
+  group_by(sonaID, cell_name, accept, .drop=FALSE) %>%
+  summarise(counts = n()) %>%
+  ungroup() %>%
+  filter(counts == 0) %>%
+  count(accept, cell_name) %>%
+  mutate(pc_people = n/n_subj) %>%
+  arrange(accept, n)
+
 pref_data <- final_sft %>%
   select(all_of(sft_columns)) %>%
   mutate(rt = as.numeric(rt) / 1000) %>%
