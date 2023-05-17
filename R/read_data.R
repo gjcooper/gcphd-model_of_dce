@@ -72,6 +72,7 @@ read_expyriment_data <- function(folder, filename_pattern) {
 #' @return A list containing each participants data converted from JSON
 #'
 #' @import dplyr
+#' @importFrom forcats fct_recode
 #' @export
 reformat <- function(x) {
   factor_cols <- c("PriceRatingOrder", "ResponseCounterbalancing",
