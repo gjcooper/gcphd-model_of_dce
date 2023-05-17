@@ -55,6 +55,53 @@ read_expyriment_data <- function(folder, filename_pattern) {
 }
 
 
+#' Reformat data from the Expyriment file format to a useful tibble
+#'
+#' Import Exypriment data into R. The function concatinates all data and returns
+#' a R data frame with all subjects. Between subject factors will be added as
+#' variables to the data matrix.
+#'
+#' Copyright: 2012-2015 Florian Krause <siebenhundertzehn@googlemail.com>
+#'            2012-2015 Oliver Lindemann <lindemann09@googlemail.com>
+#' License: GPL-3.0+
+#' Adapted for this package by Gavin Cooper <gavin@gavincooper.net> 2020
+#'
+#' @param folder The data folder (string)
+#' @param filename_pattern The pattern with which the names of each data file
+#'   start (string)
+#' @return A list containing each participants data converted from JSON
+#'
+#' @import dplyr
+#' @export
+reformat <- function(x) {
+  factor_cols <- c("PriceRatingOrder", "ResponseCounterbalancing",
+                   "AcceptRejectFocus", "GreyedItemDisplay")
+  short_codes <- c(H = "High", L = "Low", D = "OutOfBounds")
+  cfix <- function(x, end = 1) {
+    substr(x, 3, nchar(x) - end)
+  }
+
+  x %>%
+    tibble() %>%
+    filter(BlockName != "Practice Block") %>%
+    rename_with(.fn = cfix, .cols = starts_with("b'"), end=2) %>%
+    mutate(across(any_of(factor_cols), .fns = cfix)) %>%
+    mutate(
+      PriceSalience = fct_recode(PriceSalience, !!!short_codes),
+      RatingSalience = fct_recode(RatingSalience, !!!short_codes)
+    ) %>%
+    mutate(Correct = as.logical(Correct)) %>%
+    mutate(trial_cat = case_when(
+      PriceSalience %in% c("H", "L") & RatingSalience %in% c("H", "L") ~ "both",
+      PriceSalience %in% c("H", "L") ~ "psing",
+      RatingSalience %in% c("H", "L")~ "rsing",
+      TRUE ~ "neither"
+    )) %>%
+    mutate(subject_id = factor(subject_id)) %>%
+    mutate(acceptAND = AcceptRejectFocus == "Accept")
+}
+
+
 #' Parses a JATOS datafile line in 2020 Pref SFT format
 #'
 #' For a particular line from a datafile, parse the JSON and return the result.
