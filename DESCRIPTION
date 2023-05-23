@@ -1,6 +1,6 @@
 Package: mcce
 Title: Models of Consumer Choice Experiments
-Version: 0.2.1
+Version: 0.2.2
 Authors@R: 
     person(given = "Gavin",
            family = "Cooper",
@@ -28,6 +28,7 @@ Imports:
     ggplot2,
     here,
     forcats,
-    checkmate
+    checkmate,
+    stringr
 Depends: 
     R (>= 3.5.0)

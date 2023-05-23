@@ -149,10 +149,10 @@ arch_medians <- function(medians) {
   medians %>%
     group_by(subjectid) %>%
     mutate(rel_val = value / sum(value)) %>%
-    mutate(parameter = str_remove(parameter, "alpha_")) %>%
+    mutate(parameter = stringr::str_remove(parameter, "alpha_")) %>%
     mutate(subjectid = case_when(
       subjectid == "theta_mu" ~ "Group",
-      TRUE ~ str_pad(subjectid, 2, pad = "0")
+      TRUE ~ stringr::str_pad(subjectid, 2, pad = "0")
     ))
 }
 
