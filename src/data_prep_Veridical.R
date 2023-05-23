@@ -65,6 +65,14 @@ filtered_by_trial_category <- responded_trials %>%
   group_outer %>%
   filter(min(pc_correct) >= 0.8)
 
+# Matching actual process used in SFT paper
+responded_trials %>%
+  filter(subject_id == 56, RT > 300) %>%
+  filter(RT < quantile(RT, .95)) %>%
+  group_by(trial_cat) %>%
+  summarise(pc_correct = mean(Correct))
+
+
 filtered_by_global_correct <- responded_trials %>%
   group_outer %>%
   filter(mean(Correct) >= 0.8)
