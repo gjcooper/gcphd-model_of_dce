@@ -1,0 +1,122 @@
+---
+title: "Figures for architecture_of_multiattribute_choice paper"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    theme: paper
+    highlight: pygments
+    df_print: kable
+---
+
+
+# Preparation
+
+Before creating our plots we need to load in packages and prepare some convenience functions and themes for plotting.
+
+## Load Packages
+
+I use the tidyverse a lot, so we'll load that all in now, we also need the `BayesFactor` package, and `ggpubr` for combining subplots into larger figures. We'll also tell knitr to create all figures at the full column width.
+
+```{r, message = FALSE}
+library(dplyr)
+#library(forcats)
+library(ggplot2)
+library(patchwork)
+library(watercolours)
+library(mcce)   # devtools::install_github('gjcooper/gcphd-model_of_dce')
+knitr::opts_chunk$set(out.width = "100%")
+```
+
+## Load Data
+
+```{r read_data}
+# Load all the samples
+accept_file <- here::here("data", "output", "NumericVDCE_1878182.rcgbcm_Estimation5Model.RData")
+reject_file <- here::here("data", "output", "NumericVDCE_2117450.rcgbcm_RejectEstimation5Model.RData")
+
+accept_samples <- get_samples(accept_file) %>% extract_parameters
+reject_samples <- get_samples(reject_file) %>% extract_parameters
+
+samples <- list(accept = accept_samples, reject = reject_samples) %>%
+  bind_rows(.id = "condition")
+
+```
+
+## Plot theme
+
+To keep things as consistent as possible we'll create a theme and update the default ggplot theme with it.
+
+```{r}
+txt_base_sz <- 12
+plot_theme <- theme(
+  strip.background = element_blank(),
+  strip.text = element_text(face = "bold", size = txt_base_sz + 2),
+  strip.placement = "outside",
+  legend.title =  element_blank(),
+  legend.position = "bottom",
+  legend.margin = margin(0, 0, 0, 0, "cm"),
+  axis.text = element_text(face = "bold", size = txt_base_sz - 2),
+  axis.title = element_text(face = "bold", size = txt_base_sz + 2),
+  plot.margin = margin(l = 2, r = 2, t = 2),
+  plot.title = element_text(face = "bold", size = txt_base_sz + 2, hjust = 0.5),
+)
+
+bigger_text <- theme(
+  axis.title = element_text(size = txt_base_sz + 4),
+  strip.text = element_text(face = "bold", size = txt_base_sz + 4),
+  plot.title = element_text(face = "bold", size = txt_base_sz + 4))
+
+
+theme_set(theme_grey() + plot_theme)
+```
+
+## Selective Influence test
+
+
+```{r}
+model_medians <- samples %>%
+  filter(startsWith(parameter, "alpha_"), stageid == "sample") %>%
+  mutate(value = exp(value)) %>%
+  group_by(subjectid, parameter) %>%
+  summarise(value = median(value), condition = first(condition)) %>%
+  arch_medians
+
+Par_order <- c("IST", "CB", "FPP", "MW", "IEX")
+
+acc_plot <- model_medians %>%
+  filter(condition == "accept") %>%
+  mutate(parameter = factor(parameter, Par_order)) %>%
+  arch_plot +
+  scale_fill_watercolour(palette = "durer") +
+  theme(legend.position = "none") +
+  labs(title = "Accept condition")
+
+rej_plot <- model_medians %>%
+  filter(condition == "reject") %>%
+  mutate(parameter = factor(parameter, Par_order)) %>%
+  arch_plot +
+  scale_fill_watercolour(palette = "durer") +
+  theme(legend.position = "right",
+        legend.key.size = unit(2, "cm")) +
+  labs(title = "Reject condition")
+
+layout <- "
+AAAAAAAAA
+BBBB##CC#
+"
+acc_plot + rej_plot + guide_area() +
+  plot_layout(design = layout, guides = "collect")
+
+ggsave(
+  filename = here::here(
+    "results",
+    "arch_mac_figures",
+    "salience_manipulation.png"),
+  dpi = 300,
+  width = 45,
+  height = 30,
+  units = "cm"
+)
+```
