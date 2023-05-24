@@ -145,9 +145,9 @@ get_summary <- function(pars, tform = base::identity, sfunc = stats::median) {
 #'
 #' @return A tibble augmented ready for plotting
 #' @export
-arch_medians <- function(medians) {
+arch_medians <- function(medians, grouping_vars = c("subjectid")) {
   medians %>%
-    group_by(subjectid) %>%
+    group_by(across(all_of(grouping_vars))) %>%
     mutate(rel_val = value / sum(value)) %>%
     mutate(parameter = stringr::str_remove(parameter, "alpha_")) %>%
     mutate(subjectid = case_when(
