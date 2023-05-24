@@ -1,6 +1,6 @@
 Package: mcce
 Title: Models of Consumer Choice Experiments
-Version: 0.2.2
+Version: 0.2.3
 Authors@R: 
     person(given = "Gavin",
            family = "Cooper",
