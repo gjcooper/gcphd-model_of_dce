@@ -11,7 +11,7 @@ output:
 ---
 
 
-# Preparation
+# Veridical Numeric Task
 
 Before creating our plots we need to load in packages and prepare some convenience functions and themes for plotting.
 
@@ -23,6 +23,8 @@ I use the tidyverse a lot, so we'll load that all in now, we also need the `Baye
 library(dplyr)
 #library(forcats)
 library(ggplot2)
+library(ggh4x)
+library(stringr)
 library(patchwork)
 library(watercolours)
 library(mcce)   # devtools::install_github('gjcooper/gcphd-model_of_dce')
@@ -69,11 +71,10 @@ bigger_text <- theme(
   plot.title = element_text(face = "bold", size = txt_base_sz + 4))
 
 
-theme_set(theme_grey() + plot_theme)
+theme_set(theme_classic() + plot_theme)
 ```
 
 ## Selective Influence test
-
 
 ```{r}
 model_medians <- samples %>%
@@ -117,6 +118,402 @@ ggsave(
   dpi = 300,
   width = 45,
   height = 30,
+  units = "cm"
+)
+```
+
+## Parameter values for Veridical task
+
+```{r}
+par_medians <- samples %>%
+  filter(!startsWith(parameter, "alpha_"), stageid == "sample") %>%
+  mutate(value = exp(value)) %>%
+  group_by(subjectid, parameter) %>%
+  summarise(value = median(value), condition = first(condition))
+
+par_colours <- c("t0" = "grey",
+                 "A" = "grey", "b_acc" = "#73842E", "b_rej" = "#D0781C",
+                 "v_acc_p_H" = "#569F72", "v_acc_p_L" = "#407755", "v_acc_p_D" = "#2B5039",
+                 "v_rej_p_H" = "#F29F40", "v_rej_p_L" = "#EF8C1A", "v_rej_p_D" = "#BF6C0D",
+                 "v_acc_r_H" = "#85C0FF", "v_acc_r_L" = "#47A0FF", "v_acc_r_D" = "#0A81FF",
+                 "v_rej_r_H" = "#BBA9A0", "v_rej_r_L" = "#A2887C", "v_rej_r_D" = "#83685D")
+
+par_medians %>%
+  mutate(colour = par_colours[parameter]) %>%
+  ggplot(aes(x = parameter, y = value, fill = colour)) +
+  scale_colour_watercolour(palette = "durer") +
+  scale_fill_identity() +
+  geom_boxplot() +
+  coord_flip() +
+  facet_wrap(~ condition)
+
+ggsave(
+  filename = here::here(
+    "results",
+    "arch_mac_figures",
+    "vnumeric_pars.png"),
+  dpi = 300,
+  width = 45,
+  height = 30,
+  units = "cm"
+)
+```
+
+# Simulation
+
+## Prep for data reads and get original data
+
+```{r}
+# Load all the samples
+data_location <- here::here("data", "output", "VeridicalRecovery")
+odata <- "NumericVDCE_1878182.rcgbcm_Estimation5Model.RData"
+
+recovery_files <- list.files(data_location, pattern = ".RData")
+recovery_data_files <- list.files(data_location, pattern = ".RDS")
+
+original_samples <- get_samples(here::here("data", "output", odata))
+```
+
+## Read in generated data
+
+```{r}
+recovery_data <- lapply(recovery_data_files, function(x) {
+  print(paste("Reading data", x))
+  readRDS(here::here(data_location, x))
+})
+names(recovery_data) <- sapply(strsplit(recovery_data_files, "_"), "[[", 2)
+
+recovery_data[["Original"]] <- original_samples$data %>%
+  mutate(generator = "participant")
+recovery_data <- bind_rows(recovery_data, .id = "source")
+```
+
+## Data plots
+
+### Plot 1
+
+```{r}
+recovery_data %>%
+  filter(rt < 10) %>%
+  mutate(accept = factor(accept, labels = c("Reject", "Accept"))) %>%
+  ggplot(aes(x = source, y = rt, colour = generator)) +
+  geom_boxplot() +
+  facet_wrap(~ accept) +
+  scale_colour_watercolour(palette = "durer")
+
+```
+
+### Plot 2
+
+```{r}
+recovery_data %>%
+  filter(rt < 5) %>%
+  mutate(simulated = ifelse(source == "Original", "No", "Yes")) %>%
+  mutate(cell=paste0(price, rating)) %>%
+  ggplot(aes(x = rt, colour = source, linetype=simulated)) +
+  geom_density(linewidth=0.7) +
+  scale_colour_watercolour(palette = "durer") +
+  facet_wrap(~ cell)
+```
+
+
+## Read in the samples
+
+```{r}
+samples <- lapply(recovery_files, function(x) {
+  print(paste("Extracting", x))
+  get_samples(here::here(data_location, x)) %>%
+    extract_parameters
+})
+names(samples) <- sapply(strsplit(recovery_files, "_"), "[[", 2)
+
+samples[["Original"]] <- original_samples %>% extract_parameters
+
+samples <- bind_rows(samples, .id = "source")
+rm(original_samples)
+
+```
+
+## Get Architecture Medians
+
+```{r}
+model_medians <- samples %>%
+  filter(startsWith(parameter, "alpha_"), stageid == "sample") %>%
+  mutate(value = exp(value)) %>%
+  group_by(source, subjectid, parameter) %>%
+  summarise(value = median(value)) %>%
+  arch_medians(grouping_vars = c("source", "subjectid"))
+```
+
+## Get subject order for plot
+
+```{r}
+subject_order <- model_medians %>%
+  filter(subjectid != "Group") %>%
+  group_by(subjectid, source) %>%
+  summarise(maxRel = max(rel_val)) %>%
+  group_by(subjectid) %>%
+  summarise(meanMax = mean(maxRel)) %>%
+  arrange(desc(meanMax)) %>%
+  pull(subjectid)
+```
+
+## Get parameter order
+
+```{r}
+Par_order <- model_medians %>%
+  filter(source == "Original") %>%
+  group_by(parameter) %>%
+  summarise(median_val = median(rel_val)) %>%
+  arrange(median_val) %>%
+  pull(parameter)
+```
+
+## Architecture recovery
+
+```{r}
+subject_recovery <- model_medians %>%
+  filter(source != "Original") %>%
+  filter(subjectid != "Group") %>%
+  mutate(subjectid = factor(subjectid, subject_order)) %>%
+  mutate(parameter = factor(parameter, Par_order)) %>%
+  mutate(source = factor(source, Par_order)) %>%
+  ggplot(aes(x = subjectid, y = rel_val, fill = parameter)) +
+    geom_col() +
+    labs(y = "Relative Evidence") +
+    scale_fill_watercolour(palette = "durer") +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          strip.background = element_blank(),
+          strip.text.y = element_blank()) +
+    facet_grid(rows = vars(source)) +
+    scale_y_continuous(labels = NULL, breaks = NULL) +
+    ggtitle("Indidividual Subjects")
+
+group_recovery <- model_medians %>%
+  filter(source != "Original") %>%
+  filter(subjectid == "Group") %>%
+  mutate(subjectid = factor(subjectid, subject_order)) %>%
+  mutate(parameter = factor(parameter, Par_order)) %>%
+  mutate(source = factor(source, Par_order)) %>%
+  ggplot(aes(x = subjectid, y = rel_val, fill = parameter)) +
+    geom_col() +
+    scale_fill_watercolour(palette = "durer") +
+    theme(axis.title = element_blank(),
+          axis.text.x = element_blank(),
+          axis.ticks.x = element_blank()) +
+    facet_grid(rows = vars(source)) +
+    scale_y_continuous(labels = NULL, breaks = NULL) +
+    ggtitle("Group Level")
+
+subject_recovery + group_recovery +
+  plot_layout(widths = c(6, 1), guides = "collect") +
+  plot_annotation(
+    title = "Relative Evidence for each of the 5 architectures",
+    subtitle = "Each row corresponds to the generating architecture",
+    caption = "The area of each stacked bar is the relative proportion of each of the five possible modelled architectures as their dirichlet process"
+    )
+
+ggsave(
+  filename = here::here(
+    "results",
+    "arch_mac_figures",
+    "simulation_recovery.png"),
+  dpi = 300,
+  width = 45,
+  height = 30,
+  units = "cm"
+)
+```
+
+## Parameter Recovery
+
+```{r}
+par_medians <- samples %>%
+  filter(!startsWith(parameter, "alpha_")) %>%
+  group_by(source, subjectid, parameter) %>%
+  summarise(value = median(value))
+
+recovery <- par_medians %>% filter(source != "Original")
+original <- par_medians %>% filter(source == "Original")
+
+model_order <- c("CB", "FPP", "MW", "IST", "IEX", "Original")
+
+combined <- recovery %>%
+  left_join(original, by = c("parameter", "subjectid")) %>%
+  select(-source.y) %>%
+  rename(
+    recovered_value = value.x,
+    estimated_value = value.y,
+    recovery_model = source.x
+  ) %>%
+  mutate(recovery_model = factor(recovery_model, levels = model_order[-6])) %>%
+  mutate(subjectid = case_when(
+    subjectid == "theta_mu" ~ "Group",
+    TRUE ~ str_pad(subjectid, 2, pad = "0")
+  ))
+
+scatter_caption <- str_wrap(paste(
+  "The data generating values are the medians of the posterior for the full",
+  "model estimated with the dirichlet process. The generation process uses the",
+  "random sample function from only one of the 5 models.",
+  "The recovered values are again the medians of the posterior for the full",
+  "model (again with the dirichlet process)."
+), 100)
+
+pt_col <- watercolour$durer$discrete["shadow"]
+
+parplot <- function(subset) {
+  subset %>%
+  ggplot(aes(x = estimated_value, y = recovered_value)) +
+  geom_point(size = 0.5, colour = pt_col) +
+  geom_abline(intercept = 0, slope = 1) +
+  facet_grid2(rows = vars(parameter),
+              cols = vars(recovery_model),
+              scales = "free",
+              independent = "x") +
+  labs(
+    x = "Generating Value",
+    y = "Recovered Value",
+    caption = scatter_caption
+  )
+}
+
+combined %>%
+  filter(parameter %in% c("A", "t0", "b_acc", "b_rej")) %>%
+  parplot()
+
+ggsave(
+  filename = here::here(
+    "results",
+    "arch_mac_figures",
+    "parameter_recovery_other.png"),
+  dpi = 300,
+  width = 45,
+  height = 30,
+  units = "cm"
+)
+
+```
+
+### Accept drift rates
+
+```{r}
+combined %>%
+  filter(startsWith(parameter, "v_acc")) %>%
+  parplot
+
+ggsave(
+  filename = here::here(
+    "results",
+    "arch_mac_figures",
+    "parameter_recovery_drift_acc.png"),
+  dpi = 300,
+  width = 45,
+  height = 30,
+  units = "cm"
+)
+```
+
+### Reject drift rates
+
+```{r}
+combined %>%
+  filter(startsWith(parameter, "v_rej")) %>%
+  parplot
+
+ggsave(
+  filename = here::here(
+    "results",
+    "arch_mac_figures",
+    "parameter_recovery_drift_rej.png"),
+  dpi = 300,
+  width = 45,
+  height = 30,
+  units = "cm"
+)
+```
+
+# Architecture Explainer
+
+```{r}
+model_order <- model_order[c(4, 2, 3, 5, 1)]
+
+one_acc_plot <- function(col = "darkgreen", end = c(0.8, 0.8), width = 2) {
+  ggplot(data.frame(x = seq(0, 1, 0.1), y = seq(0, 1, 0.1)),
+         aes(x = x, y = y)) +
+  geom_blank() +
+  geom_hline(yintercept = 0.9, linetype = 2) +
+  geom_segment(
+    x = 0, y = 0,
+    xend = end[1], yend = end[2],
+    lineend = "round", # See available arrow types in example above
+    linejoin = "mitre",
+    linetype = 1,
+    size = width,
+    arrow = arrow(length = unit(0.3, "inches")),
+    colour = col # Also accepts "red", "blue' etc
+  ) +
+  theme(
+    axis.line = element_line(linewidth=2),
+    axis.title = element_blank(),
+    axis.text = element_blank()
+  ) +
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 1)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1))
+}
+```
+
+### All together
+
+```{r}
+layout <- "
+##BB#####
+AABB#DDEE
+AACC#DDEE
+##CC#####
+#########
+FFHH#JJ##
+FFHH#JJLL
+GGII#KKLL
+GGII#KK##
+#########
+MMMM#NNNN
+MMMM#NNNN
+MMMM#NNNN
+MMMM#NNNN
+"
+
+# IST
+one_acc_plot(end = c(0.6, 0.9)) +
+  one_acc_plot("darkred", end = c(0.95, 0.6)) +
+  one_acc_plot("darkred", end = c(0.95, 0.8)) +
+# FPP
+  one_acc_plot(end = c(0.6, 0.9)) +
+  one_acc_plot("darkred", end = c(0.95, 0.8)) +
+# MW
+  one_acc_plot(end = c(0.6, 0.9)) +
+  one_acc_plot(end = c(0.8, 0.9)) +
+  one_acc_plot("darkred", end = c(0.95, 0.6)) +
+  one_acc_plot("darkred", end = c(0.95, 0.8)) +
+# IEX
+  one_acc_plot(end = c(0.6, 0.9)) +
+  one_acc_plot(end = c(0.8, 0.9)) +
+  one_acc_plot("darkred", end = c(0.95, 0.6)) +
+# CB
+  one_acc_plot(end = c(0.7, 0.9), width = 4) +
+  one_acc_plot("darkred", end = c(0.95, 0.6), width = 4) +
+  plot_layout(design = layout)
+
+ggsave(
+  filename = here::here(
+    "results",
+    "arch_mac_figures",
+    "accumulators_diagram.png"),
+  dpi = 300,
+  width = 40,
+  height = 60,
   units = "cm"
 )
 ```
