@@ -1,11 +1,14 @@
 library(mcce)
+library(broom)
+library(purrr)
 library(dplyr)
+library(tidyr)
 library(ggplot2)
 library(stringr)
 library(watercolours)
 library(patchwork)
 
-task <- "Preferential" ## Other option, something like Preferential
+task <- "Veridical" ## Other option, something like Preferential
 
 if (task == "Veridical") {
   # Load all the samples
@@ -242,3 +245,35 @@ for (model in model_order[-6]) {
     units = "in"
   )
 }
+
+lm_res <- combined %>%
+  group_by(recovery_model, parameter) %>%
+  nest() %>%
+  mutate(fit = map(data, ~ lm(recovered_value ~ estimated_value, data = .x)),
+         tidy = map(fit, tidy)) %>%
+  unnest(tidy) %>%
+  select(-c(data, fit, statistic, p.value)) %>%
+  mutate(term = if_else(term == "(Intercept)", "Intercept", "Slope")) %>%
+  print
+
+ref_lines = tibble(term = c("Intercept", "Slope"), pos = c(0, 1))
+
+lm_res %>%
+  ggplot(aes(x = parameter, y = estimate, colour = term)) +
+  geom_point(size = 2) +
+  geom_linerange(aes(ymin = estimate - std.error, ymax = estimate + std.error)) +
+  geom_hline(data = ref_lines, mapping = aes(yintercept = pos, colour = term)) +
+  theme(axis.text.x = element_text(angle=45, hjust=1)) +
+  facet_wrap(~ recovery_model)
+
+ggsave(
+  filename = here::here(
+    "results",
+    task,
+    paste0("ParRecovery_lm_", Sys.Date(), ".png")
+  ),
+  dpi = 200,
+  width = 14.1,
+  height = 7.53,
+  units = "in"
+)
