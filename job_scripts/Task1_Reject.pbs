@@ -4,12 +4,12 @@
 #PBS -k oe
 
 # Setup email notifications when the job is aborted(a), begins (b) or ends (e)
-#PBS -M gavin@gavincooper.net
+#PBS -M Gavin.Cooper@uon.edu.au
 #PBS -m abe
 
 
 source /etc/profile.d/modules.sh 
-module load R/4.0.1
+module load R/4.2.2
 
 cd $PBS_O_WORKDIR
 
