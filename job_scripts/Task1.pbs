@@ -1,7 +1,8 @@
 #!/bin/bash
 
 #PBS -P ut81
-#PBS -l ncpus=27:mem=14gb
+#PBS -l ncpus=27
+#PBS -l mem=14gb
 #PBS -l walltime=24:00:00
 #PBS -k oe
 
