@@ -10,7 +10,7 @@
 #PBS -M Gavin.Cooper@uon.edu.au
 #PBS -m abe
 
-#PBS -q express
+#PBS -q normal
 
 source /etc/profile.d/modules.sh 
 module load R/4.2.2
