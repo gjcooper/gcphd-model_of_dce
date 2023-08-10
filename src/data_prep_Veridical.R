@@ -6,7 +6,7 @@ library(mcce)
 
 # Global options
 task <- "Task1"  # Other option is Task2 for Symbolic task
-condition <- "Reject"  # Other option is Reject
+condition <- "Accept"  # Other option is Reject
 display <- "Absent"  # Other option is Greyed
 
 raw_data <- read_expyriment_data(here::here("data", "input", task), "S*")
@@ -59,18 +59,13 @@ if (task == "Task1") {
 }
 
 
+# Matching actual process used in SFT paper
 filtered_by_trial_category <- responded_trials %>%
+  filter(RT > 300, RT < quantile(RT, .95)) %>%
   group_categories %>%
   mutate(pc_correct = mean(Correct)) %>%
   group_outer %>%
   filter(min(pc_correct) >= 0.8)
-
-# Matching actual process used in SFT paper
-responded_trials %>%
-  filter(subject_id == 56, RT > 300) %>%
-  filter(RT < quantile(RT, .95)) %>%
-  group_by(trial_cat) %>%
-  summarise(pc_correct = mean(Correct))
 
 
 filtered_by_global_correct <- responded_trials %>%
