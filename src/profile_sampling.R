@@ -1,4 +1,4 @@
-RProf()
+Rprof()
 
 sampler <- pmwgs(
   data = model_data,
@@ -22,6 +22,6 @@ sampler <- run_stage(sampler, stage = "adapt", iter = 100, particles = 100, n_co
 
 save.image(outfile)
 
-RProf(NULL)
+Rprof(NULL)
 
-summaryRProf()
+summaryRprof()
