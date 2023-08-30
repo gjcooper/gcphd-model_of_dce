@@ -26,6 +26,16 @@ print(sessionInfo())
 #            MCCE_ORIG_JOB_DATA="PrefDCE_S6I7q4nycmRv_short_burn_cont.RData",
 #            MCCE_TAG="TestContinue",
 #            MCCE_STAGES="sample")
+# For profiling
+# Sys.setenv(MCCE_EST_EXP="NumericVDCE",
+#            NCPUS=1,
+#            MCCE_MIN_RT=0.35,
+#            MCCE_MAX_RT=10,
+#            MCCE_CONTAM=0.02,
+#            MCCE_MODEL="std",
+#            MCCE_METHOD="profile",
+#            MCCE_TAG="local_profile",
+#            MCCE_EXP_DATA="Task1_preprocessed_Accept.RDS")
 # For recovery
 # Sys.setenv(MCCE_EST_EXP="PrefDCE",
 #            NCPUS=3,
@@ -47,7 +57,7 @@ filename <- get_base_filename(vars)
 
 # Get output filename and input data
 outfile <- here::here("data", "output", paste0(filename, ".RData"))
-if (vars$method %in% c("test", "model")) {
+if (vars$method %in% c("test", "model", "profile")) {
   model_data <- readRDS(here::here("data", "output", vars$experimental_data))
 } else if (vars$method == "test") {
   test_data_files <- c(std = "PrefDCE_test.RData",
