@@ -44,6 +44,10 @@ reject_samples <- get_samples(reject_file) %>% extract_parameters
 samples <- list(accept = accept_samples, reject = reject_samples) %>%
   bind_rows(.id = "condition")
 
+#Map of old parameter names to new ones
+par_labels <- c("ASRS", "ASRC", "ACRS", "ACRC", "Comp")
+names(par_labels) <- c("FPP", "IST", "IEX", "MW", "CB")
+
 ```
 
 ## Plot theme
@@ -88,7 +92,8 @@ Par_order <- c("IST", "CB", "FPP", "MW", "IEX")
 
 acc_plot <- model_medians %>%
   filter(condition == "accept") %>%
-  mutate(parameter = factor(parameter, Par_order)) %>%
+  mutate(parameter = factor(parameter, levels = Par_order,
+                            labels = par_labels[Par_order])) %>%
   arch_plot +
   scale_fill_watercolour(palette = "durer") +
   theme(legend.position = "none") +
@@ -96,7 +101,8 @@ acc_plot <- model_medians %>%
 
 rej_plot <- model_medians %>%
   filter(condition == "reject") %>%
-  mutate(parameter = factor(parameter, Par_order)) %>%
+  mutate(parameter = factor(parameter, levels = Par_order,
+                            labels = par_labels[Par_order])) %>%
   arch_plot +
   scale_fill_watercolour(palette = "durer") +
   theme(legend.position = "right",
@@ -276,8 +282,10 @@ subject_recovery <- model_medians %>%
   filter(source != "Original") %>%
   filter(subjectid != "Group") %>%
   mutate(subjectid = factor(subjectid, subject_order)) %>%
-  mutate(parameter = factor(parameter, Par_order)) %>%
-  mutate(source = factor(source, Par_order)) %>%
+  mutate(parameter = factor(parameter, Par_order,
+                            labels = par_labels[Par_order])) %>%
+  mutate(source = factor(source, Par_order,
+                         labels = par_labels[Par_order])) %>%
   ggplot(aes(x = subjectid, y = rel_val, fill = parameter)) +
     geom_col() +
     labs(y = "Relative Evidence") +
@@ -295,8 +303,10 @@ group_recovery <- model_medians %>%
   filter(source != "Original") %>%
   filter(subjectid == "Group") %>%
   mutate(subjectid = factor(subjectid, subject_order)) %>%
-  mutate(parameter = factor(parameter, Par_order)) %>%
-  mutate(source = factor(source, Par_order)) %>%
+  mutate(parameter = factor(parameter, Par_order,
+                            labels = par_labels[Par_order])) %>%
+  mutate(source = factor(source, Par_order,
+                         labels = par_labels[Par_order])) %>%
   ggplot(aes(x = subjectid, y = rel_val, fill = parameter)) +
     geom_col() +
     scale_fill_watercolour(palette = "durer") +
@@ -348,7 +358,8 @@ combined <- recovery %>%
     estimated_value = value.y,
     recovery_model = source.x
   ) %>%
-  mutate(recovery_model = factor(recovery_model, levels = model_order[-6])) %>%
+  mutate(recovery_model = factor(recovery_model, levels = model_order[-6],
+                                 labels = par_labels[model_order[-6]])) %>%
   mutate(subjectid = case_when(
     subjectid == "theta_mu" ~ "Group",
     TRUE ~ str_pad(subjectid, 2, pad = "0")
@@ -495,7 +506,7 @@ one_acc_plot(end = c(0.6, 0.9)) +
 # MW
   one_acc_plot(end = c(0.6, 0.9)) +
   one_acc_plot(end = c(0.8, 0.9)) +
-  one_acc_plot("darkred", end = c(0.95, 0.6)) +
+  qne_acc_plot("darkred", end = c(0.95, 0.6)) +
   one_acc_plot("darkred", end = c(0.95, 0.8)) +
 # IEX
   one_acc_plot(end = c(0.6, 0.9)) +
