@@ -1,15 +1,20 @@
 #!/bin/bash
-#PBS -l select=1:ncpus=26:mem=14gb
+#PBS -P ut81
+#PBS -l ncpus=27
+#PBS -l mem=14gb
 #PBS -l walltime=24:00:00
 #PBS -k oe
 
 # Setup email notifications when the job is aborted(a), begins (b) or ends (e)
-#PBS -M gavin@gavincooper.net
+#PBS -M Gavin.Cooper@uon.edu.au
 #PBS -m abe
+
+#PBS -q normal
 
 
 source /etc/profile.d/modules.sh 
-module load R/4.0.1
+module load R/4.0.0
+module load gsl/2.7.1
 
 cd $PBS_O_WORKDIR
 

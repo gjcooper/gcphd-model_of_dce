@@ -52,19 +52,8 @@ cleaned_data <- readRDS(here::here("data", "output", experimental_data))
 # Only accept trials
 # Create simplifed data for modelling with rtdists
 # add drift parameter names
-mod_data <- cleaned_data %>%
-  transmute(
-    rt = RT / 1000,
-    subject = subject_id,
-    accept = as.numeric(Accept) + 1,
-    price = Price,
-    rating = Rating) %>%
-  mutate(
-    v_acc_p = paste0("v_acc_p_", price),
-    v_rej_p = paste0("v_rej_p_", price),
-    v_acc_r = paste0("v_acc_r_", rating),
-    v_rej_r = paste0("v_rej_r_", rating)
-  )
+mod_data <- cleaned_data
+# Preprocessing script gets data in correct format
 
 # < 0.3 participants were penalised, max trial length was 4.5 seconds
 min_rt <- 0
