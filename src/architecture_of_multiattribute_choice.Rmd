@@ -463,23 +463,24 @@ ggsave(
 # Architecture Explainer
 
 ```{r}
-one_acc_plot <- function(col = "darkgreen", end = c(0.8, 0.8), width = 2) {
+one_acc_plot <- function(racecol = "darkgreen", diagcol = "black", end = c(0.8, 0.8), width = 1) {
   ggplot(data.frame(x = seq(0, 1, 0.1), y = seq(0, 1, 0.1)),
          aes(x = x, y = y)) +
   geom_blank() +
-  geom_hline(yintercept = 0.9, linetype = 2) +
+  geom_hline(yintercept = 0.9, linetype = 2, colour = diagcol) +
   geom_segment(
     x = 0, y = 0,
     xend = end[1], yend = end[2],
     lineend = "round", # See available arrow types in example above
     linejoin = "mitre",
     linetype = 1,
-    size = width,
+    linewidth = width,
     arrow = arrow(length = unit(0.3, "inches")),
-    colour = col # Also accepts "red", "blue' etc
+    colour = racecol # Also accepts "red", "blue' etc
   ) +
+  theme_void() +
   theme(
-    axis.line = element_line(linewidth=2),
+    axis.line = element_line(linewidth=width, colour = diagcol),
     axis.title = element_blank(),
     axis.text = element_blank()
   ) +
@@ -488,46 +489,104 @@ one_acc_plot <- function(col = "darkgreen", end = c(0.8, 0.8), width = 2) {
 }
 ```
 
+```{r arch_specific_plots}
+plot_canvas <- function(xmax = 1, ymax = 1) {
+  ggplot(data.frame(x = seq(0, xmax, length.out = 10), y = seq(0, ymax, length.out = 10)),
+         aes(x = x, y = y)) +
+    geom_blank() +
+    scale_x_continuous(expand = c(0, 0), limits = c(0, xmax)) +
+    scale_y_continuous(expand = c(0, 0), limits = c(0, ymax)) +
+    theme_void() +
+    theme(panel.background = element_rect(fill = "white", colour = "black"))
+
+}
+
+arch_schema_plot <- function(arch) {
+  p <- plot_canvas() +
+    theme(
+      plot.title = element_text(size = 24, hjust = 0.5)
+    ) +
+    coord_fixed()
+
+  arch_spec <- arch_schema[[arch]]
+  for (component in arch_spec$components) {
+    lba <- do.call(one_acc_plot, component$args)
+    annote_args <- c(list(grob = ggplotGrob(lba)), component$pos)
+    p <- p + do.call(annotation_custom, annote_args)
+  }
+  p + ggtitle(arch_spec$name)
+}
+
+greengrey <- "#C5D3C5"
+redgrey <- "#D3C5C5"
+
+arch_order <- c("FPP", "IST", "IEX", "MW", "CB")
+arch_schema <- list(
+  ASRS = list(name = "Accept Selective Reject Selective",
+              components = list(list(pos = list(xmin = 0.05, xmax = 0.45, ymin = 0.55, ymax = 0.95),
+                                     args = list(racecol = "darkgreen", end = c(0.6, 0.9), width = 2)),
+                                list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.55, ymax = 0.95),
+                                     args = list(racecol = redgrey, end = c(0.95, 0.8))),
+                                list(pos = list(xmin = 0.05, xmax = 0.45, ymin = 0.05, ymax = 0.45),
+                                     args = list(racecol = greengrey, end = c(0.7, 0.8))),
+                                list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.05, ymax = 0.45),
+                                     args = list(racecol = redgrey, end = c(0.99, 0.75))))),
+  ASRC = list(name = "Accept Selective Reject Complete",
+              components = list(list(pos = list(xmin = 0.05, xmax = 0.45, ymin = 0.55, ymax = 0.95),
+                                     args = list(racecol = "lightgrey", end = c(0.6, 0.75))),
+                                list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.55, ymax = 0.95),
+                                     args = list(racecol = "darkred", end = c(0.55, 0.9), width = 2)),
+                                list(pos = list(xmin = 0.05, xmax = 0.45, ymin = 0.05, ymax = 0.45),
+                                     args = list(racecol = "darkgreen", end = c(0.6, 0.9), width = 2)),
+                                list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.05, ymax = 0.45),
+                                     args = list(racecol = "lightgrey", end = c(0.65, 0.85))))),
+  ACRS = list(name = "Accept Complete Reject Selective",
+              components = list(list(pos = list(xmin = 0.05, xmax = 0.45, ymin = 0.55, ymax = 0.95),
+                                     args = list(racecol = "darkgreen", end = c(0.6, 0.9), width = 2)),
+                                list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.55, ymax = 0.95),
+                                     args = list(racecol = "lightgrey", end = c(0.8, 0.8))),
+                                list(pos = list(xmin = 0.05, xmax = 0.45, ymin = 0.05, ymax = 0.45),
+                                     args = list(racecol = "darkgreen", end = c(0.8, 0.9), width = 2)),
+                                list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.05, ymax = 0.45),
+                                     args = list(racecol = "lightgrey", end = c(0.9, 0.85))))),
+  ACRC = list(name = "Accept Complete Reject Complete",
+              components = list(list(pos = list(xmin = 0.05, xmax = 0.45, ymin = 0.55, ymax = 0.95),
+                                     args = list(racecol = "darkgreen", end = c(0.7, 0.95), width = 2)),
+                                list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.55, ymax = 0.95),
+                                     args = list(racecol = "lightgrey", end = c(0.8, 0.8))),
+                                list(pos = list(xmin = 0.05, xmax = 0.45, ymin = 0.05, ymax = 0.45),
+                                     args = list(racecol = "darkgreen", end = c(0.7, 0.9), width = 2)),
+                                list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.05, ymax = 0.45),
+                                     args = list(racecol = "darkred", end = c(0.55, 0.9), width = 2)))),
+  Comp = list(name = "Compensatory",
+              components = list(list(pos = list(xmin = 0.05, xmax = 0.45, ymin = 0.3, ymax = 0.7),
+                                     args = list(racecol = "darkgreen", end = c(0.6, 0.9), width = 4)),
+                                list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.3, ymax = 0.7),
+                                     args = list(racecol = "lightgrey", end = c(0.7, 0.8), width = 2))))
+)
+
+
+```
+
+
 ### All together
 
 ```{r}
-layout <- "
-##BB#####
-AABB#DDEE
-AACC#DDEE
-##CC#####
-#########
-FFHH#JJ##
-FFHH#JJLL
-GGII#KKLL
-GGII#KK##
-#########
-MMMM#NNNN
-MMMM#NNNN
-MMMM#NNNN
-MMMM#NNNN
-"
+p <- plot_canvas(xmax = 2, ymax = 3) +
+  coord_fixed() +
+  annotation_custom(ggplotGrob(arch_schema_plot('ASRS')),
+                    xmin = 0.05, xmax = 0.95, ymin = 2.05, ymax = 2.95) +
+  annotation_custom(ggplotGrob(arch_schema_plot('ASRC')),
+                    xmin = 1.05, xmax = 1.95, ymin = 2.05, ymax = 2.95) +
+  annotation_custom(ggplotGrob(arch_schema_plot('ACRS')),
+                    xmin = 0.05, xmax = 0.95, ymin = 1.05, ymax = 1.95) +
+  annotation_custom(ggplotGrob(arch_schema_plot('ACRC')),
+                    xmin = 1.05, xmax = 1.95, ymin = 1.05, ymax = 1.95) +
+  annotation_custom(ggplotGrob(arch_schema_plot('Comp')),
+                    xmin = 0.55, xmax = 1.45, ymin = 0.05, ymax = .95)
 
-# IST
-one_acc_plot(end = c(0.6, 0.9)) +
-  one_acc_plot("darkred", end = c(0.95, 0.6)) +
-  one_acc_plot("darkred", end = c(0.95, 0.8)) +
-# FPP
-  one_acc_plot(end = c(0.6, 0.9)) +
-  one_acc_plot("darkred", end = c(0.95, 0.8)) +
-# MW
-  one_acc_plot(end = c(0.6, 0.9)) +
-  one_acc_plot(end = c(0.8, 0.9)) +
-  one_acc_plot("darkred", end = c(0.95, 0.6)) +
-  one_acc_plot("darkred", end = c(0.95, 0.8)) +
-# IEX
-  one_acc_plot(end = c(0.6, 0.9)) +
-  one_acc_plot(end = c(0.8, 0.9)) +
-  one_acc_plot("darkred", end = c(0.95, 0.6)) +
-# CB
-  one_acc_plot(end = c(0.7, 0.9), width = 4) +
-  one_acc_plot("darkred", end = c(0.95, 0.6), width = 4) +
-  plot_layout(design = layout)
+
+print(p)
 
 ggsave(
   filename = here::here(
