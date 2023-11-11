@@ -436,9 +436,9 @@ ggsave(
 ### Reject drift rates
 
 ```{r}
-rej_dr <- c("v_acc_p_D", "v_acc_r_D",
-            "v_acc_p_L", "v_acc_r_L",
-            "v_acc_p_H", "v_acc_r_H")
+rej_dr <- c("v_rej_p_D", "v_rej_r_D",
+            "v_rej_p_L", "v_rej_r_L",
+            "v_rej_p_H", "v_rej_r_H")
 drlabs <- c("Price Distractor", "Rating Distractor",
             "Price Low", "Rating Low",
             "Price High", "Rating High")
@@ -446,7 +446,6 @@ drlabs <- c("Price Distractor", "Rating Distractor",
 combined %>%
   filter(startsWith(parameter, "v_rej")) %>%
   mutate(parameter = factor(parameter, levels = rej_dr, labels = drlabs)) %>%
-combined %>%
   parplot
 
 ggsave(
