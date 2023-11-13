@@ -21,7 +21,7 @@ v_rej_r <- drift_names[grepl("rej_r", drift_names)]
 #' @return The log of the likelihood for the data under parameter values x
 #' @export
 model_wrapper <- function(x, data, model) {
-  drifts <- tibble::tibble(
+  drifts <- data.frame(
     AccPrice = x[data$v_acc_p],
     RejPrice = x[data$v_rej_p],
     AccRating = x[data$v_acc_r],
@@ -65,7 +65,7 @@ rmodel_wrapper <- function(x, data, model, contaminant_prob = 0.02, min_rt = 0, 
   data$accept <- NA
   data$rt <- NA
   x <- transform_pars(x)
-  drifts <- tibble::tibble(
+  drifts <- data.frame(
     AccPrice = x[data$v_acc_p],
     RejPrice = x[data$v_rej_p],
     AccRating = x[data$v_acc_r],
