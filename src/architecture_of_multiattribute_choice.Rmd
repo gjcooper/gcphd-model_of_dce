@@ -48,9 +48,11 @@ par_label_long <- c("Accept Selective Reject Selective",
                     "Accept Complete Reject Selective",
                     "Accept Complete Reject Complete",
                     "Compensatory")
+par_label_long2 <- str_replace_all(par_label_long, " ", "\n")
 
 names(par_label_short) <- c("FPP", "IST", "IEX", "MW", "CB")
 names(par_label_long) <- c("FPP", "IST", "IEX", "MW", "CB")
+names(par_label_long2) <- c("FPP", "IST", "IEX", "MW", "CB")
 arch_order <- c("FPP", "IST", "IEX", "MW", "CB")
 
 
@@ -289,9 +291,9 @@ subject_recovery <- model_medians %>%
   filter(subjectid != "Group") %>%
   mutate(subjectid = factor(subjectid, subject_order)) %>%
   mutate(parameter = factor(parameter, Par_order,
-                            labels = par_label_long[Par_order])) %>%
+                            labels = par_label_long2[Par_order])) %>%
   mutate(source = factor(source, Par_order,
-                         labels = par_label_long[Par_order])) %>%
+                         labels = par_label_long2[Par_order])) %>%
   ggplot(aes(x = subjectid, y = rel_val, fill = parameter)) +
     geom_col() +
     labs(y = "Relative Evidence") +
@@ -310,21 +312,25 @@ group_recovery <- model_medians %>%
   filter(subjectid == "Group") %>%
   mutate(subjectid = factor(subjectid, subject_order)) %>%
   mutate(parameter = factor(parameter, Par_order,
-                            labels = par_label_long[Par_order])) %>%
+                            labels = par_label_long2[Par_order])) %>%
   mutate(source = factor(source, Par_order,
-                         labels = par_label_long[Par_order])) %>%
+                         labels = par_label_long2[Par_order])) %>%
   ggplot(aes(x = subjectid, y = rel_val, fill = parameter)) +
     geom_col() +
+    scale_x_discrete(expand = c(0.5, 0)) +
     scale_fill_watercolour(palette = "durer") +
     theme(axis.title = element_blank(),
           axis.text.x = element_blank(),
-          axis.ticks.x = element_blank()) +
+          axis.ticks.x = element_blank(),
+          strip.text.y.right = element_text(angle = 0, hjust=0)
+
+          ) +
     facet_grid(rows = vars(source)) +
     scale_y_continuous(labels = NULL, breaks = NULL) +
     ggtitle("Group Level")
 
 subject_recovery + group_recovery +
-  plot_layout(widths = c(6, 1), guides = "collect") +
+  plot_layout(widths = c(9, 1), guides = "collect") +
   plot_annotation(
     title = "Relative Evidence for each of the 5 architectures",
     subtitle = "Each row corresponds to the generating architecture",
