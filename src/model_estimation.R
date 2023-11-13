@@ -29,8 +29,8 @@ print(sessionInfo())
 # For profiling
 # Sys.setenv(MCCE_EST_EXP="NumericVDCE",
 #            NCPUS=1,
-#            MCCE_MIN_RT=0.35,
-#            MCCE_MAX_RT=10,
+#            MCCE_MIN_RT=0,
+#            MCCE_MAX_RT=4.5,
 #            MCCE_CONTAM=0.02,
 #            MCCE_MODEL="std",
 #            MCCE_METHOD="profile",

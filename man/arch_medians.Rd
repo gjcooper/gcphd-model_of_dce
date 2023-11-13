@@ -4,7 +4,7 @@
 \alias{arch_medians}
 \title{Reshape median architecture estimates for plotting}
 \usage{
-arch_medians(medians)
+arch_medians(medians, grouping_vars = c("subjectid"))
 }
 \arguments{
 \item{medians}{}
