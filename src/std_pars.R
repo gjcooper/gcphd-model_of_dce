@@ -12,7 +12,7 @@ parameters <- c(
   "b_rej",
   # t0 - residual time, bounded above by min response time for participant k
   "t0",
-  # Drift rates rto accept/reject for different stimulus levels/attributes
+  # Drift rates to accept/reject for different stimulus levels/attributes
   apply(expand.grid(acc_rej_drift, stim_levels), 1, paste, collapse = "_")
 )
 

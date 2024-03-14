@@ -26,6 +26,7 @@ library(ggh4x)
 library(stringr)
 library(patchwork)
 library(watercolours)
+library(tune)
 library(mcce)   # devtools::install_github('gjcooper/gcphd-model_of_dce')
 knitr::opts_chunk$set(out.width = "100%")
 ```
@@ -42,12 +43,12 @@ samples <- list(accept = get_samples(accept_file) %>% extract_parameters(filter 
   bind_rows(.id = "condition")
 
 #Map of old parameter names to new ones
-par_label_short <- c("ASRS", "ASRC", "ACRS", "ACRC", "Comp")
-par_label_long <- c("Accept Selective Reject Selective",
-                    "Accept Selective Reject Complete",
-                    "Accept Complete Reject Selective",
-                    "Accept Complete Reject Complete",
-                    "Compensatory")
+par_label_short <- c("AORO", "AORA", "AARO", "AARA", "Int")
+par_label_long <- c("Accept OR Reject OR",
+                    "Accept OR Reject AND",
+                    "Accept AND Reject OR",
+                    "Accept AND Reject AND",
+                    "Integrated")
 par_label_long2 <- str_replace_all(par_label_long, " ", "\n")
 
 names(par_label_short) <- c("FPP", "IST", "IEX", "MW", "CB")
@@ -82,6 +83,8 @@ bigger_text <- theme(
   strip.text = element_text(face = "bold", size = txt_base_sz + 4),
   plot.title = element_text(face = "bold", size = txt_base_sz + 4))
 
+five_col_palette <- setNames(watercolour$durer$discrete[c(1:4, 7)], NULL)
+
 
 theme_set(theme_classic() + plot_theme)
 ```
@@ -97,13 +100,14 @@ model_medians <- samples %>%
   arch_medians
 
 Par_order <- c("IST", "CB", "FPP", "MW", "IEX")
+leg_order <- c("FPP", "IST", "IEX", "MW", "CB")
 
 acc_plot <- model_medians %>%
   filter(condition == "accept") %>%
   mutate(parameter = factor(parameter, levels = Par_order,
                             labels = par_label_long[Par_order])) %>%
   arch_plot +
-  scale_fill_watercolour(palette = "durer") +
+  scale_fill_discrete(type = five_col_palette, breaks = par_label_long[leg_order]) +
   theme(legend.position = "none") +
   labs(title = "Accept condition")
 
@@ -112,7 +116,7 @@ rej_plot <- model_medians %>%
   mutate(parameter = factor(parameter, levels = Par_order,
                             labels = par_label_long[Par_order])) %>%
   arch_plot +
-  scale_fill_watercolour(palette = "durer") +
+  scale_fill_discrete(type = five_col_palette, breaks = par_label_long[leg_order]) +
   theme(legend.position = "right",
         legend.key.size = unit(2, "cm")) +
   labs(title = "Reject condition")
@@ -292,12 +296,12 @@ subject_recovery <- model_medians %>%
   mutate(subjectid = factor(subjectid, subject_order)) %>%
   mutate(parameter = factor(parameter, Par_order,
                             labels = par_label_long2[Par_order])) %>%
-  mutate(source = factor(source, Par_order,
-                         labels = par_label_long2[Par_order])) %>%
+  mutate(source = factor(source, leg_order,
+                         labels = par_label_long2[leg_order])) %>%
   ggplot(aes(x = subjectid, y = rel_val, fill = parameter)) +
     geom_col() +
     labs(y = "Relative Evidence") +
-    scale_fill_watercolour(palette = "durer") +
+    scale_fill_discrete(type = five_col_palette, breaks = par_label_long2[leg_order]) +
     theme(axis.title.x = element_blank(),
           axis.text.x = element_blank(),
           axis.ticks.x = element_blank(),
@@ -313,12 +317,12 @@ group_recovery <- model_medians %>%
   mutate(subjectid = factor(subjectid, subject_order)) %>%
   mutate(parameter = factor(parameter, Par_order,
                             labels = par_label_long2[Par_order])) %>%
-  mutate(source = factor(source, Par_order,
-                         labels = par_label_long2[Par_order])) %>%
+  mutate(source = factor(source, leg_order,
+                         labels = par_label_long2[leg_order])) %>%
   ggplot(aes(x = subjectid, y = rel_val, fill = parameter)) +
     geom_col() +
     scale_x_discrete(expand = c(0.5, 0)) +
-    scale_fill_watercolour(palette = "durer") +
+    scale_fill_discrete(type = five_col_palette, breaks = par_label_long2[leg_order]) +
     theme(axis.title = element_blank(),
           axis.text.x = element_blank(),
           axis.ticks.x = element_blank(),
@@ -351,6 +355,8 @@ ggsave(
 
 ## Parameter Recovery
 
+### Get data in right format
+
 ```{r}
 par_medians <- samples %>%
   filter(!startsWith(parameter, "alpha_")) %>%
@@ -377,21 +383,29 @@ combined <- recovery %>%
 
 pt_col <- watercolour$durer$discrete["shadow"]
 
+```
+
+### Plotting function
+
+```{r}
 parplot <- function(subset) {
   subset %>%
   ggplot(aes(x = estimated_value, y = recovered_value)) +
   geom_point(size = 0.5, colour = pt_col) +
   geom_abline(intercept = 0, slope = 1) +
-  facet_grid2(rows = vars(parameter),
-              cols = vars(recovery_model),
-              scales = "free",
-              independent = "x") +
+  facet_grid(rows = vars(parameter),
+              cols = vars(recovery_model)) +
   labs(
     x = "Generating Value",
     y = "Recovered Value"
-  )
+  ) +
+  coord_obs_pred()
 }
+```
 
+### Non drift parameter
+
+```{r}
 pars <- c("A", "t0", "b_acc", "b_rej")
 plabs <- c("Start Point", "Non-decision Time",
            "Threshold to Accept", "Threshold to Reject")
@@ -528,7 +542,7 @@ redgrey <- "#D3C5C5"
 
 arch_order <- c("FPP", "IST", "IEX", "MW", "CB")
 arch_schema <- list(
-  ASRS = list(name = "Accept Selective Reject Selective",
+  AORO = list(name = "Accept OR Reject OR",
               components = list(list(pos = list(xmin = 0.05, xmax = 0.45, ymin = 0.55, ymax = 0.95),
                                      args = list(racecol = "darkgreen", end = c(0.6, 0.9), width = 2)),
                                 list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.55, ymax = 0.95),
@@ -537,7 +551,7 @@ arch_schema <- list(
                                      args = list(racecol = greengrey, end = c(0.7, 0.8))),
                                 list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.05, ymax = 0.45),
                                      args = list(racecol = redgrey, end = c(0.99, 0.75))))),
-  ASRC = list(name = "Accept Selective Reject Complete",
+  AORA = list(name = "Accept OR Reject AND",
               components = list(list(pos = list(xmin = 0.05, xmax = 0.45, ymin = 0.55, ymax = 0.95),
                                      args = list(racecol = "lightgrey", end = c(0.6, 0.75))),
                                 list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.55, ymax = 0.95),
@@ -546,7 +560,7 @@ arch_schema <- list(
                                      args = list(racecol = "darkgreen", end = c(0.6, 0.9), width = 2)),
                                 list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.05, ymax = 0.45),
                                      args = list(racecol = "lightgrey", end = c(0.65, 0.85))))),
-  ACRS = list(name = "Accept Complete Reject Selective",
+  AARO = list(name = "Accept AND Reject OR",
               components = list(list(pos = list(xmin = 0.05, xmax = 0.45, ymin = 0.55, ymax = 0.95),
                                      args = list(racecol = "darkgreen", end = c(0.6, 0.9), width = 2)),
                                 list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.55, ymax = 0.95),
@@ -555,7 +569,7 @@ arch_schema <- list(
                                      args = list(racecol = "darkgreen", end = c(0.8, 0.9), width = 2)),
                                 list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.05, ymax = 0.45),
                                      args = list(racecol = "lightgrey", end = c(0.9, 0.85))))),
-  ACRC = list(name = "Accept Complete Reject Complete",
+  AARA = list(name = "Accept AND Reject AND",
               components = list(list(pos = list(xmin = 0.05, xmax = 0.45, ymin = 0.55, ymax = 0.95),
                                      args = list(racecol = "darkgreen", end = c(0.7, 0.95), width = 2)),
                                 list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.55, ymax = 0.95),
@@ -564,7 +578,7 @@ arch_schema <- list(
                                      args = list(racecol = "darkgreen", end = c(0.7, 0.9), width = 2)),
                                 list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.05, ymax = 0.45),
                                      args = list(racecol = "darkred", end = c(0.55, 0.9), width = 2)))),
-  Comp = list(name = "Compensatory",
+  Int = list(name = "Integrated",
               components = list(list(pos = list(xmin = 0.05, xmax = 0.45, ymin = 0.3, ymax = 0.7),
                                      args = list(racecol = "darkgreen", end = c(0.6, 0.9), width = 4)),
                                 list(pos = list(xmin = 0.55, xmax = 0.95, ymin = 0.3, ymax = 0.7),
@@ -580,15 +594,15 @@ arch_schema <- list(
 ```{r}
 p <- plot_canvas(xmax = 2, ymax = 3) +
   coord_fixed() +
-  annotation_custom(ggplotGrob(arch_schema_plot('ASRS')),
+  annotation_custom(ggplotGrob(arch_schema_plot('AORO')),
                     xmin = 0.05, xmax = 0.95, ymin = 2.05, ymax = 2.95) +
-  annotation_custom(ggplotGrob(arch_schema_plot('ASRC')),
+  annotation_custom(ggplotGrob(arch_schema_plot('AORA')),
                     xmin = 1.05, xmax = 1.95, ymin = 2.05, ymax = 2.95) +
-  annotation_custom(ggplotGrob(arch_schema_plot('ACRS')),
+  annotation_custom(ggplotGrob(arch_schema_plot('AARO')),
                     xmin = 0.05, xmax = 0.95, ymin = 1.05, ymax = 1.95) +
-  annotation_custom(ggplotGrob(arch_schema_plot('ACRC')),
+  annotation_custom(ggplotGrob(arch_schema_plot('AARA')),
                     xmin = 1.05, xmax = 1.95, ymin = 1.05, ymax = 1.95) +
-  annotation_custom(ggplotGrob(arch_schema_plot('Comp')),
+  annotation_custom(ggplotGrob(arch_schema_plot('Int')),
                     xmin = 0.55, xmax = 1.45, ymin = 0.05, ymax = .95)
 
 
