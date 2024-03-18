@@ -260,7 +260,7 @@ rll_CB <- function(data, A, b_acc, b_rej, t0, drifts) {
     rej_coactive <- rlba_norm(1, 2*A, 2*b_rej, t0, rej_co_drifts[[row]], sqrt(2), posdrift = FALSE)
     acc_coactive_time <- acc_coactive[,"rt"]
     rej_coactive_time <- rej_coactive[,"rt"]
-    if (length(acc_coactive_time) == length(rej_coactive_time) == 1) {
+    if (length(acc_coactive_time) == 1 && length(rej_coactive_time) == 1) {
       acc_wins <- acc_coactive_time < rej_coactive_time
     } else if (length(acc_coactive_time) == 1) {
       acc_wins <- TRUE
