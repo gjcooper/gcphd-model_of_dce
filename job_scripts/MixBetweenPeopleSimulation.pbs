@@ -1,0 +1,26 @@
+#!/bin/bash
+
+#PBS -P ut81
+#PBS -l ncpus=8
+#PBS -l mem=20gb
+#PBS -l walltime=24:00:00
+#PBS -l storage=scratch/ut81+gdata/ut81
+
+#PBS -q normal
+
+# Setup email notifications when the job is aborted(a), begins (b) or ends (e)
+#PBS -M gavin@gavincooper.net
+#PBS -m abe
+
+cd $PBS_O_WORKDIR
+{
+    source /etc/profile.d/modules.sh
+    . ~/.bashrc
+    module load R-ut81/4.3.2
+
+    Rscript --no-save --no-restore src/mix_between_simulation.R
+
+    qstat -xf $PBS_JOBID
+} > job_output/mix_between_$PBS_JOBID.out 2> job_output/mix_between_$PBS_JOBID.err
+
+exit 0
