@@ -37,13 +37,13 @@ print(sessionInfo())
 #            MCCE_TAG="local_profile",
 #            MCCE_EXP_DATA="Task1_preprocessed_Accept.RDS")
 # For recovery
-# Sys.setenv(MCCE_EST_EXP="PrefDCE",
+# Sys.setenv(MCCE_EST_EXP="NumericVDCE",
 #            NCPUS=3,
 #            MCCE_REC_MODEL="CB",
-#            MCCE_REC_MED="median_alpha_pref.RDS",
-#            MCCE_MODEL_FILE="PrefDCE_2506730.rcgbcm_Estimation5Model.RData",
-#            MCCE_MIN_RT=0.35,
-#            MCCE_MAX_RT=10,
+#            MCCE_REC_MED="median_alpha_exp1.RDS",
+#            MCCE_MODEL_FILE="NumericVDCE_1878182.rcgbcm_Estimation5Model.RData",
+#            MCCE_MIN_RT=0,
+#            MCCE_MAX_RT=4.5,
 #            MCCE_CONTAM=0.02,
 #            RANDOM_SEED=3,
 #            MCCE_MODEL="std",
