@@ -1,0 +1,30 @@
+#!/bin/bash
+
+#PBS -P ut81
+#PBS -l ncpus=2
+#PBS -l mem=12gb
+#PBS -l walltime=1:00:00
+#PBS -l storage=scratch/ut81+gdata/ut81
+
+# Environment variables - modify the script being run
+#PBS -v DCE_EST_EXP=NumericVDCE,VDCE_TAG=OldVersionEst_Acc,DCE_EXP_DATA=Task1_preprocessed_Reject.RDS
+
+# Setup email notifications when the job is aborted(a), begins (b) or ends (e)
+#PBS -M Gavin.Cooper@uon.edu.au
+#PBS -m abe
+
+#PBS -q express
+
+cd $PBS_O_WORKDIR
+{
+    source /etc/profile.d/modules.sh
+    . ~/.bashrc
+    module load R-ut81/4.3.2
+
+	Rscript --no-save --no-restore src/model_estimation_Exp1.R
+
+    qstat -xf $PBS_JOBID
+} > job_output/estimation_$DCE_EST_EXP.$VDCE_TAG.$PBS_JOBID.out 2> job_output/estimation_$DCE_EST_EXP.$VDCE_TAG.$PBS_JOBID.err
+
+exit 0
+
