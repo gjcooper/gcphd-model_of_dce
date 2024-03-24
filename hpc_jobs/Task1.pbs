@@ -1,9 +1,9 @@
 #!/bin/bash
 
 #PBS -P ut81
-#PBS -l ncpus=8
+#PBS -l ncpus=2
 #PBS -l mem=12gb
-#PBS -l walltime=8:00:00
+#PBS -l walltime=1:00:00
 #PBS -l storage=scratch/ut81+gdata/ut81
 
 # Environment variables - modify the script being run
@@ -13,7 +13,7 @@
 #PBS -M Gavin.Cooper@uon.edu.au
 #PBS -m abe
 
-#PBS -q normal
+#PBS -q express
 
 cd $PBS_O_WORKDIR
 {
@@ -21,7 +21,7 @@ cd $PBS_O_WORKDIR
     . ~/.bashrc
     module load R-ut81/4.3.2
 
-	Rscript --no-save --no-restore src/model_estimation_Exp1.R > estimation_$DCE_EST_EXP.$VDCE_TAG.$PBS_JOBID.out 2> estimation_$DCE_EST_EXP.$VDCE_TAG.$PBS_JOBID.err
+	Rscript --no-save --no-restore src/model_estimation_Exp1.R
 
     qstat -xf $PBS_JOBID
 } > job_output/estimation_$DCE_EST_EXP.$VDCE_TAG.$PBS_JOBID.out 2> job_output/estimation_$DCE_EST_EXP.$VDCE_TAG.$PBS_JOBID.err
