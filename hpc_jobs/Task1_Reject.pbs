@@ -7,7 +7,7 @@
 #PBS -l storage=scratch/ut81+gdata/ut81
 
 # Environment variables - modify the script being run
-#PBS -v DCE_EST_EXP=NumericVDCE,VDCE_TAG=OldVersionEst_Acc,DCE_EXP_DATA=Task1_preprocessed_Reject.RDS
+#PBS -v DCE_EST_EXP=NumericVDCE,VDCE_TAG=OldVersionEst_Rej,DCE_EXP_DATA=Task1_preprocessed_Reject.RDS
 
 # Setup email notifications when the job is aborted(a), begins (b) or ends (e)
 #PBS -M Gavin.Cooper@uon.edu.au
