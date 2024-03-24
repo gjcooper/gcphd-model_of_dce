@@ -1,18 +1,30 @@
 #!/bin/bash
-#PBS -l select=1:ncpus=26:mem=14gb
-#PBS -l walltime=24:00:00
-#PBS -k oe
+
+#PBS -P ut81
+#PBS -l ncpus=8
+#PBS -l mem=12gb
+#PBS -l walltime=8:00:00
+#PBS -l storage=scratch/ut81+gdata/ut81
+
+# Environment variables - modify the script being run
+#PBS -v DCE_EST_EXP=NumericVDCE,VDCE_TAG=OldVersionEst_Acc,DCE_EXP_DATA=Task1_preprocessed_Accept.RDS
 
 # Setup email notifications when the job is aborted(a), begins (b) or ends (e)
-#PBS -M gavin@gavincooper.net
+#PBS -M Gavin.Cooper@uon.edu.au
 #PBS -m abe
 
-
-source /etc/profile.d/modules.sh 
-module load R/4.0.1
+#PBS -q normal
 
 cd $PBS_O_WORKDIR
+{
+    source /etc/profile.d/modules.sh
+    . ~/.bashrc
+    module load R-ut81/4.3.2
 
-Rscript --no-save --no-restore src/model_estimation_Exp1.R > estimation_$DCE_EST_EXP.$VDCE_TAG.$PBS_JOBID.out 2> estimation_$DCE_EST_EXP.$VDCE_TAG.$PBS_JOBID.err
+	Rscript --no-save --no-restore src/model_estimation_Exp1.R > estimation_$DCE_EST_EXP.$VDCE_TAG.$PBS_JOBID.out 2> estimation_$DCE_EST_EXP.$VDCE_TAG.$PBS_JOBID.err
+
+    qstat -xf $PBS_JOBID
+} > job_output/estimation_$DCE_EST_EXP.$VDCE_TAG.$PBS_JOBID.out 2> job_output/estimation_$DCE_EST_EXP.$VDCE_TAG.$PBS_JOBID.err
 
 exit 0
+

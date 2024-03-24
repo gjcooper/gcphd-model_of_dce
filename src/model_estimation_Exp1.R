@@ -3,7 +3,7 @@ require(rtdists)
 library(dplyr)
 library(MCMCpack)
 library(stringi)
-library(mcce)
+devtools::load_all()
 
 print(sessionInfo())
 
@@ -47,24 +47,7 @@ if (experiment == "NumericVDCE") {
 
 # Get output filename and input data
 outfile <- here::here("data", "output", paste0(filename, ".RData"))
-cleaned_data <- readRDS(here::here("data", "output", experimental_data))
-
-# Only accept trials
-# Create simplifed data for modelling with rtdists
-# add drift parameter names
-mod_data <- cleaned_data %>%
-  transmute(
-    rt = RT / 1000,
-    subject = subject_id,
-    accept = as.numeric(Accept) + 1,
-    price = Price,
-    rating = Rating) %>%
-  mutate(
-    v_acc_p = paste0("v_acc_p_", price),
-    v_rej_p = paste0("v_rej_p_", price),
-    v_acc_r = paste0("v_acc_r_", rating),
-    v_rej_r = paste0("v_rej_r_", rating)
-  )
+mod_data <- readRDS(here::here("data", "output", experimental_data))
 
 # < 0.3 participants were penalised, max trial length was 4.5 seconds
 min_rt <- 0
@@ -111,14 +94,14 @@ sampler <- pmwgs(
 
 sampler <- init(sampler)
 
-burned <- run_stage(sampler, stage = "burn", iter = 5000, particles = 500, n_cores = cores)
+burned <- run_stage(sampler, stage = "burn", iter = 2000, particles = 100, n_cores = cores)
 
 save.image(outfile)
 
-adapted <- run_stage(burned, stage = "adapt", iter = 10000, particles = 500, n_cores = cores, n_unique = 40)
+adapted <- run_stage(burned, stage = "adapt", iter = 10000, particles = 100, n_cores = cores, n_unique = 40)
 
 save.image(outfile)
 
-sampled <- run_stage(adapted, stage = "sample", iter = 10000, particles = 100, n_cores = cores, pdist_update_n = NA)
+sampled <- run_stage(adapted, stage = "sample", iter = 10000, particles = 50, n_cores = cores, pdist_update_n = NA)
 
 save.image(outfile)
